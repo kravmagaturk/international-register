@@ -53,10 +53,10 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .legal-warning{background:#fdecea;color:#b71c1c;border:2px solid #f44336;padding:12px;border-radius:8px;margin-top:10px;text-align:center;font-size:13px;font-weight:bold;}
 .security-notice{font-size:11px;color:#999;text-align:center;margin-top:10px;}
 .hidden{display:none;}
-.photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
-.photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;border:3px solid #d32f2f;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+.photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
 .photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame-large::after{content:'🔍';position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;}
 .qr-box{text-align:center;margin:10px 0;}
@@ -205,6 +205,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
+              <option value="Güvenlik">Security</option>
             </select>
           </div>
           <div class="form-group hidden" id="sub-level-group">
@@ -256,6 +257,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
+              <option value="Güvenlik">Security</option>
             </select>
           </div>
           <div id="result-count" class="result-count"></div>
@@ -297,8 +299,11 @@ var levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
-  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[]
+  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[], 'Güvenlik':[]
 };
+
+// Kimlik indirme yetkisi olan seviyeler
+var ID_ELIGIBLE_LEVELS = ['Instructor', 'Asistan', 'Güvenlik', 'Close Protection'];
 
 var UI_I18N = {
   tr: {
@@ -504,9 +509,16 @@ var PDF_I18N = {
   }
 };
 
+// Kimlik kartı için başlık ve rol çevirileri
 var ID_I18N = {
-  tr: { title1:'KRAV MAGA', title2:'ANTRENÖR KİMLİK', role:'ANTRENÖR', fullName:'Ad Soyad', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
-  en: { title1:'KRAV MAGA', title2:'INSTRUCTOR ID', role:'INSTRUCTOR', fullName:'Full Name', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
+  tr: { title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
+  en: { title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
+};
+
+// Kimlik kartındaki "rol" satırı - seviyeye göre çevrilir
+var ID_ROLE_LABELS = {
+  tr: { 'Instructor':'Antrenör', 'Asistan':'Asistan', 'Güvenlik':'Güvenlik', 'Close Protection':'Yakın Koruma' },
+  en: { 'Instructor':'Instructor', 'Asistan':'Assistant', 'Güvenlik':'Security', 'Close Protection':'Close Protection' }
 };
 
 function turkishSafe(text){
@@ -521,8 +533,8 @@ function buildQrUrl(registerNo){
   return SITE_URL + '?reg=' + encodeURIComponent(registerNo);
 }
 
-function isInstructorLevel(level){
-  return !!(level && level.indexOf('Instructor') === 0);
+function isIdEligibleLevel(level){
+  return ID_ELIGIBLE_LEVELS.indexOf(level) !== -1;
 }
 
 // ============================================
@@ -708,23 +720,6 @@ function generateDiagonalTextLayer(pxW, pxH){
   return canvas.toDataURL('image/png');
 }
 
-function drawCornerBrackets(doc, pageW, pageH){
-  doc.setDrawColor(224,0,0);
-  doc.setLineWidth(1.1);
-  var L = 12, m = 8;
-  doc.line(m, m+L, m, m); doc.line(m, m, m+L, m);
-  doc.line(pageW-m-L, m, pageW-m, m); doc.line(pageW-m, m, pageW-m, m+L);
-  doc.line(m, pageH-m-L, m, pageH-m); doc.line(m, pageH-m, m+L, pageH-m);
-  doc.line(pageW-m-L, pageH-m, pageW-m, pageH-m); doc.line(pageW-m, pageH-m-L, pageW-m, pageH-m);
-}
-
-function smallBracket(doc, x, y, dx, dy, size){
-  doc.setDrawColor(224,0,0);
-  doc.setLineWidth(0.9);
-  doc.line(x, y+dy*size, x, y);
-  doc.line(x, y, x+dx*size, y);
-}
-
 function infoRow(doc, label, value, y, valueColor){
   var safeLabel = turkishSafe(label);
   var safeValue = turkishSafe(value);
@@ -786,7 +781,7 @@ function searchDiploma(){
 }
 
 // ============================================
-// PDF OLUŞTURMA - Standart Sertifika (TR/EN)
+// PDF OLUŞTURMA - Standart Sertifika (TR/EN) - ÇERÇEVESİZ görsel/QR
 // ============================================
 function downloadPDF(record, lang){
   record = record || lastSearchedRecord;
@@ -802,7 +797,6 @@ function downloadPDF(record, lang){
 
     doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, 210, 297);
     if(logoData){ drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09); }
-    drawCornerBrackets(doc, 210, 297);
 
     var emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
     var qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
@@ -831,25 +825,17 @@ function downloadPDF(record, lang){
         if(qrCanvas){
           var qrImgData = qrCanvas.toDataURL('image/png');
           doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
-          smallBracket(doc, qrX, qrY, 1, 1, 6);
-          smallBracket(doc, qrX+qrSize, qrY, -1, 1, 6);
-          smallBracket(doc, qrX, qrY+qrSize, 1, -1, 6);
-          smallBracket(doc, qrX+qrSize, qrY+qrSize, -1, -1, 6);
         }
       } catch(e){}
 
-      doc.setFillColor(235,235,235);
-      doc.rect(photoX, photoY, photoSize, photoSize, 'F');
       if(d.photo){
         try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
       } else {
+        doc.setFillColor(240,240,240);
+        doc.rect(photoX, photoY, photoSize, photoSize, 'F');
         doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
         doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
       }
-      smallBracket(doc, photoX, photoY, 1, 1, 9);
-      smallBracket(doc, photoX+photoSize, photoY, -1, 1, 9);
-      smallBracket(doc, photoX, photoY+photoSize, 1, -1, 9);
-      smallBracket(doc, photoX+photoSize, photoY+photoSize, -1, -1, 9);
 
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
       var dLabel = turkishSafe(T.diplomaNo);
@@ -910,13 +896,15 @@ function downloadPDF(record, lang){
 }
 
 // ============================================
-// ANTRENÖR KİMLİK KARTI - Sadece Instructor seviyesi, sadece Yönetici Paneli
+// KİMLİK KARTI - Antrenör/Asistan/Güvenlik/Yakın Koruma için
+// Sınırsız çerçevesiz, sade tasarım, turkishSafe her metinde uygulanıyor
 // ============================================
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
   if(!record) return;
   var d = record;
   var I = ID_I18N[lang] || ID_I18N.tr;
+  var roleLabel = (ID_ROLE_LABELS[lang] && ID_ROLE_LABELS[lang][d.level]) ? ID_ROLE_LABELS[lang][d.level] : d.level;
 
   prepareLogoBase64().then(function(logoData){
     var jsPDF = window.jspdf.jsPDF;
@@ -925,21 +913,19 @@ function downloadInstructorID(record, lang){
 
     doc.addImage(generateDiagonalTextLayer(700,440), 'PNG', 0, 0, cardW, cardH);
     if(logoData){ drawWatermarkLogo(doc, logoData, cardW-24, cardH-22, 26, 0.12); }
-    drawCornerBrackets(doc, cardW, cardH);
 
     doc.setFillColor(211,47,47);
     doc.rect(0, 0, cardW, 14, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
-    doc.text(I.title1 + ' - ' + I.title2, cardW/2, 9.5, {align:'center'});
+    doc.text(turkishSafe(I.title), cardW/2, 9.5, {align:'center'});
 
     var photoX = 8, photoY = 20, photoSize = 34;
-    doc.setFillColor(235,235,235);
-    doc.rect(photoX, photoY, photoSize, photoSize, 'F');
     if(d.photo){
       try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
+    } else {
+      doc.setFillColor(240,240,240);
+      doc.rect(photoX, photoY, photoSize, photoSize, 'F');
     }
-    doc.setDrawColor(211,47,47); doc.setLineWidth(0.8);
-    doc.rect(photoX, photoY, photoSize, photoSize);
 
     if(logoData){
       drawCircularImage(doc, logoData, photoX+photoSize/2, photoY+photoSize+10, 8);
@@ -952,11 +938,11 @@ function downloadInstructorID(record, lang){
 
     textY += 8;
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(211,47,47);
-    doc.text(I.role, textX, textY);
+    doc.text(turkishSafe(roleLabel), textX, textY);
 
     textY += 9;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
-    doc.text(I.regNo + ':', textX, textY);
+    doc.text(turkishSafe(I.regNo) + ':', textX, textY);
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
     doc.text(turkishSafe(d.registerNo), textX, textY+6);
 
@@ -971,8 +957,6 @@ function downloadInstructorID(record, lang){
           var qrImgData = qrCanvas.toDataURL('image/png');
           var qrSize = 20, qrX = cardW - qrSize - 8, qrY = photoY + photoSize - qrSize;
           doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
-          doc.setDrawColor(211,47,47); doc.setLineWidth(0.5);
-          doc.rect(qrX, qrY, qrSize, qrSize);
         }
       } catch(e){}
 
@@ -980,7 +964,7 @@ function downloadInstructorID(record, lang){
       var dateStr = new Date().toLocaleDateString(I.locale || 'tr-TR');
       doc.text(turkishSafe(I.createdOn.replace('{date}', dateStr)), 8, cardH-4);
 
-      doc.save('antrenor-kimlik-' + d.registerNo + '-' + lang + '.pdf');
+      doc.save('kimlik-' + d.registerNo + '-' + lang + '.pdf');
       logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'instructor_id' });
     }, 200);
   });
@@ -1348,7 +1332,7 @@ function renderDiplomaList(filtered, isFiltering){
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
 
     var idButtons = '';
-    if(isInstructorLevel(d.level)){
+    if(isIdEligibleLevel(d.level)){
       idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button>' +
                   '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
     }
@@ -1377,7 +1361,7 @@ function renderDiplomaList(filtered, isFiltering){
             '<button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button>' +
             '<button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button>' +
           '</div>' +
-          '<div class="pdf-btn-row">' + idButtons + '</div>' +
+          (idButtons ? ('<div class="pdf-btn-row">' + idButtons + '</div>') : '') +
         '</div>' +
       '</div>';
   });
