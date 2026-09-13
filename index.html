@@ -13,9 +13,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .header{background:#d32f2f;color:white;padding:25px;text-align:center;position:relative;}
 .header img.logo{width:80px;height:80px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);margin-bottom:10px;background:#fff;object-fit:cover;}
 .header h1{font-size:26px;margin-bottom:8px;}
-.lang-toggle{position:absolute;top:15px;right:15px;display:flex;gap:4px;}
-.lang-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:bold;}
-.lang-btn.active{background:white;color:#d32f2f;}
+.lang-toggle{position:absolute;top:15px;right:15px;}
+.lang-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.6);color:white;padding:6px 14px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;}
+.lang-btn:hover{background:rgba(255,255,255,0.35);}
 .tabs{display:flex;background:#f8f8f8;border-bottom:1px solid #ddd;}
 .tab{flex:1;padding:15px;text-align:center;background:none;border:none;cursor:pointer;font-size:16px;color:#666;}
 .tab.active{background:white;color:#d32f2f;border-bottom:2px solid #d32f2f;}
@@ -33,8 +33,11 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .btn-pdf:hover{background:#1b5e20;}
 .btn-pdf-en{background:#1565c0;}
 .btn-pdf-en:hover{background:#0d47a1;}
+.btn-id{background:#6a1b9a;}
+.btn-id:hover{background:#4a148c;}
 .btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
 .btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
+.btn-small{padding:7px 12px;font-size:12px;}
 .badge-active{background:#e8f5e8;color:#2e7d32;border:1px solid #a5d6a7;padding:4px 10px;border-radius:15px;font-size:12px;font-weight:bold;cursor:pointer;display:inline-block;}
 .badge-passive{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;padding:4px 10px;border-radius:15px;font-size:12px;font-weight:bold;cursor:pointer;display:inline-block;}
 .password-container{position:relative;}
@@ -47,6 +50,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .error{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;}
 .success{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9;}
 .lockout-message{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:15px;border-radius:8px;margin-top:15px;text-align:center;font-weight:bold;}
+.legal-warning{background:#fdecea;color:#b71c1c;border:2px solid #f44336;padding:12px;border-radius:8px;margin-top:10px;text-align:center;font-size:13px;font-weight:bold;}
+.security-notice{font-size:11px;color:#999;text-align:center;margin-top:10px;}
 .hidden{display:none;}
 .photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
@@ -86,17 +91,22 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .lightbox-close{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;font-weight:bold;}
 .legal-footer{text-align:center;padding:15px;font-size:11px;color:#999;border-top:1px solid #eee;background:#fafafa;}
 .log-list{max-height:400px;overflow-y:auto;background:#fff;border:1px solid #eee;border-radius:6px;padding:10px;}
-.log-item{padding:10px;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.log-item{padding:10px;border-bottom:1px solid #f0f0f0;font-size:12px;}
 .log-item:last-child{border-bottom:none;}
-@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}.lang-toggle{position:static;justify-content:center;margin-top:10px;}}
+.log-item .log-ip{color:#888;font-size:11px;}
+.log-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;margin-right:6px;}
+.log-badge-download{background:#e3f2fd;color:#1565c0;}
+.log-badge-success{background:#e8f5e8;color:#2e7d32;}
+.log-badge-failed{background:#ffebee;color:#c62828;}
+.log-actions{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}.lang-toggle{position:static;margin-top:10px;text-align:center;}}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <div class="lang-toggle">
-      <button class="lang-btn" id="langBtnTr" onclick="setUILang('tr')">TR</button>
-      <button class="lang-btn" id="langBtnEn" onclick="setUILang('en')">EN</button>
+      <button class="lang-btn" id="langToggleBtn" onclick="toggleUILang()">EN</button>
     </div>
     <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
     <h1>KRAV MAGA</h1>
@@ -112,7 +122,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
       <p id="txt-queryDesc">Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.</p>
       <div class="form-group">
         <label id="txt-lblRegisterNo">Register Numarası:</label>
-        <input type="text" id="searchRegister" placeholder="Örn: KM-rg">
+        <input type="text" id="searchRegister" placeholder="Register No">
       </div>
       <button class="btn" id="search-btn" onclick="searchDiploma()">Sorgula</button>
       <div id="searchResult"></div>
@@ -137,6 +147,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button>
         </div>
         <div id="loginMessage"></div>
+        <div class="security-notice" id="txt-securityNotice">Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.</div>
       </div>
 
       <div id="admin-panel" class="hidden">
@@ -144,13 +155,17 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
         <div style="margin-bottom:20px;">
           <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" id="btn-change-password" onclick="showPasswordForm()">Şifre Değiştir</button>
-          <button class="btn" id="btn-download-logs" onclick="toggleDownloadLogs()">📋 İndirme Kayıtları</button>
+          <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
 
-        <div id="download-logs-section" class="hidden" style="margin-bottom:20px;">
-          <h4 id="txt-downloadLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 PDF İndirme Kayıtları</h4>
-          <div id="download-logs-list" class="log-list"><div class="spinner"></div></div>
+        <div id="security-logs-section" class="hidden" style="margin-bottom:20px;">
+          <h4 id="txt-securityLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 Güvenlik ve İndirme Kayıtları</h4>
+          <div class="log-actions">
+            <button class="btn btn-secondary btn-small" id="btn-clear-logs" onclick="clearSecurityLogs()">🗑️ Logları Temizle</button>
+            <button class="btn btn-pdf btn-small" id="btn-export-logs-pdf" onclick="exportLogsAsPDF()">📄 Logları PDF Olarak İndir</button>
+          </div>
+          <div id="security-logs-list" class="log-list"><div class="spinner"></div></div>
         </div>
 
         <div id="add-form" class="hidden">
@@ -263,38 +278,35 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 <div id="pdf-qr-hidden" style="position:absolute;left:-9999px;top:-9999px;"></div>
 
 <script>
-const FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_MINUTES = 5;
-const SITE_URL = 'https://kravmagaturk.github.io/international-register/';
-let lockoutTimer = null;
+var FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
+var MAX_ATTEMPTS = 3;
+var LOCKOUT_MINUTES = 5;
+var SITE_URL = 'https://kravmagaturk.github.io/international-register/';
+var lockoutTimer = null;
 
-let diplomaData = [];
-let currentPasswordHash = null;
-let currentPhotoData = '';
-let editingIndex = -1;
-let expandedRows = {};
-let lastSearchedRecord = null;
-let cachedLogoBase64 = null;
-let uiLang = localStorage.getItem('uiLang') || 'tr';
+var diplomaData = [];
+var currentPasswordHash = null;
+var currentPhotoData = '';
+var editingIndex = -1;
+var expandedRows = {};
+var lastSearchedRecord = null;
+var cachedLogoBase64 = null;
+var uiLang = localStorage.getItem('uiLang') || 'tr';
 
-const levelOptions = {
+var levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[]
 };
 
-// ============================================
-// ARAYÜZ ÇEVİRİ SÖZLÜĞÜ (TR/EN) - Sadece iki dil
-// ============================================
-const UI_I18N = {
+var UI_I18N = {
   tr: {
     subtitle:'Kayıtlı Öğrenci Sorgulama Sistemi',
     tabQuery:'Öğrenci Sorgula', tabAdmin:'Yönetici Paneli',
     queryHeading:'Kayıtlı Öğrenci Sorgulama',
     queryDesc:'Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.',
-    lblRegisterNo:'Register Numarası:', placeholderRegisterNo:'Örn: KM2025001',
+    lblRegisterNo:'Register Numarası:', placeholderRegisterNo:'Register No',
     btnSearch:'Sorgula', searching:'Aranıyor...',
     errEnterReg:'⚠️ Lütfen register numarası girin!',
     errNotFound:'❌ Kayıt bulunamadı!', errConn:'⚠️ Bağlantı hatası, lütfen tekrar deneyin.',
@@ -303,13 +315,19 @@ const UI_I18N = {
     lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
     statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
     btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
+    btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
     adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:',
     placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
     errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
+    securityNotice:'Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.',
+    legalWarningLockout:'⚠️ Bu, izinsiz erişim denemesi olarak değerlendirilebilir ve yasal işlem başlatılabilir. Giriş bilgileriniz (IP adresi ve konum) kayıt altına alınmıştır.',
     adminPanelHeading:'Yönetici Paneli',
     btnNewRecord:'Yeni Kayıt Ekle', btnChangePassword:'Şifre Değiştir',
-    btnDownloadLogs:'📋 İndirme Kayıtları', btnLogout:'Çıkış',
-    downloadLogsHeading:'📋 PDF İndirme Kayıtları', noLogsYet:'Henüz indirme kaydı yok.', logsLoadError:'Kayıtlar yüklenemedi.',
+    btnSecurityLogs:'📋 Güvenlik Kayıtları', btnLogout:'Çıkış',
+    securityLogsHeading:'📋 Güvenlik ve İndirme Kayıtları', noLogsYet:'Henüz kayıt yok.', logsLoadError:'Kayıtlar yüklenemedi.',
+    btnClearLogs:'🗑️ Logları Temizle', btnExportLogsPdf:'📄 Logları PDF Olarak İndir',
+    confirmClearLogs:'Tüm güvenlik ve indirme kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+    logTypeDownload:'İndirme', logTypeLoginSuccess:'Giriş Başarılı', logTypeLoginFailed:'Başarısız Giriş',
     formTitleNew:'Yeni Kayıt Ekle', formTitleEdit:'Kaydı Düzenle',
     lblStudentName:'Adı Soyadı:', placeholderStudentName:'Öğrenci adı soyadı',
     lblPhoto:'Öğrenci Fotoğrafı:', btnRemovePhoto:'Fotoğrafı Kaldır',
@@ -340,7 +358,7 @@ const UI_I18N = {
     tabQuery:'Search Student', tabAdmin:'Admin Panel',
     queryHeading:'Registered Student Search',
     queryDesc:'You can search your registration details by entering your register number.',
-    lblRegisterNo:'Register Number:', placeholderRegisterNo:'Ex: KM2025001',
+    lblRegisterNo:'Register Number:', placeholderRegisterNo:'Register No',
     btnSearch:'Search', searching:'Searching...',
     errEnterReg:'⚠️ Please enter your register number!',
     errNotFound:'❌ Record not found!', errConn:'⚠️ Connection error, please try again.',
@@ -349,13 +367,19 @@ const UI_I18N = {
     lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
     statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
     btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
+    btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
     adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:',
     placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
     errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
+    securityNotice:'Your login attempts are logged with your IP address for security purposes.',
+    legalWarningLockout:'⚠️ This may be considered an unauthorized access attempt and could result in legal action. Your login details (IP address and location) have been recorded.',
     adminPanelHeading:'Admin Panel',
     btnNewRecord:'Add New Record', btnChangePassword:'Change Password',
-    btnDownloadLogs:'📋 Download Logs', btnLogout:'Log Out',
-    downloadLogsHeading:'📋 PDF Download Logs', noLogsYet:'No download logs yet.', logsLoadError:'Failed to load logs.',
+    btnSecurityLogs:'📋 Security Logs', btnLogout:'Log Out',
+    securityLogsHeading:'📋 Security & Download Logs', noLogsYet:'No records yet.', logsLoadError:'Failed to load logs.',
+    btnClearLogs:'🗑️ Clear Logs', btnExportLogsPdf:'📄 Export Logs as PDF',
+    confirmClearLogs:'Are you sure you want to delete all security and download logs? This action cannot be undone.',
+    logTypeDownload:'Download', logTypeLoginSuccess:'Login Success', logTypeLoginFailed:'Failed Login',
     formTitleNew:'Add New Record', formTitleEdit:'Edit Record',
     lblStudentName:'Full Name:', placeholderStudentName:'Student full name',
     lblPhoto:'Student Photo:', btnRemovePhoto:'Remove Photo',
@@ -384,32 +408,35 @@ const UI_I18N = {
 };
 
 function t(key, params){
-  const dict = UI_I18N[uiLang] || UI_I18N.tr;
-  let str = dict[key] !== undefined ? dict[key] : key;
+  var dict = UI_I18N[uiLang] || UI_I18N.tr;
+  var str = dict[key] !== undefined ? dict[key] : key;
   if(params){
-    Object.keys(params).forEach(function(p){ str = str.split('{'+p+'}').join(params[p]); });
+    for(var p in params){
+      str = str.split('{'+p+'}').join(params[p]);
+    }
   }
   return str;
+}
+
+function toggleUILang(){
+  setUILang(uiLang === 'tr' ? 'en' : 'tr');
 }
 
 function setUILang(lang){
   uiLang = lang;
   localStorage.setItem('uiLang', lang);
   applyStaticLanguage();
-  // Ekranda açık olan dinamik içerikleri de yenile
   if(!document.getElementById('admin-panel').classList.contains('hidden')){
     filterDiplomas();
   }
-  const searchResultEl = document.getElementById('searchResult');
+  var searchResultEl = document.getElementById('searchResult');
   if(searchResultEl && searchResultEl.innerHTML.trim() !== '' && lastSearchedRecord){
     renderSearchResult(lastSearchedRecord);
   }
 }
 
 function applyStaticLanguage(){
-  document.getElementById('langBtnTr').classList.toggle('active', uiLang==='tr');
-  document.getElementById('langBtnEn').classList.toggle('active', uiLang==='en');
-
+  document.getElementById('langToggleBtn').textContent = uiLang === 'tr' ? 'EN' : 'TR';
   document.getElementById('txt-subtitle').textContent = t('subtitle');
   document.getElementById('tab-query-btn').textContent = t('tabQuery');
   document.getElementById('tab-admin-btn').textContent = t('tabAdmin');
@@ -422,12 +449,15 @@ function applyStaticLanguage(){
   document.getElementById('txt-lblPassword').textContent = t('lblPassword');
   document.getElementById('adminPass').placeholder = t('placeholderPassword');
   document.getElementById('login-btn').textContent = t('btnLogin');
+  document.getElementById('txt-securityNotice').textContent = t('securityNotice');
   document.getElementById('txt-adminPanelHeading').textContent = t('adminPanelHeading');
   document.getElementById('btn-new-record').textContent = t('btnNewRecord');
   document.getElementById('btn-change-password').textContent = t('btnChangePassword');
-  document.getElementById('btn-download-logs').textContent = t('btnDownloadLogs');
+  document.getElementById('btn-security-logs').textContent = t('btnSecurityLogs');
   document.getElementById('btn-logout').textContent = t('btnLogout');
-  document.getElementById('txt-downloadLogsHeading').textContent = t('downloadLogsHeading');
+  document.getElementById('txt-securityLogsHeading').textContent = t('securityLogsHeading');
+  document.getElementById('btn-clear-logs').textContent = t('btnClearLogs');
+  document.getElementById('btn-export-logs-pdf').textContent = t('btnExportLogsPdf');
   document.getElementById('txt-lblStudentName').textContent = t('lblStudentName');
   document.getElementById('studentName').placeholder = t('placeholderStudentName');
   document.getElementById('txt-lblPhoto').textContent = t('lblPhoto');
@@ -455,12 +485,9 @@ function applyStaticLanguage(){
   document.getElementById('txt-legalFooter').textContent = t('legalFooter');
 }
 
-// ============================================
-// PDF İÇİN ÇOK DİLLİ METİNLER (TR/EN)
-// ============================================
-const PDF_I18N = {
+var PDF_I18N = {
   tr: {
-    title:'KRAV MAGA - Kayıtlı Öğrenci Bilgileri', diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT',
+    diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT',
     fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:',
     level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif',
     footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.',
@@ -468,13 +495,18 @@ const PDF_I18N = {
     noPhoto:'FOTOGRAF YOK', locale:'tr-TR'
   },
   en: {
-    title:'KRAV MAGA - Registered Student Information', diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT',
+    diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT',
     fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:',
     level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive',
     footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.',
     rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
     noPhoto:'NO PHOTO', locale:'en-US'
   }
+};
+
+var ID_I18N = {
+  tr: { title1:'KRAV MAGA', title2:'ANTRENÖR KİMLİK', role:'ANTRENÖR', fullName:'Ad Soyad', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
+  en: { title1:'KRAV MAGA', title2:'INSTRUCTOR ID', role:'INSTRUCTOR', fullName:'Full Name', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
 };
 
 function turkishSafe(text){
@@ -489,80 +521,100 @@ function buildQrUrl(registerNo){
   return SITE_URL + '?reg=' + encodeURIComponent(registerNo);
 }
 
-async function logDownload(record, lang){
-  try {
-    await fetch(FIREBASE_URL + '/downloadLogs.json', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        studentName: record.studentName,
-        registerNo: record.registerNo,
-        lang: lang || 'tr',
-        timestamp: new Date().toISOString()
-      })
-    });
-  } catch(e){ console.warn('İndirme kaydedilemedi:', e); }
+function isInstructorLevel(level){
+  return !!(level && level.indexOf('Instructor') === 0);
 }
 
-async function sha256(text){
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+// ============================================
+// GÜVENLİK - IP/konum bilgisi (basit ve güvenli zaman aşımı, asla donmaz)
+// ============================================
+function getClientInfo(){
+  var fetchPromise = fetch('https://ipapi.co/json/').then(function(r){ return r.json(); });
+  var timeoutPromise = new Promise(function(resolve){
+    setTimeout(function(){ resolve(null); }, 3000);
+  });
+  return Promise.race([fetchPromise, timeoutPromise]).then(function(data){
+    if(!data) return { ip:'unknown', city:'', country:'' };
+    return { ip: data.ip || 'unknown', city: data.city || '', country: data.country_name || '' };
+  }).catch(function(){
+    return { ip:'unknown', city:'', country:'' };
+  });
+}
+
+function logSecurityEvent(type, details){
+  getClientInfo().then(function(client){
+    var payload = { type:type, ip:client.ip, city:client.city, country:client.country, timestamp:new Date().toISOString() };
+    if(details){
+      for(var k in details){ payload[k] = details[k]; }
+    }
+    fetch(FIREBASE_URL + '/securityLogs.json', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    }).catch(function(){});
+  }).catch(function(){});
+}
+
+function sha256(text){
+  var encoder = new TextEncoder();
+  var data = encoder.encode(text);
+  return crypto.subtle.digest('SHA-256', data).then(function(hashBuffer){
+    var hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  });
 }
 
 function generateRandomPassword(length){
   length = length || 10;
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  let result = '';
-  for(let i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  var result = '';
+  for(var i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
   return result;
 }
 
-async function getStoredPasswordHash(){
-  const res = await fetch(FIREBASE_URL + '/adminPasswordHash.json');
-  return await res.json();
+function getStoredPasswordHash(){
+  return fetch(FIREBASE_URL + '/adminPasswordHash.json').then(function(res){ return res.json(); });
 }
 
 function formatDateForDisplay(isoDate){
-  const d = new Date(isoDate);
+  var d = new Date(isoDate);
   return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
 }
 function formatDateForInput(displayDate){
-  const parts = (displayDate||'').split('.');
+  var parts = (displayDate||'').split('.');
   if(parts.length===3) return parts[2]+'-'+parts[1]+'-'+parts[0];
   return '';
 }
 
 function showTab(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  var tabs = document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++){ tabs[i].classList.remove('active'); }
+  var contents = document.querySelectorAll('.tab-content');
+  for(var j=0;j<contents.length;j++){ contents[j].classList.remove('active'); }
   event.target.classList.add('active');
   document.getElementById(name+'-content').classList.add('active');
 }
 
 function togglePassword(id,btn){
-  const input = document.getElementById(id);
-  if(input.type==='password'){input.type='text';btn.textContent='🙈';}
-  else{input.type='password';btn.textContent='👁️';}
+  var input = document.getElementById(id);
+  if(input.type==='password'){ input.type='text'; btn.textContent='🙈'; }
+  else { input.type='password'; btn.textContent='👁️'; }
 }
 
 function previewPhoto(event){
-  const file = event.target.files[0];
+  var file = event.target.files[0];
   if(!file) return;
-  const reader = new FileReader();
+  var reader = new FileReader();
   reader.onload = function(e){
-    const img = new Image();
+    var img = new Image();
     img.onload = function(){
-      const size = 300;
-      const canvas = document.createElement('canvas');
+      var size = 300;
+      var canvas = document.createElement('canvas');
       canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
+      var ctx = canvas.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
-      const scale = Math.min(size/img.width, size/img.height);
-      const w = img.width*scale, h = img.height*scale;
-      const x = (size-w)/2, y = (size-h)/2;
+      var scale = Math.min(size/img.width, size/img.height);
+      var w = img.width*scale, h = img.height*scale;
+      var x = (size-w)/2, y = (size-h)/2;
       ctx.drawImage(img, x, y, w, h);
       currentPhotoData = canvas.toDataURL('image/jpeg', 0.8);
       document.getElementById('photoPreviewImg').src = currentPhotoData;
@@ -589,29 +641,28 @@ function closeLightbox(){
 }
 
 function generateQR(elementId, text){
-  const el = document.getElementById(elementId);
+  var el = document.getElementById(elementId);
   if(!el) return;
   el.innerHTML = '';
   new QRCode(el, { text: text, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
 }
 
-async function prepareLogoBase64(){
-  if(cachedLogoBase64 !== null) return cachedLogoBase64;
-  try {
-    const res = await fetch('logo.png');
-    const blob = await res.blob();
-    const dataUrl = await new Promise(function(resolve, reject){
-      const reader = new FileReader();
+function prepareLogoBase64(){
+  if(cachedLogoBase64 !== null) return Promise.resolve(cachedLogoBase64);
+  return fetch('logo.png').then(function(res){ return res.blob(); }).then(function(blob){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
       reader.onloadend = function(){ resolve(reader.result); };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  }).then(function(dataUrl){
     cachedLogoBase64 = dataUrl;
-  } catch(e){
-    console.warn('Logo yüklenemedi:', e);
+    return dataUrl;
+  }).catch(function(){
     cachedLogoBase64 = false;
-  }
-  return cachedLogoBase64;
+    return false;
+  });
 }
 
 function drawCircularImage(doc, base64, cx, cy, r){
@@ -639,27 +690,28 @@ function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
   } catch(e){}
 }
 
-function generateDiagonalTextLayer(){
-  const pxW = 1000, pxH = 1414;
-  const canvas = document.createElement('canvas');
+function generateDiagonalTextLayer(pxW, pxH){
+  pxW = pxW || 1000; pxH = pxH || 1414;
+  var canvas = document.createElement('canvas');
   canvas.width = pxW; canvas.height = pxH;
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
   ctx.save();
-  ctx.translate(-180, 230);
+  ctx.translate(-pxW*0.18, pxH*0.16);
   ctx.rotate(-30*Math.PI/180);
-  ctx.fillStyle = 'rgba(0,0,0,0.055)';
-  ctx.font = '900 42px Arial';
-  for(let i=-2;i<18;i++){
-    ctx.fillText('KRAV MAGA          KRAV MAGA', 0, i*95);
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.font = '900 ' + Math.round(pxW*0.042) + 'px Arial';
+  var lineH = pxH*0.067;
+  for(var i=-2;i<24;i++){
+    ctx.fillText('KRAV MAGA          KRAV MAGA          KRAV MAGA', 0, i*lineH);
   }
   ctx.restore();
   return canvas.toDataURL('image/png');
 }
 
-function drawCornerBrackets(doc){
+function drawCornerBrackets(doc, pageW, pageH){
   doc.setDrawColor(224,0,0);
   doc.setLineWidth(1.1);
-  const L = 12, m = 8, pageW = 210, pageH = 297;
+  var L = 12, m = 8;
   doc.line(m, m+L, m, m); doc.line(m, m, m+L, m);
   doc.line(pageW-m-L, m, pageW-m, m); doc.line(pageW-m, m, pageW-m, m+L);
   doc.line(m, pageH-m-L, m, pageH-m); doc.line(m, pageH-m, m+L, pageH-m);
@@ -674,8 +726,8 @@ function smallBracket(doc, x, y, dx, dy, size){
 }
 
 function infoRow(doc, label, value, y, valueColor){
-  const safeLabel = turkishSafe(label);
-  const safeValue = turkishSafe(value);
+  var safeLabel = turkishSafe(label);
+  var safeValue = turkishSafe(value);
   doc.setFont('helvetica','bold');
   doc.setFontSize(11);
   doc.setTextColor(20,20,20);
@@ -688,12 +740,13 @@ function infoRow(doc, label, value, y, valueColor){
 }
 
 function renderSearchResult(d){
-  const resultDiv = document.getElementById('searchResult');
-  const photoHtml = d.photo ?
+  var resultDiv = document.getElementById('searchResult');
+  var photoHtml = d.photo ?
     '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
     '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
-  const statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
-  resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
+  var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
+  var html = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' +
+    photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
     '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
@@ -706,19 +759,18 @@ function renderSearchResult(d){
       '<button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button>' +
       '<button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button>' +
     '</div></div>';
+  resultDiv.innerHTML = html;
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
 
-async function searchDiploma(){
-  const registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
-  const resultDiv = document.getElementById('searchResult');
-  const btn = document.getElementById('search-btn');
-  if(!registerNo){resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>';return;}
+function searchDiploma(){
+  var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
+  var resultDiv = document.getElementById('searchResult');
+  var btn = document.getElementById('search-btn');
+  if(!registerNo){ resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>'; return; }
   btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
-  try {
-    const res = await fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json');
-    const d = await res.json();
+  fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json').then(function(res){ return res.json(); }).then(function(d){
     if(d){
       lastSearchedRecord = d;
       renderSearchResult(d);
@@ -726,139 +778,217 @@ async function searchDiploma(){
       lastSearchedRecord = null;
       resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>';
     }
-  } catch(e){
+  }).catch(function(){
     resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
-  } finally {
+  }).finally(function(){
     btn.disabled = false; btn.textContent = t('btnSearch');
-  }
+  });
 }
 
 // ============================================
-// PDF OLUŞTURMA - TR/EN
+// PDF OLUŞTURMA - Standart Sertifika (TR/EN)
 // ============================================
-async function downloadPDF(record, lang){
+function downloadPDF(record, lang){
   record = record || lastSearchedRecord;
   lang = lang || 'tr';
   if(!record) return;
-  const d = record;
-  const T = PDF_I18N[lang] || PDF_I18N.tr;
+  var d = record;
+  var T = PDF_I18N[lang] || PDF_I18N.tr;
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','mm','a4');
-  const pageW = 210;
+  prepareLogoBase64().then(function(logoData){
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF('p','mm','a4');
+    var pageW = 210;
 
-  const logoData = await prepareLogoBase64();
+    doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, 210, 297);
+    if(logoData){ drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09); }
+    drawCornerBrackets(doc, 210, 297);
 
-  doc.addImage(generateDiagonalTextLayer(), 'PNG', 0, 0, 210, 297);
-  if(logoData){ drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09); }
-  drawCornerBrackets(doc);
+    var emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
+    var qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
+    var photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
+    var dLabelY = 138, dNumberY = 146;
+    var titleY = 160;
+    var subtitleY = 167, dashY = 165.5;
+    var rowStartY = 185, rowStep = 10;
+    var footerY = 262, footerDashY = 260.5;
+    var legal1Y = 272, legal2Y = 280;
 
-  const emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
-  const qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
-  const photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
-  const dLabelY = 138, dNumberY = 146;
-  const titleY = 160;
-  const subtitleY = 167, dashY = 165.5;
-  const rowStartY = 185, rowStep = 10;
-  const footerY = 262, footerDashY = 260.5;
-  const legal1Y = 272, legal2Y = 280;
-
-  if(logoData){
-    drawCircularImage(doc, logoData, emCx, emCy, emR);
-  } else {
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
-    doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
-  }
-
-  const qrTemp = document.getElementById('pdf-qr-hidden');
-  qrTemp.innerHTML = '';
-  new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-  await new Promise(function(resolve){ setTimeout(resolve, 200); });
-  try {
-    const qrCanvas = qrTemp.querySelector('canvas');
-    if(qrCanvas){
-      const qrImgData = qrCanvas.toDataURL('image/png');
-      doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
-      smallBracket(doc, qrX, qrY, 1, 1, 6);
-      smallBracket(doc, qrX+qrSize, qrY, -1, 1, 6);
-      smallBracket(doc, qrX, qrY+qrSize, 1, -1, 6);
-      smallBracket(doc, qrX+qrSize, qrY+qrSize, -1, -1, 6);
+    if(logoData){
+      drawCircularImage(doc, logoData, emCx, emCy, emR);
+    } else {
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
+      doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
     }
-  } catch(e){}
 
-  doc.setFillColor(235,235,235);
-  doc.rect(photoX, photoY, photoSize, photoSize, 'F');
-  if(d.photo){
-    try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
-  } else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
-    doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
-  }
-  smallBracket(doc, photoX, photoY, 1, 1, 9);
-  smallBracket(doc, photoX+photoSize, photoY, -1, 1, 9);
-  smallBracket(doc, photoX, photoY+photoSize, 1, -1, 9);
-  smallBracket(doc, photoX+photoSize, photoY+photoSize, -1, -1, 9);
+    var qrTemp = document.getElementById('pdf-qr-hidden');
+    qrTemp.innerHTML = '';
+    new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-  const dLabel = turkishSafe(T.diplomaNo);
-  const dLabelW = doc.getTextWidth(dLabel);
-  doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
-  doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-  doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
-  doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
+    setTimeout(function(){
+      try {
+        var qrCanvas = qrTemp.querySelector('canvas');
+        if(qrCanvas){
+          var qrImgData = qrCanvas.toDataURL('image/png');
+          doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
+          smallBracket(doc, qrX, qrY, 1, 1, 6);
+          smallBracket(doc, qrX+qrSize, qrY, -1, 1, 6);
+          smallBracket(doc, qrX, qrY+qrSize, 1, -1, 6);
+          smallBracket(doc, qrX+qrSize, qrY+qrSize, -1, -1, 6);
+        }
+      } catch(e){}
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
-  doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
+      doc.setFillColor(235,235,235);
+      doc.rect(photoX, photoY, photoSize, photoSize, 'F');
+      if(d.photo){
+        try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
+      } else {
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
+        doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
+      }
+      smallBracket(doc, photoX, photoY, 1, 1, 9);
+      smallBracket(doc, photoX+photoSize, photoY, -1, 1, 9);
+      smallBracket(doc, photoX, photoY+photoSize, 1, -1, 9);
+      smallBracket(doc, photoX+photoSize, photoY+photoSize, -1, -1, 9);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(25);
-  const w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
-  const sx = pageW/2 - (w1+w2)/2;
-  doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
-  doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+      var dLabel = turkishSafe(T.diplomaNo);
+      var dLabelW = doc.getTextWidth(dLabel);
+      doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
+      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
+      doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
+      doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-  const ccLabel = T.contactCombat;
-  const ccW = doc.getTextWidth(ccLabel);
-  doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
-  doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-  doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
-  doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
+      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
+      doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
 
-  let ry = rowStartY;
-  infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
-  if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
-  infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
-  infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
-  infoRow(doc, T.level, d.level, ry); ry += rowStep;
-  infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
-  const isActive = d.status !== 'pasif';
-  infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
+      doc.setFont('helvetica','bold'); doc.setFontSize(25);
+      var w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
+      var sx = pageW/2 - (w1+w2)/2;
+      doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
+      doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
-  const footerLabel = T.footer;
-  const flW = doc.getTextWidth(footerLabel);
-  doc.text(footerLabel, pageW/2, footerY, {align:'center'});
-  doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-  doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
-  doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+      var ccLabel = T.contactCombat;
+      var ccW = doc.getTextWidth(ccLabel);
+      doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
+      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
+      doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
+      doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
 
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(8);
-  doc.setTextColor(150,150,150);
-  const dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
-  doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
-  doc.setFontSize(7.5);
-  doc.setTextColor(160,160,160);
-  doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
+      var ry = rowStartY;
+      infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
+      if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
+      infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
+      infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
+      infoRow(doc, T.level, d.level, ry); ry += rowStep;
+      infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
+      var isActive = d.status !== 'pasif';
+      infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
 
-  doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+      var footerLabel = T.footer;
+      var flW = doc.getTextWidth(footerLabel);
+      doc.text(footerLabel, pageW/2, footerY, {align:'center'});
+      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
+      doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
+      doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
 
-  await logDownload(d, lang);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(150,150,150);
+      var dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
+      doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
+      doc.setFontSize(7.5);
+      doc.setTextColor(160,160,160);
+      doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
+
+      doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
+      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang });
+    }, 200);
+  });
+}
+
+// ============================================
+// ANTRENÖR KİMLİK KARTI - Sadece Instructor seviyesi, sadece Yönetici Paneli
+// ============================================
+function downloadInstructorID(record, lang){
+  lang = lang || 'tr';
+  if(!record) return;
+  var d = record;
+  var I = ID_I18N[lang] || ID_I18N.tr;
+
+  prepareLogoBase64().then(function(logoData){
+    var jsPDF = window.jspdf.jsPDF;
+    var cardW = 130, cardH = 82;
+    var doc = new jsPDF('l','mm',[cardH, cardW]);
+
+    doc.addImage(generateDiagonalTextLayer(700,440), 'PNG', 0, 0, cardW, cardH);
+    if(logoData){ drawWatermarkLogo(doc, logoData, cardW-24, cardH-22, 26, 0.12); }
+    drawCornerBrackets(doc, cardW, cardH);
+
+    doc.setFillColor(211,47,47);
+    doc.rect(0, 0, cardW, 14, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+    doc.text(I.title1 + ' - ' + I.title2, cardW/2, 9.5, {align:'center'});
+
+    var photoX = 8, photoY = 20, photoSize = 34;
+    doc.setFillColor(235,235,235);
+    doc.rect(photoX, photoY, photoSize, photoSize, 'F');
+    if(d.photo){
+      try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
+    }
+    doc.setDrawColor(211,47,47); doc.setLineWidth(0.8);
+    doc.rect(photoX, photoY, photoSize, photoSize);
+
+    if(logoData){
+      drawCircularImage(doc, logoData, photoX+photoSize/2, photoY+photoSize+10, 8);
+    }
+
+    var textX = photoX + photoSize + 8;
+    var textY = 27;
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(20,20,20);
+    doc.text(turkishSafe(d.studentName), textX, textY);
+
+    textY += 8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(211,47,47);
+    doc.text(I.role, textX, textY);
+
+    textY += 9;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+    doc.text(I.regNo + ':', textX, textY);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
+    doc.text(turkishSafe(d.registerNo), textX, textY+6);
+
+    var qrTemp = document.getElementById('pdf-qr-hidden');
+    qrTemp.innerHTML = '';
+    new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+
+    setTimeout(function(){
+      try {
+        var qrCanvas = qrTemp.querySelector('canvas');
+        if(qrCanvas){
+          var qrImgData = qrCanvas.toDataURL('image/png');
+          var qrSize = 20, qrX = cardW - qrSize - 8, qrY = photoY + photoSize - qrSize;
+          doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
+          doc.setDrawColor(211,47,47); doc.setLineWidth(0.5);
+          doc.rect(qrX, qrY, qrSize, qrSize);
+        }
+      } catch(e){}
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(140,140,140);
+      var dateStr = new Date().toLocaleDateString(I.locale || 'tr-TR');
+      doc.text(turkishSafe(I.createdOn.replace('{date}', dateStr)), 8, cardH-4);
+
+      doc.save('antrenor-kimlik-' + d.registerNo + '-' + lang + '.pdf');
+      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'instructor_id' });
+    }, 200);
+  });
 }
 
 function checkLockoutStatus(){
-  const lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
-  const now = Date.now();
+  var lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
+  var now = Date.now();
   if(lockUntil > now){
     startLockoutCountdown(lockUntil);
     return true;
@@ -867,12 +997,12 @@ function checkLockoutStatus(){
 }
 
 function startLockoutCountdown(lockUntil){
-  const btn = document.getElementById('login-btn');
-  const msg = document.getElementById('loginMessage');
+  var btn = document.getElementById('login-btn');
+  var msg = document.getElementById('loginMessage');
   btn.disabled = true;
   if(lockoutTimer) clearInterval(lockoutTimer);
   function updateDisplay(){
-    const remaining = lockUntil - Date.now();
+    var remaining = lockUntil - Date.now();
     if(remaining <= 0){
       clearInterval(lockoutTimer);
       localStorage.removeItem('loginLockUntil');
@@ -882,72 +1012,73 @@ function startLockoutCountdown(lockUntil){
       msg.innerHTML = '';
       return;
     }
-    const mins = Math.floor(remaining / 60000);
-    const secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div>';
+    var mins = Math.floor(remaining / 60000);
+    var secs = Math.floor((remaining % 60000) / 1000);
+    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div>' +
+      '<div class="legal-warning">'+t('legalWarningLockout')+'</div>';
   }
   updateDisplay();
   lockoutTimer = setInterval(updateDisplay, 1000);
 }
 
-async function adminLogin(){
+function adminLogin(){
   if(checkLockoutStatus()) return;
-  const pass = document.getElementById('adminPass').value;
-  const msg = document.getElementById('loginMessage');
-  const btn = document.getElementById('login-btn');
+  var pass = document.getElementById('adminPass').value;
+  var msg = document.getElementById('loginMessage');
+  var btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = t('loggingIn');
-  try {
-    let storedHash = await getStoredPasswordHash();
 
+  getStoredPasswordHash().then(function(storedHash){
     if(!storedHash){
-      const newPass = generateRandomPassword();
-      storedHash = await sha256(newPass);
-      await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(storedHash)});
-      alert(t('firstSetupAlert',{pass:newPass}));
-      btn.disabled = false; btn.textContent = t('btnLogin');
-      return;
+      var newPass = generateRandomPassword();
+      return sha256(newPass).then(function(hash){
+        return fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hash)});
+      }).then(function(){
+        alert(t('firstSetupAlert',{pass:newPass}));
+        btn.disabled = false; btn.textContent = t('btnLogin');
+      });
     }
 
-    const enteredHash = await sha256(pass);
-    if(enteredHash === storedHash){
-      currentPasswordHash = storedHash;
-      localStorage.removeItem('loginAttempts');
-      localStorage.removeItem('loginLockUntil');
-      document.getElementById('login-form').classList.add('hidden');
-      document.getElementById('admin-panel').classList.remove('hidden');
-      msg.innerHTML = '';
-      await loadAllDiplomas();
-    } else {
-      let attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
-      localStorage.setItem('loginAttempts', attempts);
-      if(attempts >= MAX_ATTEMPTS){
-        const lockUntil = Date.now() + (LOCKOUT_MINUTES * 60 * 1000);
-        localStorage.setItem('loginLockUntil', lockUntil);
-        startLockoutCountdown(lockUntil);
+    return sha256(pass).then(function(enteredHash){
+      if(enteredHash === storedHash){
+        currentPasswordHash = storedHash;
+        localStorage.removeItem('loginAttempts');
+        localStorage.removeItem('loginLockUntil');
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        msg.innerHTML = '';
+        logSecurityEvent('login_success', {});
+        return loadAllDiplomas();
       } else {
-        const remaining = MAX_ATTEMPTS - attempts;
-        msg.innerHTML = '<div class="message error">'+t('errWrongPass',{n:remaining})+'</div>';
-        btn.disabled = false; btn.textContent = t('btnLogin');
+        var attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
+        localStorage.setItem('loginAttempts', attempts);
+        logSecurityEvent('login_failed', { attemptNumber: attempts });
+        if(attempts >= MAX_ATTEMPTS){
+          var lockUntil = Date.now() + (LOCKOUT_MINUTES * 60 * 1000);
+          localStorage.setItem('loginLockUntil', lockUntil);
+          startLockoutCountdown(lockUntil);
+        } else {
+          var remaining = MAX_ATTEMPTS - attempts;
+          msg.innerHTML = '<div class="message error">'+t('errWrongPass',{n:remaining})+'</div>';
+          btn.disabled = false; btn.textContent = t('btnLogin');
+        }
       }
-    }
-  } catch(e){
+    });
+  }).catch(function(){
     msg.innerHTML = '<div class="message error">'+t('errConnGeneric')+'</div>';
     btn.disabled = false; btn.textContent = t('btnLogin');
-  }
+  });
 }
 
-async function loadAllDiplomas(){
-  const box = document.getElementById('diploma-items');
+function loadAllDiplomas(){
+  var box = document.getElementById('diploma-items');
   box.innerHTML = '<div class="spinner"></div>';
   diplomaData = [];
-  try {
-    const res = await fetch(FIREBASE_URL + '/diplomaData.json');
-    const data = await res.json();
-    const migrations = [];
-
+  return fetch(FIREBASE_URL + '/diplomaData.json').then(function(res){ return res.json(); }).then(function(data){
+    var migrations = [];
     if(data){
-      for(const key in data){
-        const record = data[key];
+      for(var key in data){
+        var record = data[key];
         if(record && typeof record === 'object' && record.registerNo){
           diplomaData.push(record);
           if(key !== record.registerNo){
@@ -956,20 +1087,23 @@ async function loadAllDiplomas(){
         }
       }
     }
-
-    if(migrations.length > 0){
-      for(const m of migrations){
-        try {
-          await fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {
-            method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)
-          });
-          await fetch(FIREBASE_URL + '/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
-        } catch(e){ console.warn('Onarım hatası:', e); }
-      }
-    }
-  } catch(e){ diplomaData = []; }
-  expandedRows = {};
-  filterDiplomas();
+    var chain = Promise.resolve();
+    migrations.forEach(function(m){
+      chain = chain.then(function(){
+        return fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)
+        }).then(function(){
+          return fetch(FIREBASE_URL + '/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
+        }).catch(function(){});
+      });
+    });
+    return chain;
+  }).catch(function(){
+    diplomaData = [];
+  }).then(function(){
+    expandedRows = {};
+    filterDiplomas();
+  });
 }
 
 function logout(){
@@ -993,9 +1127,9 @@ function hideAddForm(){
   clearAddForm();
   editingIndex = -1;
 }
-function showPasswordForm(){hideAllForms();document.getElementById('password-form').classList.remove('hidden');}
-function hidePasswordForm(){document.getElementById('password-form').classList.add('hidden');clearPasswordForm();}
-function hideAllForms(){document.getElementById('add-form').classList.add('hidden');document.getElementById('password-form').classList.add('hidden');}
+function showPasswordForm(){ hideAllForms(); document.getElementById('password-form').classList.remove('hidden'); }
+function hidePasswordForm(){ document.getElementById('password-form').classList.add('hidden'); clearPasswordForm(); }
+function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); document.getElementById('password-form').classList.add('hidden'); }
 
 function clearAddForm(){
   document.getElementById('studentName').value='';
@@ -1014,13 +1148,13 @@ function clearPasswordForm(){
 }
 
 function updateSubLevels(){
-  const level = document.getElementById('mainLevel').value;
-  const group = document.getElementById('sub-level-group');
-  const sel = document.getElementById('subLevel');
+  var level = document.getElementById('mainLevel').value;
+  var group = document.getElementById('sub-level-group');
+  var sel = document.getElementById('subLevel');
   if(levelOptions[level] && levelOptions[level].length>0){
     group.classList.remove('hidden');
     sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
-    levelOptions[level].forEach(l=>sel.innerHTML += '<option value="'+l+'">'+l+'</option>');
+    levelOptions[level].forEach(function(l){ sel.innerHTML += '<option value="'+l+'">'+l+'</option>'; });
   } else {
     group.classList.add('hidden');
     sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
@@ -1028,7 +1162,7 @@ function updateSubLevels(){
 }
 
 function editDiploma(index){
-  const d = diplomaData[index];
+  var d = diplomaData[index];
   editingIndex = index;
   document.getElementById('form-title').textContent = t('formTitleEdit');
   document.getElementById('save-btn').textContent = t('btnUpdate');
@@ -1036,7 +1170,7 @@ function editDiploma(index){
   document.getElementById('examLocation').value = d.examLocation;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
-  const levelParts = d.level.split(' Level ');
+  var levelParts = d.level.split(' Level ');
   document.getElementById('mainLevel').value = levelParts[0];
   updateSubLevels();
   if(levelParts[1]){
@@ -1051,129 +1185,135 @@ function editDiploma(index){
   document.getElementById('add-form').classList.remove('hidden');
 }
 
-async function addDiploma(){
-  const studentName = document.getElementById('studentName').value.trim();
-  const joinDateRaw = document.getElementById('joinDate').value;
-  const examDate = document.getElementById('examDate').value;
-  const examLocation = document.getElementById('examLocation').value.trim();
-  const mainLevel = document.getElementById('mainLevel').value;
-  const subLevel = document.getElementById('subLevel').value;
+function addDiploma(){
+  var studentName = document.getElementById('studentName').value.trim();
+  var joinDateRaw = document.getElementById('joinDate').value;
+  var examDate = document.getElementById('examDate').value;
+  var examLocation = document.getElementById('examLocation').value.trim();
+  var mainLevel = document.getElementById('mainLevel').value;
+  var subLevel = document.getElementById('subLevel').value;
 
   if(!studentName || !examDate || !examLocation || !mainLevel){
     alert(t('errFillAll'));
     return;
   }
-  let levelText = mainLevel + (subLevel ? ' '+subLevel : '');
-  const formattedExamDate = formatDateForDisplay(examDate);
-  const formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
+  var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
+  var formattedExamDate = formatDateForDisplay(examDate);
+  var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
 
-  const saveBtn = document.getElementById('save-btn');
+  var saveBtn = document.getElementById('save-btn');
   saveBtn.disabled = true; saveBtn.textContent = t('saving');
 
-  const panel = document.getElementById('admin-panel');
-  const msg = document.createElement('div');
+  var panel = document.getElementById('admin-panel');
+  var msg = document.createElement('div');
   msg.className = 'message success';
 
-  try {
-    let record, registerNo;
-    if(editingIndex >= 0){
-      registerNo = diplomaData[editingIndex].registerNo;
-      record = {registerNo, studentName, joinDate: formattedJoinDate, examDate: formattedExamDate, examLocation, level: levelText, photo: currentPhotoData, status: diplomaData[editingIndex].status || 'aktif'};
-      diplomaData[editingIndex] = record;
-      msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
-    } else {
-      const year = new Date().getFullYear();
-      let counter = diplomaData.length + 1;
+  var record, registerNo;
+  if(editingIndex >= 0){
+    registerNo = diplomaData[editingIndex].registerNo;
+    record = { registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText, photo:currentPhotoData, status: diplomaData[editingIndex].status || 'aktif' };
+    diplomaData[editingIndex] = record;
+    msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
+  } else {
+    var year = new Date().getFullYear();
+    var counter = diplomaData.length + 1;
+    registerNo = 'KM'+year+String(counter).padStart(3,'0');
+    while(diplomaData.some(function(x){ return x.registerNo === registerNo; })){
+      counter++;
       registerNo = 'KM'+year+String(counter).padStart(3,'0');
-      while(diplomaData.some(function(x){return x.registerNo === registerNo;})){
-        counter++;
-        registerNo = 'KM'+year+String(counter).padStart(3,'0');
-      }
-      record = {registerNo, studentName, joinDate: formattedJoinDate, examDate: formattedExamDate, examLocation, level: levelText, photo: currentPhotoData, status: 'aktif'};
-      diplomaData.push(record);
-      msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
     }
-    await fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)});
+    record = { registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText, photo:currentPhotoData, status:'aktif' };
+    diplomaData.push(record);
+    msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
+  }
+
+  fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)}).then(function(){
     filterDiplomas();
     hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
-  } catch(e){
+  }).catch(function(){
     msg.className = 'message error';
     msg.innerHTML = t('msgSaveError');
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
-  } finally {
+  }).finally(function(){
     saveBtn.disabled = false;
     saveBtn.textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
-  }
+  });
 }
 
-async function toggleStatus(index){
-  const d = diplomaData[index];
+function toggleStatus(index){
+  var d = diplomaData[index];
   d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
-  try {
-    await fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)});
-  } catch(e){ alert(t('msgSaveError')); }
-  filterDiplomas();
+  fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){
+    filterDiplomas();
+  }).catch(function(){
+    alert(t('msgSaveError'));
+    filterDiplomas();
+  });
 }
 
-async function changePassword(){
-  const cur = document.getElementById('currentPass').value;
-  const nw = document.getElementById('newPass').value;
-  const cf = document.getElementById('confirmPass').value;
-  const btn = document.getElementById('pass-btn');
-  if(!cur||!nw||!cf){alert(t('errFillAll'));return;}
+function changePassword(){
+  var cur = document.getElementById('currentPass').value;
+  var nw = document.getElementById('newPass').value;
+  var cf = document.getElementById('confirmPass').value;
+  var btn = document.getElementById('pass-btn');
+  if(!cur||!nw||!cf){ alert(t('errFillAll')); return; }
 
   btn.disabled = true; btn.textContent = t('changing');
-  try {
-    const curHash = await sha256(cur);
+
+  sha256(cur).then(function(curHash){
     if(curHash !== currentPasswordHash){
       alert(t('errWrongCurrentPass'));
       btn.disabled = false; btn.textContent = t('btnChange');
-      return;
+      return Promise.reject('stop');
     }
-    if(nw.length<6){alert(t('errPassTooShort')); btn.disabled = false; btn.textContent = t('btnChange'); return;}
-    if(nw !== cf){alert(t('errPassMismatch')); btn.disabled = false; btn.textContent = t('btnChange'); return;}
-
-    const newHash = await sha256(nw);
-    await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newHash)});
-    currentPasswordHash = newHash;
-    hidePasswordForm();
-    const panel = document.getElementById('admin-panel');
-    const msg = document.createElement('div');
-    msg.className='message success';
-    msg.textContent = t('msgPassChanged');
-    panel.insertBefore(msg, document.getElementById('diploma-list'));
-    setTimeout(function(){ msg.remove(); },3000);
-  } catch(e){
-    alert(t('errPassSaveFail'));
-  } finally {
-    btn.disabled = false; btn.textContent = t('btnChange');
-  }
+    if(nw.length<6){ alert(t('errPassTooShort')); btn.disabled = false; btn.textContent = t('btnChange'); return Promise.reject('stop'); }
+    if(nw !== cf){ alert(t('errPassMismatch')); btn.disabled = false; btn.textContent = t('btnChange'); return Promise.reject('stop'); }
+    return sha256(nw);
+  }).then(function(newHash){
+    if(!newHash) return;
+    return fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newHash)}).then(function(){
+      currentPasswordHash = newHash;
+      hidePasswordForm();
+      var panel = document.getElementById('admin-panel');
+      var msg = document.createElement('div');
+      msg.className='message success';
+      msg.textContent = t('msgPassChanged');
+      panel.insertBefore(msg, document.getElementById('diploma-list'));
+      setTimeout(function(){ msg.remove(); },3000);
+      btn.disabled = false; btn.textContent = t('btnChange');
+    });
+  }).catch(function(err){
+    if(err !== 'stop'){
+      alert(t('errPassSaveFail'));
+      btn.disabled = false; btn.textContent = t('btnChange');
+    }
+  });
 }
 
 function filterDiplomas(){
-  const searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
-  const levelFilter = document.getElementById('levelFilter').value;
-  let filtered = diplomaData.map(function(d,i){ return {d:d, i:i}; });
+  var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
+  var levelFilter = document.getElementById('levelFilter').value;
+  var filtered = diplomaData.map(function(d,i){ return {d:d, i:i}; });
   if(searchText){
     filtered = filtered.filter(function(item){
-      return item.d.studentName.toLowerCase().includes(searchText) || item.d.registerNo.toLowerCase().includes(searchText);
+      return item.d.studentName.toLowerCase().indexOf(searchText) !== -1 || item.d.registerNo.toLowerCase().indexOf(searchText) !== -1;
     });
   }
   if(levelFilter){
     filtered = filtered.filter(function(item){ return item.d.level.indexOf(levelFilter) === 0; });
   }
   renderStats();
-  renderDiplomaList(filtered, searchText || levelFilter);
+  renderDiplomaList(filtered, !!(searchText || levelFilter));
 }
 
 function renderStats(){
-  const statsBox = document.getElementById('stats-display');
-  const total = diplomaData.length;
-  const activeCount = diplomaData.filter(function(d){ return d.status !== 'pasif'; }).length;
-  const passiveCount = total - activeCount;
+  var statsBox = document.getElementById('stats-display');
+  var total = diplomaData.length;
+  var activeCount = diplomaData.filter(function(d){ return d.status !== 'pasif'; }).length;
+  var passiveCount = total - activeCount;
   if(total > 0){
     statsBox.classList.remove('hidden');
     statsBox.innerHTML = t('statsLine',{total:total, active:activeCount, passive:passiveCount});
@@ -1183,8 +1323,8 @@ function renderStats(){
 }
 
 function renderDiplomaList(filtered, isFiltering){
-  const box = document.getElementById('diploma-items');
-  const countBox = document.getElementById('result-count');
+  var box = document.getElementById('diploma-items');
+  var countBox = document.getElementById('result-count');
   if(diplomaData.length === 0){
     box.innerHTML = '<p>'+t('noRecordsYet')+'</p>';
     countBox.textContent = '';
@@ -1195,17 +1335,23 @@ function renderDiplomaList(filtered, isFiltering){
     box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">'+t('noMatchFound')+'</p>';
     return;
   }
-  let html = '';
+  var html = '';
   filtered.forEach(function(item){
-    const d = item.d, i = item.i;
-    const isOpen = !!expandedRows[i];
-    const statusDot = d.status === 'pasif' ? '🔴' : '🟢';
-    const statusBadge = d.status === 'pasif' ?
+    var d = item.d, i = item.i;
+    var isOpen = !!expandedRows[i];
+    var statusDot = d.status === 'pasif' ? '🔴' : '🟢';
+    var statusBadge = d.status === 'pasif' ?
       '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusInactive')+'</span>' :
       '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusActive')+'</span>';
-    const photoHtml = d.photo ?
+    var photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
+
+    var idButtons = '';
+    if(isInstructorLevel(d.level)){
+      idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button>' +
+                  '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
+    }
 
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1231,6 +1377,7 @@ function renderDiplomaList(filtered, isFiltering){
             '<button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button>' +
             '<button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button>' +
           '</div>' +
+          '<div class="pdf-btn-row">' + idButtons + '</div>' +
         '</div>' +
       '</div>';
   });
@@ -1239,74 +1386,137 @@ function renderDiplomaList(filtered, isFiltering){
 
 function toggleDetails(i){
   expandedRows[i] = !expandedRows[i];
-  const details = document.getElementById('details-'+i);
-  const icon = document.getElementById('icon-'+i);
-  const row = icon ? icon.closest('.diploma-row') : null;
+  var details = document.getElementById('details-'+i);
+  var icon = document.getElementById('icon-'+i);
+  var row = icon ? icon.closest('.diploma-row') : null;
   if(details){ details.classList.toggle('hidden'); }
   if(icon){ icon.classList.toggle('open'); }
   if(row){ row.classList.toggle('closed'); }
 }
 
-async function deleteDiploma(i){
-  const d = diplomaData[i];
+function deleteDiploma(i){
+  var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
-    try {
-      await fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'});
-      await loadAllDiplomas();
-    } catch(e){
+    fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){
+      return loadAllDiplomas();
+    }).catch(function(){
       alert(t('msgDeleteError'));
-    }
+    });
   }
 }
 
-// ============================================
-// İNDİRME KAYITLARI (Yönetici Paneli - halka açık arayüzde görünmez)
-// ============================================
-let downloadLogsVisible = false;
-function toggleDownloadLogs(){
-  downloadLogsVisible = !downloadLogsVisible;
-  const section = document.getElementById('download-logs-section');
-  if(downloadLogsVisible){
+var securityLogsVisible = false;
+var cachedSecurityLogEntries = [];
+
+function toggleSecurityLogs(){
+  securityLogsVisible = !securityLogsVisible;
+  var section = document.getElementById('security-logs-section');
+  if(securityLogsVisible){
     section.classList.remove('hidden');
-    loadDownloadLogs();
+    loadSecurityLogs();
   } else {
     section.classList.add('hidden');
   }
 }
 
-async function loadDownloadLogs(){
-  const listEl = document.getElementById('download-logs-list');
+function logTypeBadge(type){
+  if(type === 'download') return '<span class="log-badge log-badge-download">'+t('logTypeDownload')+'</span>';
+  if(type === 'login_success') return '<span class="log-badge log-badge-success">'+t('logTypeLoginSuccess')+'</span>';
+  if(type === 'login_failed') return '<span class="log-badge log-badge-failed">'+t('logTypeLoginFailed')+'</span>';
+  return '';
+}
+
+function loadSecurityLogs(){
+  var listEl = document.getElementById('security-logs-list');
   listEl.innerHTML = '<div class="spinner"></div>';
-  try {
-    const res = await fetch(FIREBASE_URL + '/downloadLogs.json');
-    const data = await res.json();
-    if(!data){ listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>'; return; }
-    const entries = Object.values(data).sort(function(a,b){
-      return new Date(b.timestamp) - new Date(a.timestamp);
-    });
-    let html = '';
-    entries.slice(0, 200).forEach(function(entry){
-      const dt = new Date(entry.timestamp);
-      const dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
-      html += '<div class="log-item"><strong>'+entry.studentName+'</strong> — '+entry.registerNo+' — '+(entry.lang||'tr').toUpperCase()+' — <span style="color:#888;">'+dateStr+'</span></div>';
+  fetch(FIREBASE_URL + '/securityLogs.json').then(function(res){ return res.json(); }).then(function(data){
+    if(!data){
+      cachedSecurityLogEntries = [];
+      listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
+      return;
+    }
+    var entries = Object.values(data).sort(function(a,b){ return new Date(b.timestamp) - new Date(a.timestamp); });
+    cachedSecurityLogEntries = entries;
+    var html = '';
+    entries.slice(0, 300).forEach(function(entry){
+      var dt = new Date(entry.timestamp);
+      var dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+      var detail = '';
+      if(entry.type === 'download'){
+        detail = '<strong>'+(entry.studentName||'')+'</strong> — '+(entry.registerNo||'')+' — '+(entry.lang||'tr').toUpperCase();
+      }
+      var location = [entry.city, entry.country].filter(Boolean).join(', ');
+      html += '<div class="log-item">'+logTypeBadge(entry.type)+detail+
+        '<div class="log-ip">IP: '+(entry.ip||'-')+(location?(' — '+location):'')+' — '+dateStr+'</div></div>';
     });
     listEl.innerHTML = html || '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
-  } catch(e){
+  }).catch(function(){
     listEl.innerHTML = '<p style="text-align:center;color:#c62828;">'+t('logsLoadError')+'</p>';
+  });
+}
+
+function clearSecurityLogs(){
+  if(!confirm(t('confirmClearLogs'))) return;
+  fetch(FIREBASE_URL + '/securityLogs.json', {method:'DELETE'}).then(function(){
+    cachedSecurityLogEntries = [];
+    loadSecurityLogs();
+  }).catch(function(){
+    alert(t('msgDeleteError'));
+  });
+}
+
+function exportLogsAsPDF(){
+  if(!cachedSecurityLogEntries || cachedSecurityLogEntries.length === 0){
+    alert(t('noLogsYet'));
+    return;
   }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF('p','mm','a4');
+  var pageW = 210;
+  var y = 20;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(211,47,47);
+  doc.text(turkishSafe(t('securityLogsHeading')), pageW/2, y, {align:'center'});
+  y += 8;
+  doc.setDrawColor(211,47,47); doc.setLineWidth(0.4);
+  doc.line(15, y, 195, y);
+  y += 8;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,60,60);
+
+  cachedSecurityLogEntries.forEach(function(entry){
+    if(y > 280){ doc.addPage(); y = 20; }
+    var dt = new Date(entry.timestamp);
+    var dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+    var typeLabel = entry.type === 'download' ? 'DOWNLOAD' : (entry.type === 'login_success' ? 'LOGIN OK' : 'LOGIN FAIL');
+    var line1 = '['+typeLabel+'] '+dateStr;
+    var line2 = 'IP: '+(entry.ip||'-')+'  Location: '+[entry.city, entry.country].filter(Boolean).join(', ');
+    if(entry.type === 'download'){
+      line2 += '  Student: '+(entry.studentName||'-')+'  Reg: '+(entry.registerNo||'-')+'  Lang: '+(entry.lang||'-').toUpperCase();
+    }
+    doc.setFont('helvetica','bold');
+    doc.text(turkishSafe(line1), 15, y);
+    doc.setFont('helvetica','normal');
+    doc.text(turkishSafe(line2), 15, y+5);
+    doc.setDrawColor(230,230,230); doc.setLineWidth(0.2);
+    doc.line(15, y+8, 195, y+8);
+    y += 13;
+  });
+
+  doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 
 document.addEventListener('DOMContentLoaded', function(){
   applyStaticLanguage();
 
-  const searchInput = document.getElementById('searchRegister');
+  var searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
-  const passInput = document.getElementById('adminPass');
+  var passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
   checkLockoutStatus();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const regParam = urlParams.get('reg');
+  var urlParams = new URLSearchParams(window.location.search);
+  var regParam = urlParams.get('reg');
   if(regParam && searchInput){
     searchInput.value = regParam;
     searchDiploma();
