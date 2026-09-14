@@ -15,7 +15,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .header h1{font-size:26px;margin-bottom:8px;}
 .lang-toggle{position:absolute;top:15px;right:15px;}
 .lang-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.6);color:white;padding:6px 14px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;}
-.lang-btn:hover{background:rgba(255,255,255,0.35);}
 .tabs{display:flex;background:#f8f8f8;border-bottom:1px solid #ddd;}
 .tab{flex:1;padding:15px;text-align:center;background:none;border:none;cursor:pointer;font-size:16px;color:#666;}
 .tab.active{background:white;color:#d32f2f;border-bottom:2px solid #d32f2f;}
@@ -30,13 +29,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .btn:disabled{background:#ccc;cursor:not-allowed;}
 .btn-secondary{background:#666;}
 .btn-pdf{background:#2e7d32;}
-.btn-pdf:hover{background:#1b5e20;}
 .btn-pdf-en{background:#1565c0;}
-.btn-pdf-en:hover{background:#0d47a1;}
 .btn-id{background:#6a1b9a;}
-.btn-id:hover{background:#4a148c;}
 .btn-cert{background:#b8860b;}
-.btn-cert:hover{background:#8b6508;}
 .btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
 .btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
 .btn-small{padding:7px 12px;font-size:12px;}
@@ -71,16 +66,14 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .search-filter-bar input{flex:2;min-width:200px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .search-filter-bar select{flex:1;min-width:140px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .result-count{font-size:13px;color:#888;margin-bottom:10px;}
-.diploma-row{background:#f9f9f9;border:1px solid #ddd;border-radius:6px 6px 0 0;padding:12px 15px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;}
+.diploma-row{background:#f9f9f9;border:1px solid #ddd;border-radius:6px 6px 0 0;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;}
 .diploma-row.closed{border-radius:6px;margin-bottom:6px;}
-.diploma-row:hover{background:#f0e8e8;}
 .row-left{display:flex;align-items:center;gap:10px;overflow:hidden;flex:1;cursor:pointer;}
-.row-status-dot{font-size:11px;flex-shrink:0;}
 .row-name{font-weight:bold;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .row-register{font-family:monospace;color:#d32f2f;font-weight:bold;font-size:13px;flex-shrink:0;margin-left:8px;}
-.expand-btn{background:none;border:none;cursor:pointer;font-size:18px;color:#d32f2f;padding:4px 10px;flex-shrink:0;transition:transform 0.25s;}
+.expand-btn{background:none;border:none;cursor:pointer;font-size:18px;color:#d32f2f;padding:4px 10px;transition:transform 0.25s;}
 .expand-btn.open{transform:rotate(180deg);}
-.diploma-details{background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 6px 6px;padding:18px;margin-top:0;margin-bottom:6px;display:flex;gap:18px;flex-wrap:wrap;}
+.diploma-details{background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 6px 6px;padding:18px;margin-bottom:6px;display:flex;gap:18px;flex-wrap:wrap;}
 .diploma-details.hidden{display:none;}
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
@@ -89,12 +82,11 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .pdf-btn-row .btn{margin:0;padding:6px 10px;font-size:12px;}
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
-.lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);background:#fff;}
+.lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;background:#fff;}
 .lightbox-close{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;font-weight:bold;}
 .legal-footer{text-align:center;padding:15px;font-size:11px;color:#999;border-top:1px solid #eee;background:#fafafa;}
 .log-list{max-height:400px;overflow-y:auto;background:#fff;border:1px solid #eee;border-radius:6px;padding:10px;}
 .log-item{padding:10px;border-bottom:1px solid #f0f0f0;font-size:12px;}
-.log-item:last-child{border-bottom:none;}
 .log-item .log-ip{color:#888;font-size:11px;}
 .log-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;margin-right:6px;}
 .log-badge-download{background:#e3f2fd;color:#1565c0;}
@@ -107,10 +99,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 <body>
 <div class="container">
   <div class="header">
-    <div class="lang-toggle">
-      <button class="lang-btn" id="langToggleBtn" onclick="toggleUILang()">EN</button>
-    </div>
-    <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
+    <div class="lang-toggle"><button class="lang-btn" id="langToggleBtn" onclick="toggleUILang()">EN</button></div>
+    <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Logo">
     <h1>KRAV MAGA</h1>
     <p id="txt-subtitle">Kayıtlı Öğrenci Sorgulama Sistemi</p>
   </div>
@@ -133,7 +123,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
     <div id="admin-content" class="tab-content">
       <div id="login-form">
         <div style="text-align:center;margin-bottom:30px;">
-          <div style="display:inline-block;background:linear-gradient(135deg,#d32f2f,#b71c1c);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(211,47,47,0.3);margin-bottom:20px;">
+          <div style="display:inline-block;background:linear-gradient(135deg,#d32f2f,#b71c1c);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" fill="white" opacity="0.9"/><path d="M9 12L11 14L15 10" stroke="#d32f2f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h2 id="txt-adminLoginHeading" style="color:#d32f2f;margin:0;">Güvenli Yönetici Girişi</h2>
@@ -145,9 +135,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <button type="button" class="password-toggle" onclick="togglePassword('adminPass',this)">👁️</button>
           </div>
         </div>
-        <div style="text-align:center;">
-          <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button>
-        </div>
+        <div style="text-align:center;"><button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button></div>
         <div id="loginMessage"></div>
         <div class="security-notice" id="txt-securityNotice">Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.</div>
       </div>
@@ -223,24 +211,15 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <h3 id="txt-pwFormHeading">Şifre Değiştir</h3>
           <div class="form-group">
             <label id="txt-lblCurrentPass">Mevcut Şifre:</label>
-            <div class="password-container">
-              <input type="password" id="currentPass">
-              <button type="button" class="password-toggle" onclick="togglePassword('currentPass',this)">👁️</button>
-            </div>
+            <div class="password-container"><input type="password" id="currentPass"><button type="button" class="password-toggle" onclick="togglePassword('currentPass',this)">👁️</button></div>
           </div>
           <div class="form-group">
             <label id="txt-lblNewPass">Yeni Şifre:</label>
-            <div class="password-container">
-              <input type="password" id="newPass">
-              <button type="button" class="password-toggle" onclick="togglePassword('newPass',this)">👁️</button>
-            </div>
+            <div class="password-container"><input type="password" id="newPass"><button type="button" class="password-toggle" onclick="togglePassword('newPass',this)">👁️</button></div>
           </div>
           <div class="form-group">
             <label id="txt-lblConfirmPass">Yeni Şifre Tekrar:</label>
-            <div class="password-container">
-              <input type="password" id="confirmPass">
-              <button type="button" class="password-toggle" onclick="togglePassword('confirmPass',this)">👁️</button>
-            </div>
+            <div class="password-container"><input type="password" id="confirmPass"><button type="button" class="password-toggle" onclick="togglePassword('confirmPass',this)">👁️</button></div>
           </div>
           <button class="btn" id="pass-btn" onclick="changePassword()">Değiştir</button>
           <button class="btn btn-secondary" id="btn-cancel-pw" onclick="hidePasswordForm()">İptal</button>
@@ -270,17 +249,13 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
       </div>
     </div>
   </div>
-
-  <div class="legal-footer" id="txt-legalFooter">
-    © 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875
-  </div>
+  <div class="legal-footer" id="txt-legalFooter">© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875</div>
 </div>
 
 <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
   <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
   <img id="lightbox-img" src="">
 </div>
-
 <div id="pdf-qr-hidden" style="position:absolute;left:-9999px;top:-9999px;"></div>
 
 <script>
@@ -305,116 +280,79 @@ var levelOptions = {
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[]
 };
-
-// Kimlik indirme yetkisi olan seviyeler
 var ID_ELIGIBLE_LEVELS = ['Instructor', 'Asistan', 'Güvenlik', 'Close Protection'];
-// Teşekkür belgesi indirme yetkisi
 var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
 
 var UI_I18N = {
   tr: {
-    subtitle:'Kayıtlı Öğrenci Sorgulama Sistemi',
-    tabQuery:'Öğrenci Sorgula', tabAdmin:'Yönetici Paneli',
-    queryHeading:'Kayıtlı Öğrenci Sorgulama',
-    queryDesc:'Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.',
-    lblRegisterNo:'Register Numarası:', placeholderRegisterNo:'Register No',
-    btnSearch:'Sorgula', searching:'Aranıyor...',
-    errEnterReg:'⚠️ Lütfen register numarası girin!',
-    errNotFound:'❌ Kayıt bulunamadı!', errConn:'⚠️ Bağlantı hatası, lütfen tekrar deneyin.',
+    subtitle:'Kayıtlı Öğrenci Sorgulama Sistemi', tabQuery:'Öğrenci Sorgula', tabAdmin:'Yönetici Paneli',
+    queryHeading:'Kayıtlı Öğrenci Sorgulama', queryDesc:'Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.',
+    lblRegisterNo:'Register Numarası:', placeholderRegisterNo:'Register No', btnSearch:'Sorgula', searching:'Aranıyor...',
+    errEnterReg:'⚠️ Lütfen register numarası girin!', errNotFound:'❌ Kayıt bulunamadı!', errConn:'⚠️ Bağlantı hatası, lütfen tekrar deneyin.',
     foundTitle:'✅ Kayıt Bulundu', qrLabel:'Sorgulama Linki QR Kodu',
-    lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:',
-    lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
+    lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:', lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
     statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
-    btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
-    btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
     btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
-    adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:',
-    placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
+    adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:', placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
     errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
     securityNotice:'Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.',
     legalWarningLockout:'⚠️ Bu, izinsiz erişim denemesi olarak değerlendirilebilir ve yasal işlem başlatılabilir. Giriş bilgileriniz (IP adresi ve konum) kayıt altına alınmıştır.',
-    adminPanelHeading:'Yönetici Paneli',
-    btnNewRecord:'Yeni Kayıt Ekle', btnChangePassword:'Şifre Değiştir',
-    btnSecurityLogs:'📋 Güvenlik Kayıtları', btnLogout:'Çıkış',
+    adminPanelHeading:'Yönetici Paneli', btnNewRecord:'Yeni Kayıt Ekle', btnChangePassword:'Şifre Değiştir', btnSecurityLogs:'📋 Güvenlik Kayıtları', btnLogout:'Çıkış',
     securityLogsHeading:'📋 Güvenlik ve İndirme Kayıtları', noLogsYet:'Henüz kayıt yok.', logsLoadError:'Kayıtlar yüklenemedi.',
     btnClearLogs:'🗑️ Logları Temizle', btnExportLogsPdf:'📄 Logları PDF Olarak İndir',
     confirmClearLogs:'Tüm güvenlik ve indirme kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
     logTypeDownload:'İndirme', logTypeLoginSuccess:'Giriş Başarılı', logTypeLoginFailed:'Başarısız Giriş',
     formTitleNew:'Yeni Kayıt Ekle', formTitleEdit:'Kaydı Düzenle',
-    lblStudentName:'Adı Soyadı:', placeholderStudentName:'Öğrenci adı soyadı',
-    lblPhoto:'Öğrenci Fotoğrafı:', btnRemovePhoto:'Fotoğrafı Kaldır',
+    lblStudentName:'Adı Soyadı:', placeholderStudentName:'Öğrenci adı soyadı', lblPhoto:'Öğrenci Fotoğrafı:', btnRemovePhoto:'Fotoğrafı Kaldır',
     lblJoinDateForm:'Akademiye Giriş Tarihi:', lblExamDateForm:'Sınav Tarihi:', lblExamLocForm:'Sınav Yeri:',
-    placeholderExamLoc:'Sınav yeri', lblMainLevel:'Ana Seviye:', selectPlaceholder:'Seçiniz',
-    lblSubLevel:'Alt Seviye:', btnSave:'Kaydet', btnUpdate:'Güncelle', saving:'Kaydediliyor...', btnCancel:'İptal',
-    errFillAll:'⚠️ Lütfen tüm alanları doldurun!',
-    msgUpdated:'✅ Kayıt güncellendi!', msgAdded:'✅ Kayıt eklendi ve buluta kaydedildi!',
-    msgSaveError:'⚠️ Kaydedilemedi, internet bağlantınızı kontrol edin.',
+    placeholderExamLoc:'Sınav yeri', lblMainLevel:'Ana Seviye:', selectPlaceholder:'Seçiniz', lblSubLevel:'Alt Seviye:',
+    btnSave:'Kaydet', btnUpdate:'Güncelle', saving:'Kaydediliyor...', btnCancel:'İptal', errFillAll:'⚠️ Lütfen tüm alanları doldurun!',
+    msgUpdated:'✅ Kayıt güncellendi!', msgAdded:'✅ Kayıt eklendi ve buluta kaydedildi!', msgSaveError:'⚠️ Kaydedilemedi, internet bağlantınızı kontrol edin.',
     pwFormHeading:'Şifre Değiştir', lblCurrentPass:'Mevcut Şifre:', lblNewPass:'Yeni Şifre:', lblConfirmPass:'Yeni Şifre Tekrar:',
-    btnChange:'Değiştir', changing:'Kontrol ediliyor...',
-    errWrongCurrentPass:'❌ Mevcut şifre hatalı!', errPassTooShort:'⚠️ Yeni şifre en az 6 karakter olmalı!',
-    errPassMismatch:'❌ Şifreler eşleşmiyor!', msgPassChanged:'✅ Şifre değiştirildi ve güvenli şekilde kaydedildi!',
-    errPassSaveFail:'⚠️ Şifre kaydedilemedi, internet bağlantınızı kontrol edin.',
-    registeredStudentsHeading:'Kayıtlı Öğrenciler',
-    placeholderAdminSearch:'🔍 İsim veya Register No ile ara...', allLevels:'Tüm Seviyeler',
-    resultsFound:'{n} sonuç bulundu (Toplam {total} kayıttan)', noRecordsYet:'Henüz kayıt yok.',
-    noMatchFound:'🔍 Aramanızla eşleşen kayıt bulunamadı.',
-    noPhotoLabel:'Fotoğraf Yok', btnEdit:'✏️ Düzenle', btnDelete:'🗑️ Sil',
-    confirmDelete:'"{name}" ({reg}) kaydını silmek istiyor musunuz?', msgDeleteError:'⚠️ Silinemedi, internet bağlantınızı kontrol edin.',
-    statsLine:'📊 Toplam Kayıtlı Öğrenci: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Aktif: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Pasif: {passive}',
-    firstSetupAlert:'🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: {pass}\n\nLütfen bu şifreyi güvenli bir yere not edin. Tekrar gösterilmeyecektir. Şimdi bu şifre ile giriş yapabilirsiniz.',
+    btnChange:'Değiştir', changing:'Kontrol ediliyor...', errWrongCurrentPass:'❌ Mevcut şifre hatalı!', errPassTooShort:'⚠️ Yeni şifre en az 6 karakter olmalı!',
+    errPassMismatch:'❌ Şifreler eşleşmiyor!', msgPassChanged:'✅ Şifre değiştirildi ve güvenli şekilde kaydedildi!', errPassSaveFail:'⚠️ Şifre kaydedilemedi.',
+    registeredStudentsHeading:'Kayıtlı Öğrenciler', placeholderAdminSearch:'🔍 İsim veya Register No ile ara...', allLevels:'Tüm Seviyeler',
+    resultsFound:'{n} sonuç bulundu (Toplam {total} kayıttan)', noRecordsYet:'Henüz kayıt yok.', noMatchFound:'🔍 Aramanızla eşleşen kayıt bulunamadı.',
+    noPhotoLabel:'Fotoğraf Yok', btnEdit:'✏️ Düzenle', btnDelete:'🗑️ Sil', confirmDelete:'"{name}" ({reg}) kaydını silmek istiyor musunuz?',
+    msgDeleteError:'⚠️ Silinemedi.', statsLine:'📊 Toplam Kayıtlı Öğrenci: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Aktif: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Pasif: {passive}',
+    firstSetupAlert:'🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: {pass}\n\nLütfen bu şifreyi güvenli bir yere not edin.',
     lockoutMsg:'🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen {mins}:{secs} dakika sonra tekrar deneyin.',
     legalFooter:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875'
   },
   en: {
-    subtitle:'Registered Student Query System',
-    tabQuery:'Search Student', tabAdmin:'Admin Panel',
-    queryHeading:'Registered Student Search',
-    queryDesc:'You can search your registration details by entering your register number.',
-    lblRegisterNo:'Register Number:', placeholderRegisterNo:'Register No',
-    btnSearch:'Search', searching:'Searching...',
-    errEnterReg:'⚠️ Please enter your register number!',
-    errNotFound:'❌ Record not found!', errConn:'⚠️ Connection error, please try again.',
+    subtitle:'Registered Student Query System', tabQuery:'Search Student', tabAdmin:'Admin Panel',
+    queryHeading:'Registered Student Search', queryDesc:'You can search your registration details by entering your register number.',
+    lblRegisterNo:'Register Number:', placeholderRegisterNo:'Register No', btnSearch:'Search', searching:'Searching...',
+    errEnterReg:'⚠️ Please enter your register number!', errNotFound:'❌ Record not found!', errConn:'⚠️ Connection error, please try again.',
     foundTitle:'✅ Record Found', qrLabel:'Query Link QR Code',
-    lblFullName:'Full Name:', lblJoinDate:'Academy Entry:', lblExamDate:'Exam Date:',
-    lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
+    lblFullName:'Full Name:', lblJoinDate:'Academy Entry:', lblExamDate:'Exam Date:', lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
     statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
-    btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
-    btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
     btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
-    adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:',
-    placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
+    adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:', placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
     errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
     securityNotice:'Your login attempts are logged with your IP address for security purposes.',
-    legalWarningLockout:'⚠️ This may be considered an unauthorized access attempt and could result in legal action. Your login details (IP address and location) have been recorded.',
-    adminPanelHeading:'Admin Panel',
-    btnNewRecord:'Add New Record', btnChangePassword:'Change Password',
-    btnSecurityLogs:'📋 Security Logs', btnLogout:'Log Out',
+    legalWarningLockout:'⚠️ This may be considered an unauthorized access attempt and could result in legal action.',
+    adminPanelHeading:'Admin Panel', btnNewRecord:'Add New Record', btnChangePassword:'Change Password', btnSecurityLogs:'📋 Security Logs', btnLogout:'Log Out',
     securityLogsHeading:'📋 Security & Download Logs', noLogsYet:'No records yet.', logsLoadError:'Failed to load logs.',
     btnClearLogs:'🗑️ Clear Logs', btnExportLogsPdf:'📄 Export Logs as PDF',
-    confirmClearLogs:'Are you sure you want to delete all security and download logs? This action cannot be undone.',
+    confirmClearLogs:'Are you sure you want to delete all logs? This action cannot be undone.',
     logTypeDownload:'Download', logTypeLoginSuccess:'Login Success', logTypeLoginFailed:'Failed Login',
     formTitleNew:'Add New Record', formTitleEdit:'Edit Record',
-    lblStudentName:'Full Name:', placeholderStudentName:'Student full name',
-    lblPhoto:'Student Photo:', btnRemovePhoto:'Remove Photo',
+    lblStudentName:'Full Name:', placeholderStudentName:'Student full name', lblPhoto:'Student Photo:', btnRemovePhoto:'Remove Photo',
     lblJoinDateForm:'Academy Entry Date:', lblExamDateForm:'Exam Date:', lblExamLocForm:'Exam Venue:',
-    placeholderExamLoc:'Exam venue', lblMainLevel:'Main Level:', selectPlaceholder:'Select',
-    lblSubLevel:'Sub Level:', btnSave:'Save', btnUpdate:'Update', saving:'Saving...', btnCancel:'Cancel',
-    errFillAll:'⚠️ Please fill in all fields!',
-    msgUpdated:'✅ Record updated!', msgAdded:'✅ Record added and saved to cloud!',
-    msgSaveError:'⚠️ Could not save, please check your internet connection.',
+    placeholderExamLoc:'Exam venue', lblMainLevel:'Main Level:', selectPlaceholder:'Select', lblSubLevel:'Sub Level:',
+    btnSave:'Save', btnUpdate:'Update', saving:'Saving...', btnCancel:'Cancel', errFillAll:'⚠️ Please fill in all fields!',
+    msgUpdated:'✅ Record updated!', msgAdded:'✅ Record added and saved to cloud!', msgSaveError:'⚠️ Could not save.',
     pwFormHeading:'Change Password', lblCurrentPass:'Current Password:', lblNewPass:'New Password:', lblConfirmPass:'Confirm New Password:',
-    btnChange:'Change', changing:'Checking...',
-    errWrongCurrentPass:'❌ Current password is incorrect!', errPassTooShort:'⚠️ New password must be at least 6 characters!',
-    errPassMismatch:'❌ Passwords do not match!', msgPassChanged:'✅ Password changed and saved securely!',
-    errPassSaveFail:'⚠️ Could not save password, please check your internet connection.',
-    registeredStudentsHeading:'Registered Students',
-    placeholderAdminSearch:'🔍 Search by name or register no...', allLevels:'All Levels',
-    resultsFound:'{n} results found (out of {total} total)', noRecordsYet:'No records yet.',
-    noMatchFound:'🔍 No records matching your search were found.',
-    noPhotoLabel:'No Photo', btnEdit:'✏️ Edit', btnDelete:'🗑️ Delete',
-    confirmDelete:'Do you want to delete "{name}" ({reg})\'s record?', msgDeleteError:'⚠️ Could not delete, please check your internet connection.',
-    statsLine:'📊 Total Registered Students: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Active: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Inactive: {passive}',
-    firstSetupAlert:'🔐 First setup complete!\n\nYour admin password is: {pass}\n\nPlease note it down somewhere safe. It will not be shown again. You can now log in with this password.',
+    btnChange:'Change', changing:'Checking...', errWrongCurrentPass:'❌ Current password is incorrect!', errPassTooShort:'⚠️ New password must be at least 6 characters!',
+    errPassMismatch:'❌ Passwords do not match!', msgPassChanged:'✅ Password changed and saved securely!', errPassSaveFail:'⚠️ Could not save password.',
+    registeredStudentsHeading:'Registered Students', placeholderAdminSearch:'🔍 Search by name or register no...', allLevels:'All Levels',
+    resultsFound:'{n} results found (out of {total} total)', noRecordsYet:'No records yet.', noMatchFound:'🔍 No records matching your search were found.',
+    noPhotoLabel:'No Photo', btnEdit:'✏️ Edit', btnDelete:'🗑️ Delete', confirmDelete:'Do you want to delete "{name}" ({reg})\'s record?',
+    msgDeleteError:'⚠️ Could not delete.', statsLine:'📊 Total Registered Students: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Active: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Inactive: {passive}',
+    firstSetupAlert:'🔐 First setup complete!\n\nYour admin password is: {pass}\n\nPlease note it down somewhere safe.',
     lockoutMsg:'🔒 Too many failed attempts.<br>Please try again in {mins}:{secs}.',
     legalFooter:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875'
   }
@@ -423,31 +361,18 @@ var UI_I18N = {
 function t(key, params){
   var dict = UI_I18N[uiLang] || UI_I18N.tr;
   var str = dict[key] !== undefined ? dict[key] : key;
-  if(params){
-    for(var p in params){
-      str = str.split('{'+p+'}').join(params[p]);
-    }
-  }
+  if(params){ for(var p in params){ str = str.split('{'+p+'}').join(params[p]); } }
   return str;
 }
-
-function toggleUILang(){
-  setUILang(uiLang === 'tr' ? 'en' : 'tr');
-}
-
+function toggleUILang(){ setUILang(uiLang === 'tr' ? 'en' : 'tr'); }
 function setUILang(lang){
   uiLang = lang;
   localStorage.setItem('uiLang', lang);
   applyStaticLanguage();
-  if(!document.getElementById('admin-panel').classList.contains('hidden')){
-    filterDiplomas();
-  }
-  var searchResultEl = document.getElementById('searchResult');
-  if(searchResultEl && searchResultEl.innerHTML.trim() !== '' && lastSearchedRecord){
-    renderSearchResult(lastSearchedRecord);
-  }
+  if(!document.getElementById('admin-panel').classList.contains('hidden')){ filterDiplomas(); }
+  var sr = document.getElementById('searchResult');
+  if(sr && sr.innerHTML.trim() !== '' && lastSearchedRecord){ renderSearchResult(lastSearchedRecord); }
 }
-
 function applyStaticLanguage(){
   document.getElementById('langToggleBtn').textContent = uiLang === 'tr' ? 'EN' : 'TR';
   document.getElementById('txt-subtitle').textContent = t('subtitle');
@@ -499,99 +424,45 @@ function applyStaticLanguage(){
 }
 
 var PDF_I18N = {
-  tr: {
-    diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT',
-    fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:',
-    level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif',
-    footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.',
-    rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875',
-    noPhoto:'FOTOGRAF YOK', locale:'tr-TR'
-  },
-  en: {
-    diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT',
-    fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:',
-    level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive',
-    footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.',
-    rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
-    noPhoto:'NO PHOTO', locale:'en-US'
-  }
+  tr:{diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:', level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif', footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.', rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875', noPhoto:'FOTOGRAF YOK', locale:'tr-TR'},
+  en:{diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:', level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive', footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.', rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875', noPhoto:'NO PHOTO', locale:'en-US'}
 };
-
 var ID_I18N = {
-  tr: { title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
-  en: { title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
+  tr:{title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
+  en:{title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}'}
 };
-
 var ID_ROLE_LABELS = {
-  tr: { 'Instructor':'Antrenör', 'Asistan':'Asistan', 'Güvenlik':'Güvenlik', 'Close Protection':'Yakın Koruma' },
-  en: { 'Instructor':'Instructor', 'Asistan':'Assistant', 'Güvenlik':'Security', 'Close Protection':'Close Protection' }
+  tr:{'Instructor':'Antrenör','Asistan':'Asistan','Güvenlik':'Güvenlik','Close Protection':'Yakın Koruma'},
+  en:{'Instructor':'Instructor','Asistan':'Assistant','Güvenlik':'Security','Close Protection':'Close Protection'}
 };
-
-// Teşekkür Belgesi metinleri (kendi yorumumuz, örnek görselden esinlenildi - kopya değil)
 var CERT_I18N = {
-  tr: {
-    title:'TEŞEKKÜR BELGESİ', subtitle:'TAKDİR SERTİFİKASI',
-    presentedTo:'Bu belge gururla asagidaki kisiye sunulmustur:',
-    thanksLine1:'Krav Maga Turk Academy bunyesinde gosterdigi ozveri, disiplin, sadakat ve katkilarindan dolayi kendisine tesekkur ederiz.',
-    thanksLine2:'"Her zaman disiplin, kararlilik ve mucadele ruhuyla ileri..."',
-    dateLabel:'TARIH:', signatureName:'BULENT CETIN', signatureTitle:'Antrenör', locale:'tr-TR'
-  },
-  en: {
-    title:'CERTIFICATE OF', subtitle:'APPRECIATION',
-    presentedTo:'This certificate is proudly presented to:',
-    thanksLine1:'We would like to thank them for their dedication, discipline, loyalty, and contributions within the Krav Maga Turk Academy.',
-    thanksLine2:'"Always forward with discipline, determination, and fighting spirit..."',
-    dateLabel:'DATE:', signatureName:'BULENT CETIN', signatureTitle:'Instructor', locale:'en-US'
-  }
+  tr:{title:'TEŞEKKÜR BELGESİ', subtitle:'TAKDİR SERTİFİKASI', presentedTo:'Bu belge gururla asagidaki kisiye sunulmustur:', thanksLine1:'Krav Maga Turk Academy bunyesinde gosterdigi ozveri, disiplin, sadakat ve katkilarindan dolayi kendisine tesekkur ederiz.', thanksLine2:'"Her zaman disiplin, kararlilik ve mucadele ruhuyla ileri..."', dateLabel:'TARIH:', signatureName:'BULENT CETIN', signatureTitle:'Antrenör', locale:'tr-TR'},
+  en:{title:'CERTIFICATE OF', subtitle:'APPRECIATION', presentedTo:'This certificate is proudly presented to:', thanksLine1:'We would like to thank them for their dedication, discipline, loyalty, and contributions within the Krav Maga Turk Academy.', thanksLine2:'"Always forward with discipline, determination, and fighting spirit..."', dateLabel:'DATE:', signatureName:'BULENT CETIN', signatureTitle:'Instructor', locale:'en-US'}
 };
 
 function turkishSafe(text){
   if(text === null || text === undefined) return '-';
-  return String(text)
-    .replace(/İ/g,'I').replace(/ı/g,'i')
-    .replace(/Ş/g,'S').replace(/ş/g,'s')
-    .replace(/Ğ/g,'G').replace(/ğ/g,'g');
+  return String(text).replace(/İ/g,'I').replace(/ı/g,'i').replace(/Ş/g,'S').replace(/ş/g,'s').replace(/Ğ/g,'G').replace(/ğ/g,'g');
 }
+function buildQrUrl(registerNo){ return SITE_URL + '?reg=' + encodeURIComponent(registerNo); }
+function isIdEligibleLevel(level){ return ID_ELIGIBLE_LEVELS.indexOf(level) !== -1; }
+function isCertEligibleLevel(level){ return level === CERT_ELIGIBLE_LEVEL; }
 
-function buildQrUrl(registerNo){
-  return SITE_URL + '?reg=' + encodeURIComponent(registerNo);
-}
-
-function isIdEligibleLevel(level){
-  return ID_ELIGIBLE_LEVELS.indexOf(level) !== -1;
-}
-function isCertEligibleLevel(level){
-  return level === CERT_ELIGIBLE_LEVEL;
-}
-
-// ============================================
-// GÜVENLİK - IP/konum bilgisi (basit ve güvenli zaman aşımı, asla donmaz)
-// ============================================
 function getClientInfo(){
   var fetchPromise = fetch('https://ipapi.co/json/').then(function(r){ return r.json(); });
-  var timeoutPromise = new Promise(function(resolve){
-    setTimeout(function(){ resolve(null); }, 3000);
-  });
+  var timeoutPromise = new Promise(function(resolve){ setTimeout(function(){ resolve(null); }, 3000); });
   return Promise.race([fetchPromise, timeoutPromise]).then(function(data){
     if(!data) return { ip:'unknown', city:'', country:'' };
     return { ip: data.ip || 'unknown', city: data.city || '', country: data.country_name || '' };
-  }).catch(function(){
-    return { ip:'unknown', city:'', country:'' };
-  });
+  }).catch(function(){ return { ip:'unknown', city:'', country:'' }; });
 }
-
 function logSecurityEvent(type, details){
   getClientInfo().then(function(client){
     var payload = { type:type, ip:client.ip, city:client.city, country:client.country, timestamp:new Date().toISOString() };
-    if(details){
-      for(var k in details){ payload[k] = details[k]; }
-    }
-    fetch(FIREBASE_URL + '/securityLogs.json', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
-    }).catch(function(){});
+    if(details){ for(var k in details){ payload[k] = details[k]; } }
+    fetch(FIREBASE_URL + '/securityLogs.json', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).catch(function(){});
   }).catch(function(){});
 }
-
 function sha256(text){
   var encoder = new TextEncoder();
   var data = encoder.encode(text);
@@ -600,7 +471,6 @@ function sha256(text){
     return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
   });
 }
-
 function generateRandomPassword(length){
   length = length || 10;
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -608,11 +478,7 @@ function generateRandomPassword(length){
   for(var i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
   return result;
 }
-
-function getStoredPasswordHash(){
-  return fetch(FIREBASE_URL + '/adminPasswordHash.json').then(function(res){ return res.json(); });
-}
-
+function getStoredPasswordHash(){ return fetch(FIREBASE_URL + '/adminPasswordHash.json').then(function(res){ return res.json(); }); }
 function formatDateForDisplay(isoDate){
   var d = new Date(isoDate);
   return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
@@ -622,7 +488,6 @@ function formatDateForInput(displayDate){
   if(parts.length===3) return parts[2]+'-'+parts[1]+'-'+parts[0];
   return '';
 }
-
 function showTab(name){
   var tabs = document.querySelectorAll('.tab');
   for(var i=0;i<tabs.length;i++){ tabs[i].classList.remove('active'); }
@@ -631,13 +496,11 @@ function showTab(name){
   event.target.classList.add('active');
   document.getElementById(name+'-content').classList.add('active');
 }
-
 function togglePassword(id,btn){
   var input = document.getElementById(id);
   if(input.type==='password'){ input.type='text'; btn.textContent='🙈'; }
   else { input.type='password'; btn.textContent='👁️'; }
 }
-
 function previewPhoto(event){
   var file = event.target.files[0];
   if(!file) return;
@@ -663,29 +526,23 @@ function previewPhoto(event){
   };
   reader.readAsDataURL(file);
 }
-
 function clearPhotoPreview(){
   currentPhotoData = '';
   document.getElementById('studentPhoto').value = '';
   document.getElementById('photoPreviewBox').classList.add('hidden');
 }
-
 function openLightbox(src){
   if(!src) return;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox').classList.add('show');
 }
-function closeLightbox(){
-  document.getElementById('lightbox').classList.remove('show');
-}
-
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
 function generateQR(elementId, text){
   var el = document.getElementById(elementId);
   if(!el) return;
   el.innerHTML = '';
   new QRCode(el, { text: text, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
 }
-
 function prepareLogoBase64(){
   if(cachedLogoBase64 !== null) return Promise.resolve(cachedLogoBase64);
   return fetch('logo.png').then(function(res){ return res.blob(); }).then(function(blob){
@@ -695,15 +552,8 @@ function prepareLogoBase64(){
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-  }).then(function(dataUrl){
-    cachedLogoBase64 = dataUrl;
-    return dataUrl;
-  }).catch(function(){
-    cachedLogoBase64 = false;
-    return false;
-  });
+  }).then(function(dataUrl){ cachedLogoBase64 = dataUrl; return dataUrl; }).catch(function(){ cachedLogoBase64 = false; return false; });
 }
-
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
     doc.saveGraphicsState();
@@ -716,7 +566,6 @@ function drawCircularImage(doc, base64, cx, cy, r){
     try { doc.addImage(base64, 'PNG', cx-r, cy-r, r*2, r*2); } catch(e2){}
   }
 }
-
 function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
   try {
     doc.saveGraphicsState();
@@ -729,19 +578,30 @@ function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
   } catch(e){}
 }
 
+// FİLİGRAN METNİ - dikey/yatay boşluklar sıkılaştırıldı, tam kaplama sağlandı
 function generateDiagonalTextLayer(pxW, pxH){
   pxW = pxW || 1000; pxH = pxH || 1414;
   var canvas = document.createElement('canvas');
   canvas.width = pxW; canvas.height = pxH;
   var ctx = canvas.getContext('2d');
   ctx.save();
-  ctx.translate(-pxW*0.18, pxH*0.16);
-  ctx.rotate(-30*Math.PI/180);
+  ctx.translate(pxW/2, pxH/2);
+  ctx.rotate(-28*Math.PI/180);
+  ctx.translate(-pxW*0.9, -pxH*0.9);
   ctx.fillStyle = 'rgba(0,0,0,0.06)';
-  ctx.font = '900 ' + Math.round(pxW*0.042) + 'px Arial';
-  var lineH = pxH*0.067;
-  for(var i=-2;i<24;i++){
-    ctx.fillText('KRAV MAGA          KRAV MAGA          KRAV MAGA', 0, i*lineH);
+  var fontSize = Math.round(pxW*0.038);
+  ctx.font = '900 ' + fontSize + 'px Arial';
+  var word = 'KRAV MAGA';
+  var wordWidth = ctx.measureText(word).width;
+  var gap = wordWidth * 0.35;
+  var lineH = fontSize * 1.7;
+  var totalW = pxW*2.4, totalH = pxH*2.4;
+  for(var y=-totalH*0.2; y<totalH; y+=lineH){
+    var x = -totalW*0.2;
+    while(x < totalW){
+      ctx.fillText(word, x, y);
+      x += wordWidth + gap;
+    }
   }
   ctx.restore();
   return canvas.toDataURL('image/png');
@@ -750,14 +610,10 @@ function generateDiagonalTextLayer(pxW, pxH){
 function infoRow(doc, label, value, y, valueColor){
   var safeLabel = turkishSafe(label);
   var safeValue = turkishSafe(value);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20,20,20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
   doc.text(safeLabel, 30, y);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(11);
-  if(valueColor){ doc.setTextColor(valueColor[0],valueColor[1],valueColor[2]); }
-  else { doc.setTextColor(70,70,70); }
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  if(valueColor){ doc.setTextColor(valueColor[0],valueColor[1],valueColor[2]); } else { doc.setTextColor(70,70,70); }
   doc.text(safeValue, 90, y);
 }
 
@@ -768,22 +624,15 @@ function renderSearchResult(d){
     '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
 
-  var extraButtons = '';
+  var extra = '';
   if(isIdEligibleLevel(d.level)){
-    extraButtons += '<div class="pdf-btn-row" style="margin-top:8px;">' +
-      '<button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'tr\')">'+t('btnIdTr')+'</button>' +
-      '<button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'en\')">'+t('btnIdEn')+'</button>' +
-    '</div>';
+    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'en\')">'+t('btnIdEn')+'</button></div>';
   }
   if(isCertEligibleLevel(d.level)){
-    extraButtons += '<div class="pdf-btn-row" style="margin-top:8px;">' +
-      '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'tr\')">'+t('btnCertTr')+'</button>' +
-      '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'en\')">'+t('btnCertEn')+'</button>' +
-    '</div>';
+    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'en\')">'+t('btnCertEn')+'</button></div>';
   }
 
-  var html = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' +
-    photoHtml +
+  resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
     '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
@@ -792,13 +641,8 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">'+t('lblExamLoc')+'</span><span>'+d.examLocation+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblLevel')+'</span><span>'+d.level+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    '<div class="pdf-btn-row" style="margin-top:15px;">' +
-      '<button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button>' +
-      '<button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button>' +
-    '</div>' +
-    extraButtons +
-  '</div>';
-  resultDiv.innerHTML = html;
+    '<div class="pdf-btn-row" style="margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button></div>' +
+    extra + '</div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
 
@@ -810,23 +654,13 @@ function searchDiploma(){
   btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
   fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json').then(function(res){ return res.json(); }).then(function(d){
-    if(d){
-      lastSearchedRecord = d;
-      renderSearchResult(d);
-    } else {
-      lastSearchedRecord = null;
-      resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>';
-    }
-  }).catch(function(){
-    resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
-  }).finally(function(){
-    btn.disabled = false; btn.textContent = t('btnSearch');
-  });
+    if(d){ lastSearchedRecord = d; renderSearchResult(d); }
+    else { lastSearchedRecord = null; resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>'; }
+  }).catch(function(){ resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>'; })
+  .finally(function(){ btn.disabled = false; btn.textContent = t('btnSearch'); });
 }
 
-// ============================================
-// PDF OLUŞTURMA - Standart Sertifika (TR/EN) - ÇERÇEVESİZ görsel/QR
-// ============================================
+// PDF (Standart Sertifika) - filigran logosu artık tam sayfa ortasında
 function downloadPDF(record, lang){
   record = record || lastSearchedRecord;
   lang = lang || 'tr';
@@ -837,27 +671,19 @@ function downloadPDF(record, lang){
   prepareLogoBase64().then(function(logoData){
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF('p','mm','a4');
-    var pageW = 210;
+    var pageW = 210, pageH = 297;
 
-    doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, 210, 297);
-    if(logoData){ drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09); }
+    doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, pageW, pageH);
+    if(logoData){ drawWatermarkLogo(doc, logoData, pageW/2, pageH/2, 75, 0.08); }
 
     var emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
     var qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
     var photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
-    var dLabelY = 138, dNumberY = 146;
-    var titleY = 160;
-    var subtitleY = 167, dashY = 165.5;
-    var rowStartY = 185, rowStep = 10;
-    var footerY = 262, footerDashY = 260.5;
-    var legal1Y = 272, legal2Y = 280;
+    var dLabelY = 138, dNumberY = 146, titleY = 160, subtitleY = 167, dashY = 165.5;
+    var rowStartY = 185, rowStep = 10, footerY = 262, footerDashY = 260.5, legal1Y = 272, legal2Y = 280;
 
-    if(logoData){
-      drawCircularImage(doc, logoData, emCx, emCy, emR);
-    } else {
-      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
-      doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
-    }
+    if(logoData){ drawCircularImage(doc, logoData, emCx, emCy, emR); }
+    else { doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20); doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'}); }
 
     var qrTemp = document.getElementById('pdf-qr-hidden');
     qrTemp.innerHTML = '';
@@ -866,20 +692,11 @@ function downloadPDF(record, lang){
     setTimeout(function(){
       try {
         var qrCanvas = qrTemp.querySelector('canvas');
-        if(qrCanvas){
-          var qrImgData = qrCanvas.toDataURL('image/png');
-          doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
-        }
+        if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize); }
       } catch(e){}
 
-      if(d.photo){
-        try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
-      } else {
-        doc.setFillColor(240,240,240);
-        doc.rect(photoX, photoY, photoSize, photoSize, 'F');
-        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
-        doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
-      }
+      if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
+      else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'}); }
 
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
       var dLabel = turkishSafe(T.diplomaNo);
@@ -924,13 +741,10 @@ function downloadPDF(record, lang){
       doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
       doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
 
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(8);
-      doc.setTextColor(150,150,150);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
       var dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
       doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
-      doc.setFontSize(7.5);
-      doc.setTextColor(160,160,160);
+      doc.setFontSize(7.5); doc.setTextColor(160,160,160);
       doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
 
       doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
@@ -939,9 +753,6 @@ function downloadPDF(record, lang){
   });
 }
 
-// ============================================
-// KİMLİK KARTI - Antrenör/Asistan/Güvenlik/Yakın Koruma için
-// ============================================
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
   if(!record) return;
@@ -955,34 +766,22 @@ function downloadInstructorID(record, lang){
     var doc = new jsPDF('l','mm',[cardH, cardW]);
 
     doc.addImage(generateDiagonalTextLayer(700,440), 'PNG', 0, 0, cardW, cardH);
-    if(logoData){ drawWatermarkLogo(doc, logoData, cardW-24, cardH-22, 26, 0.12); }
+    if(logoData){ drawWatermarkLogo(doc, logoData, cardW/2, cardH/2, 30, 0.10); }
 
-    doc.setFillColor(211,47,47);
-    doc.rect(0, 0, cardW, 14, 'F');
+    doc.setFillColor(211,47,47); doc.rect(0, 0, cardW, 14, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
     doc.text(turkishSafe(I.title), cardW/2, 9.5, {align:'center'});
 
     var photoX = 8, photoY = 20, photoSize = 34;
-    if(d.photo){
-      try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
-    } else {
-      doc.setFillColor(240,240,240);
-      doc.rect(photoX, photoY, photoSize, photoSize, 'F');
-    }
+    if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
+    else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); }
 
-    if(logoData){
-      drawCircularImage(doc, logoData, photoX+photoSize/2, photoY+photoSize+10, 8);
-    }
-
-    var textX = photoX + photoSize + 8;
-    var textY = 27;
+    var textX = photoX + photoSize + 8, textY = 27;
     doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(20,20,20);
     doc.text(turkishSafe(d.studentName), textX, textY);
-
     textY += 8;
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(211,47,47);
     doc.text(turkishSafe(roleLabel), textX, textY);
-
     textY += 9;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
     doc.text(turkishSafe(I.regNo) + ':', textX, textY);
@@ -997,9 +796,8 @@ function downloadInstructorID(record, lang){
       try {
         var qrCanvas = qrTemp.querySelector('canvas');
         if(qrCanvas){
-          var qrImgData = qrCanvas.toDataURL('image/png');
           var qrSize = 20, qrX = cardW - qrSize - 8, qrY = photoY + photoSize - qrSize;
-          doc.addImage(qrImgData, 'PNG', qrX, qrY, qrSize, qrSize);
+          doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize);
         }
       } catch(e){}
 
@@ -1013,9 +811,6 @@ function downloadInstructorID(record, lang){
   });
 }
 
-// ============================================
-// TEŞEKKÜR BELGESİ - Altın çerçeveli, isim+tarih otomatik (TR/EN)
-// ============================================
 function downloadAppreciationCertificate(record, lang){
   lang = lang || 'tr';
   if(!record) return;
@@ -1027,62 +822,44 @@ function downloadAppreciationCertificate(record, lang){
     var pageW = 297, pageH = 210;
     var doc = new jsPDF('l','mm','a4');
 
-    // Arka plan - hafif krem tonu + filigran
-    doc.setFillColor(253,251,245);
-    doc.rect(0,0,pageW,pageH,'F');
+    doc.setFillColor(253,251,245); doc.rect(0,0,pageW,pageH,'F');
     doc.addImage(generateDiagonalTextLayer(1400,990), 'PNG', 0, 0, pageW, pageH);
 
-    // Altın çift çerçeve
     var gold = [180,140,20];
-    doc.setDrawColor(gold[0],gold[1],gold[2]);
-    doc.setLineWidth(1.2);
+    doc.setDrawColor(gold[0],gold[1],gold[2]); doc.setLineWidth(1.2);
     doc.rect(8, 8, pageW-16, pageH-16);
-    doc.setLineWidth(0.4);
-    doc.rect(12, 12, pageW-24, pageH-24);
+    doc.setLineWidth(0.4); doc.rect(12, 12, pageW-24, pageH-24);
 
-    // Köşe süsleri (basit çizgi motifleri)
     function cornerAccent(x,y,dx,dy){
-      doc.setDrawColor(gold[0],gold[1],gold[2]);
-      doc.setLineWidth(1.5);
-      doc.line(x, y, x+dx*18, y);
-      doc.line(x, y, x, y+dy*18);
+      doc.setDrawColor(gold[0],gold[1],gold[2]); doc.setLineWidth(1.5);
+      doc.line(x, y, x+dx*18, y); doc.line(x, y, x, y+dy*18);
     }
-    cornerAccent(16,16,1,1);
-    cornerAccent(pageW-16,16,-1,1);
-    cornerAccent(16,pageH-16,1,-1);
-    cornerAccent(pageW-16,pageH-16,-1,-1);
+    cornerAccent(16,16,1,1); cornerAccent(pageW-16,16,-1,1); cornerAccent(16,pageH-16,1,-1); cornerAccent(pageW-16,pageH-16,-1,-1);
 
-    // Başlık
     doc.setFont('helvetica','bold'); doc.setFontSize(30); doc.setTextColor(20,30,90);
     doc.text(turkishSafe(C.title), pageW/2, 42, {align:'center'});
     doc.setFontSize(16); doc.setTextColor(40,60,140);
     doc.text(turkishSafe(C.subtitle), pageW/2, 52, {align:'center'});
 
-    // Sunuş cümlesi
     doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(50,50,50);
     doc.text(turkishSafe(C.presentedTo), pageW/2, 66, {align:'center'});
 
-    // İsim (otomatik)
-    doc.setFont('helvetica','bolditalic'); doc.setFontSize(30); doc.setTextColor(20,30,120);
+    doc.setFont('helvetica','bolditalic'); doc.setFontSize(34); doc.setTextColor(20,30,120);
     doc.text(turkishSafe(d.studentName), pageW/2, 86, {align:'center'});
 
-    // Alt çizgi
     doc.setDrawColor(20,30,120); doc.setLineWidth(0.4);
     doc.line(pageW/2-55, 91, pageW/2+55, 91);
 
-    // Teşekkür metni (iki satır, ortalanmış, kelime kaydırma)
     doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
     var line1 = doc.splitTextToSize(turkishSafe(C.thanksLine1), pageW-90);
     doc.text(line1, pageW/2, 105, {align:'center'});
     doc.setFont('helvetica','bolditalic'); doc.setFontSize(9);
     doc.text(turkishSafe(C.thanksLine2), pageW/2, 105 + (line1.length*5) + 6, {align:'center'});
 
-    // Tarih (otomatik, sağ üst alan)
     var dateStr = new Date().toLocaleDateString(C.locale || 'tr-TR');
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(70,70,70);
     doc.text(turkishSafe(C.dateLabel) + ' ' + dateStr, pageW-70, 130);
 
-    // QR kod (sol alt)
     var qrTemp = document.getElementById('pdf-qr-hidden');
     qrTemp.innerHTML = '';
     new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
@@ -1090,18 +867,11 @@ function downloadAppreciationCertificate(record, lang){
     setTimeout(function(){
       try {
         var qrCanvas = qrTemp.querySelector('canvas');
-        if(qrCanvas){
-          var qrImgData = qrCanvas.toDataURL('image/png');
-          doc.addImage(qrImgData, 'PNG', 30, 155, 28, 28);
-        }
+        if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 30, 155, 28, 28); }
       } catch(e){}
 
-      // Bizim logomuz (orta alt, madalya yerine)
-      if(logoData){
-        drawCircularImage(doc, logoData, pageW/2, 172, 16);
-      }
+      if(logoData){ drawCircularImage(doc, logoData, pageW/2, 172, 16); }
 
-      // İmza alanı (sağ alt) - Bülent Çetin
       doc.setDrawColor(50,50,50); doc.setLineWidth(0.3);
       doc.line(pageW-95, 172, pageW-25, 172);
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
@@ -1121,13 +891,9 @@ function downloadAppreciationCertificate(record, lang){
 function checkLockoutStatus(){
   var lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
   var now = Date.now();
-  if(lockUntil > now){
-    startLockoutCountdown(lockUntil);
-    return true;
-  }
+  if(lockUntil > now){ startLockoutCountdown(lockUntil); return true; }
   return false;
 }
-
 function startLockoutCountdown(lockUntil){
   var btn = document.getElementById('login-btn');
   var msg = document.getElementById('loginMessage');
@@ -1137,22 +903,15 @@ function startLockoutCountdown(lockUntil){
     var remaining = lockUntil - Date.now();
     if(remaining <= 0){
       clearInterval(lockoutTimer);
-      localStorage.removeItem('loginLockUntil');
-      localStorage.removeItem('loginAttempts');
-      btn.disabled = false;
-      btn.textContent = t('btnLogin');
-      msg.innerHTML = '';
-      return;
+      localStorage.removeItem('loginLockUntil'); localStorage.removeItem('loginAttempts');
+      btn.disabled = false; btn.textContent = t('btnLogin'); msg.innerHTML = ''; return;
     }
     var mins = Math.floor(remaining / 60000);
     var secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div>' +
-      '<div class="legal-warning">'+t('legalWarningLockout')+'</div>';
+    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div><div class="legal-warning">'+t('legalWarningLockout')+'</div>';
   }
-  updateDisplay();
-  lockoutTimer = setInterval(updateDisplay, 1000);
+  updateDisplay(); lockoutTimer = setInterval(updateDisplay, 1000);
 }
-
 function adminLogin(){
   if(checkLockoutStatus()) return;
   var pass = document.getElementById('adminPass').value;
@@ -1170,12 +929,10 @@ function adminLogin(){
         btn.disabled = false; btn.textContent = t('btnLogin');
       });
     }
-
     return sha256(pass).then(function(enteredHash){
       if(enteredHash === storedHash){
         currentPasswordHash = storedHash;
-        localStorage.removeItem('loginAttempts');
-        localStorage.removeItem('loginLockUntil');
+        localStorage.removeItem('loginAttempts'); localStorage.removeItem('loginLockUntil');
         document.getElementById('login-form').classList.add('hidden');
         document.getElementById('admin-panel').classList.remove('hidden');
         msg.innerHTML = '';
@@ -1201,7 +958,6 @@ function adminLogin(){
     btn.disabled = false; btn.textContent = t('btnLogin');
   });
 }
-
 function loadAllDiplomas(){
   var box = document.getElementById('diploma-items');
   box.innerHTML = '<div class="spinner"></div>';
@@ -1213,40 +969,28 @@ function loadAllDiplomas(){
         var record = data[key];
         if(record && typeof record === 'object' && record.registerNo){
           diplomaData.push(record);
-          if(key !== record.registerNo){
-            migrations.push({ oldKey: key, record: record });
-          }
+          if(key !== record.registerNo){ migrations.push({ oldKey: key, record: record }); }
         }
       }
     }
     var chain = Promise.resolve();
     migrations.forEach(function(m){
       chain = chain.then(function(){
-        return fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {
-          method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)
-        }).then(function(){
+        return fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)}).then(function(){
           return fetch(FIREBASE_URL + '/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
         }).catch(function(){});
       });
     });
     return chain;
-  }).catch(function(){
-    diplomaData = [];
-  }).then(function(){
-    expandedRows = {};
-    filterDiplomas();
-  });
+  }).catch(function(){ diplomaData = []; }).then(function(){ expandedRows = {}; filterDiplomas(); });
 }
-
 function logout(){
   document.getElementById('login-form').classList.remove('hidden');
   document.getElementById('admin-panel').classList.add('hidden');
   document.getElementById('adminPass').value = '';
-  diplomaData = [];
-  currentPasswordHash = null;
+  diplomaData = []; currentPasswordHash = null;
   hideAllForms();
 }
-
 function showAddForm(){
   editingIndex = -1;
   document.getElementById('form-title').textContent = t('formTitleNew');
@@ -1256,13 +1000,11 @@ function showAddForm(){
 }
 function hideAddForm(){
   document.getElementById('add-form').classList.add('hidden');
-  clearAddForm();
-  editingIndex = -1;
+  clearAddForm(); editingIndex = -1;
 }
 function showPasswordForm(){ hideAllForms(); document.getElementById('password-form').classList.remove('hidden'); }
 function hidePasswordForm(){ document.getElementById('password-form').classList.add('hidden'); clearPasswordForm(); }
 function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); document.getElementById('password-form').classList.add('hidden'); }
-
 function clearAddForm(){
   document.getElementById('studentName').value='';
   document.getElementById('joinDate').value='';
@@ -1278,7 +1020,6 @@ function clearPasswordForm(){
   document.getElementById('newPass').value='';
   document.getElementById('confirmPass').value='';
 }
-
 function updateSubLevels(){
   var level = document.getElementById('mainLevel').value;
   var group = document.getElementById('sub-level-group');
@@ -1292,7 +1033,6 @@ function updateSubLevels(){
     sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
   }
 }
-
 function editDiploma(index){
   var d = diplomaData[index];
   editingIndex = index;
@@ -1305,9 +1045,7 @@ function editDiploma(index){
   var levelParts = d.level.split(' Level ');
   document.getElementById('mainLevel').value = levelParts[0];
   updateSubLevels();
-  if(levelParts[1]){
-    setTimeout(function(){ document.getElementById('subLevel').value = 'Level ' + levelParts[1]; }, 50);
-  }
+  if(levelParts[1]){ setTimeout(function(){ document.getElementById('subLevel').value = 'Level ' + levelParts[1]; }, 50); }
   if(d.photo){
     currentPhotoData = d.photo;
     document.getElementById('photoPreviewImg').src = d.photo;
@@ -1316,7 +1054,6 @@ function editDiploma(index){
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
-
 function addDiploma(){
   var studentName = document.getElementById('studentName').value.trim();
   var joinDateRaw = document.getElementById('joinDate').value;
@@ -1324,22 +1061,15 @@ function addDiploma(){
   var examLocation = document.getElementById('examLocation').value.trim();
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
-
-  if(!studentName || !examDate || !examLocation || !mainLevel){
-    alert(t('errFillAll'));
-    return;
-  }
+  if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
   var formattedExamDate = formatDateForDisplay(examDate);
   var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
-
   var saveBtn = document.getElementById('save-btn');
   saveBtn.disabled = true; saveBtn.textContent = t('saving');
-
   var panel = document.getElementById('admin-panel');
   var msg = document.createElement('div');
   msg.className = 'message success';
-
   var record, registerNo;
   if(editingIndex >= 0){
     registerNo = diplomaData[editingIndex].registerNo;
@@ -1351,14 +1081,12 @@ function addDiploma(){
     var counter = diplomaData.length + 1;
     registerNo = 'KM'+year+String(counter).padStart(3,'0');
     while(diplomaData.some(function(x){ return x.registerNo === registerNo; })){
-      counter++;
-      registerNo = 'KM'+year+String(counter).padStart(3,'0');
+      counter++; registerNo = 'KM'+year+String(counter).padStart(3,'0');
     }
     record = { registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText, photo:currentPhotoData, status:'aktif' };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
   }
-
   fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)}).then(function(){
     filterDiplomas();
     hideAddForm();
@@ -1374,27 +1102,18 @@ function addDiploma(){
     saveBtn.textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
   });
 }
-
 function toggleStatus(index){
   var d = diplomaData[index];
   d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
-  fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){
-    filterDiplomas();
-  }).catch(function(){
-    alert(t('msgSaveError'));
-    filterDiplomas();
-  });
+  fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
-
 function changePassword(){
   var cur = document.getElementById('currentPass').value;
   var nw = document.getElementById('newPass').value;
   var cf = document.getElementById('confirmPass').value;
   var btn = document.getElementById('pass-btn');
   if(!cur||!nw||!cf){ alert(t('errFillAll')); return; }
-
   btn.disabled = true; btn.textContent = t('changing');
-
   sha256(cur).then(function(curHash){
     if(curHash !== currentPasswordHash){
       alert(t('errWrongCurrentPass'));
@@ -1418,13 +1137,9 @@ function changePassword(){
       btn.disabled = false; btn.textContent = t('btnChange');
     });
   }).catch(function(err){
-    if(err !== 'stop'){
-      alert(t('errPassSaveFail'));
-      btn.disabled = false; btn.textContent = t('btnChange');
-    }
+    if(err !== 'stop'){ alert(t('errPassSaveFail')); btn.disabled = false; btn.textContent = t('btnChange'); }
   });
 }
-
 function filterDiplomas(){
   var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
   var levelFilter = document.getElementById('levelFilter').value;
@@ -1434,13 +1149,10 @@ function filterDiplomas(){
       return item.d.studentName.toLowerCase().indexOf(searchText) !== -1 || item.d.registerNo.toLowerCase().indexOf(searchText) !== -1;
     });
   }
-  if(levelFilter){
-    filtered = filtered.filter(function(item){ return item.d.level.indexOf(levelFilter) === 0; });
-  }
+  if(levelFilter){ filtered = filtered.filter(function(item){ return item.d.level.indexOf(levelFilter) === 0; }); }
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
 }
-
 function renderStats(){
   var statsBox = document.getElementById('stats-display');
   var total = diplomaData.length;
@@ -1449,24 +1161,14 @@ function renderStats(){
   if(total > 0){
     statsBox.classList.remove('hidden');
     statsBox.innerHTML = t('statsLine',{total:total, active:activeCount, passive:passiveCount});
-  } else {
-    statsBox.classList.add('hidden');
-  }
+  } else { statsBox.classList.add('hidden'); }
 }
-
 function renderDiplomaList(filtered, isFiltering){
   var box = document.getElementById('diploma-items');
   var countBox = document.getElementById('result-count');
-  if(diplomaData.length === 0){
-    box.innerHTML = '<p>'+t('noRecordsYet')+'</p>';
-    countBox.textContent = '';
-    return;
-  }
+  if(diplomaData.length === 0){ box.innerHTML = '<p>'+t('noRecordsYet')+'</p>'; countBox.textContent = ''; return; }
   countBox.textContent = isFiltering ? t('resultsFound',{n:filtered.length, total:diplomaData.length}) : '';
-  if(filtered.length === 0){
-    box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">'+t('noMatchFound')+'</p>';
-    return;
-  }
+  if(filtered.length === 0){ box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">'+t('noMatchFound')+'</p>'; return; }
   var html = '';
   filtered.forEach(function(item){
     var d = item.d, i = item.i;
@@ -1478,21 +1180,17 @@ function renderDiplomaList(filtered, isFiltering){
     var photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
-
     var idButtons = '';
     if(isIdEligibleLevel(d.level)){
-      idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button>' +
-                  '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
+      idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
     }
     var certButtons = '';
     if(isCertEligibleLevel(d.level)){
-      certButtons = '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'tr\')">'+t('btnCertTr')+'</button>' +
-                    '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'en\')">'+t('btnCertEn')+'</button>';
+      certButtons = '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'en\')">'+t('btnCertEn')+'</button>';
     }
-
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
-          '<span class="row-status-dot">'+statusDot+'</span>' +
+          '<span>'+statusDot+'</span>' +
           '<span class="row-name">'+d.studentName+'</span>' +
           '<span class="row-register">'+d.registerNo+'</span>' +
         '</div>' +
@@ -1510,10 +1208,7 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<div class="pdf-btn-row">' +
-            '<button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button>' +
-            '<button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button>' +
-          '</div>' +
+          '<div class="pdf-btn-row"><button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button></div>' +
           (idButtons ? ('<div class="pdf-btn-row">' + idButtons + '</div>') : '') +
           (certButtons ? ('<div class="pdf-btn-row">' + certButtons + '</div>') : '') +
         '</div>' +
@@ -1521,7 +1216,6 @@ function renderDiplomaList(filtered, isFiltering){
   });
   box.innerHTML = html;
 }
-
 function toggleDetails(i){
   expandedRows[i] = !expandedRows[i];
   var details = document.getElementById('details-'+i);
@@ -1531,48 +1225,31 @@ function toggleDetails(i){
   if(icon){ icon.classList.toggle('open'); }
   if(row){ row.classList.toggle('closed'); }
 }
-
 function deleteDiploma(i){
   var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
-    fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){
-      return loadAllDiplomas();
-    }).catch(function(){
-      alert(t('msgDeleteError'));
-    });
+    fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
-
 var securityLogsVisible = false;
 var cachedSecurityLogEntries = [];
-
 function toggleSecurityLogs(){
   securityLogsVisible = !securityLogsVisible;
   var section = document.getElementById('security-logs-section');
-  if(securityLogsVisible){
-    section.classList.remove('hidden');
-    loadSecurityLogs();
-  } else {
-    section.classList.add('hidden');
-  }
+  if(securityLogsVisible){ section.classList.remove('hidden'); loadSecurityLogs(); }
+  else { section.classList.add('hidden'); }
 }
-
 function logTypeBadge(type){
   if(type === 'download') return '<span class="log-badge log-badge-download">'+t('logTypeDownload')+'</span>';
   if(type === 'login_success') return '<span class="log-badge log-badge-success">'+t('logTypeLoginSuccess')+'</span>';
   if(type === 'login_failed') return '<span class="log-badge log-badge-failed">'+t('logTypeLoginFailed')+'</span>';
   return '';
 }
-
 function loadSecurityLogs(){
   var listEl = document.getElementById('security-logs-list');
   listEl.innerHTML = '<div class="spinner"></div>';
   fetch(FIREBASE_URL + '/securityLogs.json').then(function(res){ return res.json(); }).then(function(data){
-    if(!data){
-      cachedSecurityLogEntries = [];
-      listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
-      return;
-    }
+    if(!data){ cachedSecurityLogEntries = []; listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>'; return; }
     var entries = Object.values(data).sort(function(a,b){ return new Date(b.timestamp) - new Date(a.timestamp); });
     cachedSecurityLogEntries = entries;
     var html = '';
@@ -1580,48 +1257,26 @@ function loadSecurityLogs(){
       var dt = new Date(entry.timestamp);
       var dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
       var detail = '';
-      if(entry.type === 'download'){
-        detail = '<strong>'+(entry.studentName||'')+'</strong> — '+(entry.registerNo||'')+' — '+(entry.lang||'tr').toUpperCase();
-      }
+      if(entry.type === 'download'){ detail = '<strong>'+(entry.studentName||'')+'</strong> — '+(entry.registerNo||'')+' — '+(entry.lang||'tr').toUpperCase(); }
       var location = [entry.city, entry.country].filter(Boolean).join(', ');
-      html += '<div class="log-item">'+logTypeBadge(entry.type)+detail+
-        '<div class="log-ip">IP: '+(entry.ip||'-')+(location?(' — '+location):'')+' — '+dateStr+'</div></div>';
+      html += '<div class="log-item">'+logTypeBadge(entry.type)+detail+'<div class="log-ip">IP: '+(entry.ip||'-')+(location?(' — '+location):'')+' — '+dateStr+'</div></div>';
     });
     listEl.innerHTML = html || '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
-  }).catch(function(){
-    listEl.innerHTML = '<p style="text-align:center;color:#c62828;">'+t('logsLoadError')+'</p>';
-  });
+  }).catch(function(){ listEl.innerHTML = '<p style="text-align:center;color:#c62828;">'+t('logsLoadError')+'</p>'; });
 }
-
 function clearSecurityLogs(){
   if(!confirm(t('confirmClearLogs'))) return;
-  fetch(FIREBASE_URL + '/securityLogs.json', {method:'DELETE'}).then(function(){
-    cachedSecurityLogEntries = [];
-    loadSecurityLogs();
-  }).catch(function(){
-    alert(t('msgDeleteError'));
-  });
+  fetch(FIREBASE_URL + '/securityLogs.json', {method:'DELETE'}).then(function(){ cachedSecurityLogEntries = []; loadSecurityLogs(); }).catch(function(){ alert(t('msgDeleteError')); });
 }
-
 function exportLogsAsPDF(){
-  if(!cachedSecurityLogEntries || cachedSecurityLogEntries.length === 0){
-    alert(t('noLogsYet'));
-    return;
-  }
+  if(!cachedSecurityLogEntries || cachedSecurityLogEntries.length === 0){ alert(t('noLogsYet')); return; }
   var jsPDF = window.jspdf.jsPDF;
   var doc = new jsPDF('p','mm','a4');
-  var pageW = 210;
-  var y = 20;
-
+  var pageW = 210, y = 20;
   doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(211,47,47);
-  doc.text(turkishSafe(t('securityLogsHeading')), pageW/2, y, {align:'center'});
-  y += 8;
-  doc.setDrawColor(211,47,47); doc.setLineWidth(0.4);
-  doc.line(15, y, 195, y);
-  y += 8;
-
+  doc.text(turkishSafe(t('securityLogsHeading')), pageW/2, y, {align:'center'}); y += 8;
+  doc.setDrawColor(211,47,47); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 8;
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,60,60);
-
   cachedSecurityLogEntries.forEach(function(entry){
     if(y > 280){ doc.addPage(); y = 20; }
     var dt = new Date(entry.timestamp);
@@ -1629,36 +1284,24 @@ function exportLogsAsPDF(){
     var typeLabel = entry.type === 'download' ? 'DOWNLOAD' : (entry.type === 'login_success' ? 'LOGIN OK' : 'LOGIN FAIL');
     var line1 = '['+typeLabel+'] '+dateStr;
     var line2 = 'IP: '+(entry.ip||'-')+'  Location: '+[entry.city, entry.country].filter(Boolean).join(', ');
-    if(entry.type === 'download'){
-      line2 += '  Student: '+(entry.studentName||'-')+'  Reg: '+(entry.registerNo||'-')+'  Lang: '+(entry.lang||'-').toUpperCase();
-    }
-    doc.setFont('helvetica','bold');
-    doc.text(turkishSafe(line1), 15, y);
-    doc.setFont('helvetica','normal');
-    doc.text(turkishSafe(line2), 15, y+5);
-    doc.setDrawColor(230,230,230); doc.setLineWidth(0.2);
-    doc.line(15, y+8, 195, y+8);
+    if(entry.type === 'download'){ line2 += '  Student: '+(entry.studentName||'-')+'  Reg: '+(entry.registerNo||'-')+'  Lang: '+(entry.lang||'-').toUpperCase(); }
+    doc.setFont('helvetica','bold'); doc.text(turkishSafe(line1), 15, y);
+    doc.setFont('helvetica','normal'); doc.text(turkishSafe(line2), 15, y+5);
+    doc.setDrawColor(230,230,230); doc.setLineWidth(0.2); doc.line(15, y+8, 195, y+8);
     y += 13;
   });
-
   doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
-
 document.addEventListener('DOMContentLoaded', function(){
   applyStaticLanguage();
-
   var searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
   var passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
   checkLockoutStatus();
-
   var urlParams = new URLSearchParams(window.location.search);
   var regParam = urlParams.get('reg');
-  if(regParam && searchInput){
-    searchInput.value = regParam;
-    searchDiploma();
-  }
+  if(regParam && searchInput){ searchInput.value = regParam; searchDiploma(); }
 });
 </script>
 </body>
