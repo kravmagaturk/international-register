@@ -35,6 +35,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .btn-pdf-en:hover{background:#0d47a1;}
 .btn-id{background:#6a1b9a;}
 .btn-id:hover{background:#4a148c;}
+.btn-cert{background:#b8860b;}
+.btn-cert:hover{background:#8b6508;}
 .btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
 .btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
 .btn-small{padding:7px 12px;font-size:12px;}
@@ -206,6 +208,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
               <option value="Güvenlik">Security</option>
+              <option value="Teşekkür Belgesi">Certificate of Appreciation</option>
             </select>
           </div>
           <div class="form-group hidden" id="sub-level-group">
@@ -258,6 +261,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
               <option value="Güvenlik">Security</option>
+              <option value="Teşekkür Belgesi">Certificate of Appreciation</option>
             </select>
           </div>
           <div id="result-count" class="result-count"></div>
@@ -299,11 +303,13 @@ var levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
-  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[], 'Güvenlik':[]
+  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[]
 };
 
 // Kimlik indirme yetkisi olan seviyeler
 var ID_ELIGIBLE_LEVELS = ['Instructor', 'Asistan', 'Güvenlik', 'Close Protection'];
+// Teşekkür belgesi indirme yetkisi
+var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
 
 var UI_I18N = {
   tr: {
@@ -321,6 +327,7 @@ var UI_I18N = {
     statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
     btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
     btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:',
     placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
     errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
@@ -373,6 +380,7 @@ var UI_I18N = {
     statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
     btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
     btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:',
     placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
     errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
@@ -509,16 +517,32 @@ var PDF_I18N = {
   }
 };
 
-// Kimlik kartı için başlık ve rol çevirileri
 var ID_I18N = {
   tr: { title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
   en: { title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
 };
 
-// Kimlik kartındaki "rol" satırı - seviyeye göre çevrilir
 var ID_ROLE_LABELS = {
   tr: { 'Instructor':'Antrenör', 'Asistan':'Asistan', 'Güvenlik':'Güvenlik', 'Close Protection':'Yakın Koruma' },
   en: { 'Instructor':'Instructor', 'Asistan':'Assistant', 'Güvenlik':'Security', 'Close Protection':'Close Protection' }
+};
+
+// Teşekkür Belgesi metinleri (kendi yorumumuz, örnek görselden esinlenildi - kopya değil)
+var CERT_I18N = {
+  tr: {
+    title:'TEŞEKKÜR BELGESİ', subtitle:'TAKDİR SERTİFİKASI',
+    presentedTo:'Bu belge gururla asagidaki kisiye sunulmustur:',
+    thanksLine1:'Krav Maga Turk Academy bunyesinde gosterdigi ozveri, disiplin, sadakat ve katkilarindan dolayi kendisine tesekkur ederiz.',
+    thanksLine2:'"Her zaman disiplin, kararlilik ve mucadele ruhuyla ileri..."',
+    dateLabel:'TARIH:', signatureName:'BULENT CETIN', signatureTitle:'Antrenör', locale:'tr-TR'
+  },
+  en: {
+    title:'CERTIFICATE OF', subtitle:'APPRECIATION',
+    presentedTo:'This certificate is proudly presented to:',
+    thanksLine1:'We would like to thank them for their dedication, discipline, loyalty, and contributions within the Krav Maga Turk Academy.',
+    thanksLine2:'"Always forward with discipline, determination, and fighting spirit..."',
+    dateLabel:'DATE:', signatureName:'BULENT CETIN', signatureTitle:'Instructor', locale:'en-US'
+  }
 };
 
 function turkishSafe(text){
@@ -535,6 +559,9 @@ function buildQrUrl(registerNo){
 
 function isIdEligibleLevel(level){
   return ID_ELIGIBLE_LEVELS.indexOf(level) !== -1;
+}
+function isCertEligibleLevel(level){
+  return level === CERT_ELIGIBLE_LEVEL;
 }
 
 // ============================================
@@ -740,6 +767,21 @@ function renderSearchResult(d){
     '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
     '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
+
+  var extraButtons = '';
+  if(isIdEligibleLevel(d.level)){
+    extraButtons += '<div class="pdf-btn-row" style="margin-top:8px;">' +
+      '<button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'tr\')">'+t('btnIdTr')+'</button>' +
+      '<button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'en\')">'+t('btnIdEn')+'</button>' +
+    '</div>';
+  }
+  if(isCertEligibleLevel(d.level)){
+    extraButtons += '<div class="pdf-btn-row" style="margin-top:8px;">' +
+      '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'tr\')">'+t('btnCertTr')+'</button>' +
+      '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'en\')">'+t('btnCertEn')+'</button>' +
+    '</div>';
+  }
+
   var html = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' +
     photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
@@ -753,7 +795,9 @@ function renderSearchResult(d){
     '<div class="pdf-btn-row" style="margin-top:15px;">' +
       '<button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button>' +
       '<button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button>' +
-    '</div></div>';
+    '</div>' +
+    extraButtons +
+  '</div>';
   resultDiv.innerHTML = html;
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
@@ -897,7 +941,6 @@ function downloadPDF(record, lang){
 
 // ============================================
 // KİMLİK KARTI - Antrenör/Asistan/Güvenlik/Yakın Koruma için
-// Sınırsız çerçevesiz, sade tasarım, turkishSafe her metinde uygulanıyor
 // ============================================
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
@@ -966,6 +1009,111 @@ function downloadInstructorID(record, lang){
 
       doc.save('kimlik-' + d.registerNo + '-' + lang + '.pdf');
       logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'instructor_id' });
+    }, 200);
+  });
+}
+
+// ============================================
+// TEŞEKKÜR BELGESİ - Altın çerçeveli, isim+tarih otomatik (TR/EN)
+// ============================================
+function downloadAppreciationCertificate(record, lang){
+  lang = lang || 'tr';
+  if(!record) return;
+  var d = record;
+  var C = CERT_I18N[lang] || CERT_I18N.tr;
+
+  prepareLogoBase64().then(function(logoData){
+    var jsPDF = window.jspdf.jsPDF;
+    var pageW = 297, pageH = 210;
+    var doc = new jsPDF('l','mm','a4');
+
+    // Arka plan - hafif krem tonu + filigran
+    doc.setFillColor(253,251,245);
+    doc.rect(0,0,pageW,pageH,'F');
+    doc.addImage(generateDiagonalTextLayer(1400,990), 'PNG', 0, 0, pageW, pageH);
+
+    // Altın çift çerçeve
+    var gold = [180,140,20];
+    doc.setDrawColor(gold[0],gold[1],gold[2]);
+    doc.setLineWidth(1.2);
+    doc.rect(8, 8, pageW-16, pageH-16);
+    doc.setLineWidth(0.4);
+    doc.rect(12, 12, pageW-24, pageH-24);
+
+    // Köşe süsleri (basit çizgi motifleri)
+    function cornerAccent(x,y,dx,dy){
+      doc.setDrawColor(gold[0],gold[1],gold[2]);
+      doc.setLineWidth(1.5);
+      doc.line(x, y, x+dx*18, y);
+      doc.line(x, y, x, y+dy*18);
+    }
+    cornerAccent(16,16,1,1);
+    cornerAccent(pageW-16,16,-1,1);
+    cornerAccent(16,pageH-16,1,-1);
+    cornerAccent(pageW-16,pageH-16,-1,-1);
+
+    // Başlık
+    doc.setFont('helvetica','bold'); doc.setFontSize(30); doc.setTextColor(20,30,90);
+    doc.text(turkishSafe(C.title), pageW/2, 42, {align:'center'});
+    doc.setFontSize(16); doc.setTextColor(40,60,140);
+    doc.text(turkishSafe(C.subtitle), pageW/2, 52, {align:'center'});
+
+    // Sunuş cümlesi
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(50,50,50);
+    doc.text(turkishSafe(C.presentedTo), pageW/2, 66, {align:'center'});
+
+    // İsim (otomatik)
+    doc.setFont('helvetica','bolditalic'); doc.setFontSize(30); doc.setTextColor(20,30,120);
+    doc.text(turkishSafe(d.studentName), pageW/2, 86, {align:'center'});
+
+    // Alt çizgi
+    doc.setDrawColor(20,30,120); doc.setLineWidth(0.4);
+    doc.line(pageW/2-55, 91, pageW/2+55, 91);
+
+    // Teşekkür metni (iki satır, ortalanmış, kelime kaydırma)
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
+    var line1 = doc.splitTextToSize(turkishSafe(C.thanksLine1), pageW-90);
+    doc.text(line1, pageW/2, 105, {align:'center'});
+    doc.setFont('helvetica','bolditalic'); doc.setFontSize(9);
+    doc.text(turkishSafe(C.thanksLine2), pageW/2, 105 + (line1.length*5) + 6, {align:'center'});
+
+    // Tarih (otomatik, sağ üst alan)
+    var dateStr = new Date().toLocaleDateString(C.locale || 'tr-TR');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(70,70,70);
+    doc.text(turkishSafe(C.dateLabel) + ' ' + dateStr, pageW-70, 130);
+
+    // QR kod (sol alt)
+    var qrTemp = document.getElementById('pdf-qr-hidden');
+    qrTemp.innerHTML = '';
+    new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+
+    setTimeout(function(){
+      try {
+        var qrCanvas = qrTemp.querySelector('canvas');
+        if(qrCanvas){
+          var qrImgData = qrCanvas.toDataURL('image/png');
+          doc.addImage(qrImgData, 'PNG', 30, 155, 28, 28);
+        }
+      } catch(e){}
+
+      // Bizim logomuz (orta alt, madalya yerine)
+      if(logoData){
+        drawCircularImage(doc, logoData, pageW/2, 172, 16);
+      }
+
+      // İmza alanı (sağ alt) - Bülent Çetin
+      doc.setDrawColor(50,50,50); doc.setLineWidth(0.3);
+      doc.line(pageW-95, 172, pageW-25, 172);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
+      doc.text(turkishSafe(C.signatureName), pageW-60, 179, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+      doc.text(turkishSafe(C.signatureTitle), pageW-60, 185, {align:'center'});
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(140,140,140);
+      doc.text('© Krav Maga Turk Academy - Register No: ' + turkishSafe(d.registerNo), pageW/2, pageH-12, {align:'center'});
+
+      doc.save('tesekkur-belgesi-' + d.registerNo + '-' + lang + '.pdf');
+      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'appreciation_certificate' });
     }, 200);
   });
 }
@@ -1336,6 +1484,11 @@ function renderDiplomaList(filtered, isFiltering){
       idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button>' +
                   '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
     }
+    var certButtons = '';
+    if(isCertEligibleLevel(d.level)){
+      certButtons = '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'tr\')">'+t('btnCertTr')+'</button>' +
+                    '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'en\')">'+t('btnCertEn')+'</button>';
+    }
 
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1362,6 +1515,7 @@ function renderDiplomaList(filtered, isFiltering){
             '<button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button>' +
           '</div>' +
           (idButtons ? ('<div class="pdf-btn-row">' + idButtons + '</div>') : '') +
+          (certButtons ? ('<div class="pdf-btn-row">' + certButtons + '</div>') : '') +
         '</div>' +
       '</div>';
   });
