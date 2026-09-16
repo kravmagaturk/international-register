@@ -925,12 +925,12 @@ function adminLogin(){
 }
 async function loadAllDiplomas() {
         try {
-            if (!currentUser) {
+            if (!currentAdminUser) {
                 diplomaData = [];
                 renderDiplomaList();
                 return;
             }
-            const token = await currentUser.getIdToken(true);
+            const token = await currentAdminUser.getIdToken(true);
             const response = await fetch(`${FIREBASE_URL}/diplomaData.json?auth=${encodeURIComponent(token)}`);
             if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
             const data = await response.json();
