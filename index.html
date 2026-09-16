@@ -705,93 +705,140 @@ function downloadPDF(record, lang){
   lang = lang || 'tr';
   if(!record) return;
   var d = record;
-  var T = PDF_I18N[lang] || PDF_I18N.tr;
+  var isTR = lang === 'tr';
 
   prepareLogoBase64().then(function(logoData){
     var jsPDF = window.jspdf.jsPDF;
-    var doc = new jsPDF('p','mm','a4');
-    var pageW = 210, pageH = 297;
+    var doc = new jsPDF('l','mm','a4');
+    var W = 297, H = 210;
 
-    doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, pageW, pageH);
-    if(logoData){ drawWatermarkLogo(doc, logoData, pageW/2, pageH/2, 75, 0.08); }
+    // Warm white certificate paper
+    doc.setFillColor(252,251,248);
+    doc.rect(0,0,W,H,'F');
 
-    var emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
-    var qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
-    var photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
-    var dLabelY = 138, dNumberY = 146, titleY = 160, subtitleY = 167, dashY = 165.5;
-    var rowStartY = 185, rowStep = 10, footerY = 262, footerDashY = 260.5, legal1Y = 272, legal2Y = 280;
+    // Very light repeating KRAV MAGA background
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(239,239,237);
+    for(var yy=24; yy<H-10; yy+=28){
+      for(var xx=-10; xx<W; xx+=62){
+        doc.text('KRAV MAGA', xx, yy, {angle:32});
+      }
+    }
 
-    if(logoData){ drawCircularImage(doc, logoData, emCx, emCy, emR); }
-    else { doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20); doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'}); }
+    // Large faded academy logo watermark in center
+    if(logoData){
+      try { drawWatermarkLogo(doc, logoData, W/2, H/2+4, 92, 0.055); } catch(e){}
+    }
 
+    // Premium double frame: black + Krav Maga red
+    doc.setDrawColor(25,25,25); doc.setLineWidth(1.0);
+    doc.rect(8,8,W-16,H-16);
+    doc.setDrawColor(211,47,47); doc.setLineWidth(0.55);
+    doc.rect(12,12,W-24,H-24);
+    doc.setDrawColor(25,25,25); doc.setLineWidth(0.18);
+    doc.rect(14.5,14.5,W-29,H-29);
+
+    // Corner accents
+    function corner(x,y,sx,sy){
+      doc.setDrawColor(211,47,47); doc.setLineWidth(1.4);
+      doc.line(x,y,x+sx*17,y); doc.line(x,y,x,y+sy*17);
+      doc.setDrawColor(25,25,25); doc.setLineWidth(0.5);
+      doc.line(x+sx*3,y+sy*3,x+sx*13,y+sy*3);
+      doc.line(x+sx*3,y+sy*3,x+sx*3,y+sy*13);
+    }
+    corner(18,18,1,1); corner(W-18,18,-1,1);
+    corner(18,H-18,1,-1); corner(W-18,H-18,-1,-1);
+
+    // Header logo
+    if(logoData){
+      try { drawCircularImage(doc, logoData, W/2, 31, 15); } catch(e){}
+    }
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(22,22,22);
+    doc.text('KRAV MAGA TURK ACADEMY', W/2, 52, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(110,110,110);
+    doc.text('INTERNATIONAL REGISTRATION SYSTEM', W/2, 58, {align:'center'});
+    doc.setDrawColor(211,47,47); doc.setLineWidth(0.8);
+    doc.line(W/2-42,62,W/2+42,62);
+
+    // Certificate title
+    doc.setFont('helvetica','bold'); doc.setFontSize(23); doc.setTextColor(211,47,47);
+    doc.text(isTR ? 'DIPLOMA' : 'CERTIFICATE', W/2, 78, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(85,85,85);
+    doc.text(isTR ? 'Bu belge asagida bilgileri bulunan kisiye verilmistir.' :
+                    'This certificate is awarded to the person identified below.',
+             W/2, 86, {align:'center'});
+
+    // Student name - main focal point
+    doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(20,20,20);
+    var studentName = turkishSafe(String(d.studentName || '').toUpperCase());
+    doc.text(studentName, W/2, 104, {align:'center', maxWidth:185});
+    doc.setDrawColor(45,45,45); doc.setLineWidth(0.35);
+    doc.line(W/2-70,109,W/2+70,109);
+
+    // Level
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(211,47,47);
+    doc.text(turkishSafe(String(d.level || '').toUpperCase()), W/2, 121, {align:'center'});
+
+    // Compact photo on left
+    if(d.photo){
+      try {
+        doc.setDrawColor(50,50,50); doc.setLineWidth(0.4);
+        doc.rect(27,82,32,40);
+        doc.addImage(d.photo,'JPEG',28,83,30,38);
+      } catch(e){}
+    }
+
+    // QR on right
     var qrTemp = document.getElementById('pdf-qr-hidden');
     qrTemp.innerHTML = '';
-    new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+    new QRCode(qrTemp, {text:buildQrUrl(d.registerNo),width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
 
     setTimeout(function(){
-      try {
+      try{
         var qrCanvas = qrTemp.querySelector('canvas');
-        if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize); }
-      } catch(e){}
+        if(qrCanvas){
+          doc.addImage(qrCanvas.toDataURL('image/png'),'PNG',W-57,84,28,28);
+          doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(95,95,95);
+          doc.text(isTR ? 'Dogrulamak icin tarayin' : 'Scan to verify', W-43, 117, {align:'center'});
+        }
+      }catch(e){}
 
-      if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
-      else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'}); }
+      // Details block
+      var y=137;
+      doc.setFontSize(9.2);
+      function detail(label,value,x){
+        doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
+        doc.text(turkishSafe(label),x,y);
+        doc.setFont('helvetica','normal'); doc.setTextColor(25,25,25);
+        doc.text(turkishSafe(String(value || '-')),x,y+6);
+      }
+      detail(isTR?'Sicil No':'Register No', d.registerNo, 42);
+      detail(isTR?'Sinav Tarihi':'Exam Date', d.examDate, 104);
+      detail(isTR?'Sinav Yeri':'Exam Location', d.examLocation, 166);
+      detail(isTR?'Akademiye Giris':'Academy Entry', d.joinDate || '-', 228);
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-      var dLabel = turkishSafe(T.diplomaNo);
-      var dLabelW = doc.getTextWidth(dLabel);
-      doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
-      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-      doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
-      doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
+      // verification statement / footer
+      doc.setDrawColor(190,190,190); doc.setLineWidth(0.3);
+      doc.line(30,158,W-30,158);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(100,100,100);
+      doc.text(isTR ?
+        'Bu belgenin gecerliligi QR kod veya sicil numarasi ile online olarak dogrulanabilir.' :
+        'The validity of this certificate can be verified online using the QR code or register number.',
+        W/2,166,{align:'center'});
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
-      doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(35,35,35);
+      doc.text('KRAV MAGA TURK', W/2,178,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(125,125,125);
+      doc.text('International Registration • ' + String(d.registerNo || ''), W/2,184,{align:'center'});
+      doc.text('© 2026 Krav Maga Turk Guvenlik Danismanligi', W/2,190,{align:'center'});
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(25);
-      var w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
-      var sx = pageW/2 - (w1+w2)/2;
-      doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
-      doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
-
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-      var ccLabel = T.contactCombat;
-      var ccW = doc.getTextWidth(ccLabel);
-      doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
-      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-      doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
-      doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
-
-      var ry = rowStartY;
-      infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
-      if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
-      infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
-      infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
-      infoRow(doc, T.level, d.level, ry); ry += rowStep;
-      infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
-      var isActive = d.status !== 'pasif';
-      infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
-
-      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
-      var footerLabel = T.footer;
-      var flW = doc.getTextWidth(footerLabel);
-      doc.text(footerLabel, pageW/2, footerY, {align:'center'});
-      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-      doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
-      doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
-
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
-      var dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
-      doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
-      doc.setFontSize(7.5); doc.setTextColor(160,160,160);
-      doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
-
-      doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
-      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang });
-    }, 200);
+      doc.save('diploma-' + d.registerNo + '-' + lang + '.pdf');
+      logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
+    },220);
   });
 }
-
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
   if(!record) return;
