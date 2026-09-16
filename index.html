@@ -766,11 +766,7 @@ function downloadPDF(record, lang){
     doc.text(lvl,W/2,136,{align:'center'});
 
     // Sade alt alanlar: sadece REGISTER NO ve DATE değerleri.
-    // Şablondaki eski çizgileri temiz bir zeminle kapatıyoruz.
-    doc.setFillColor(250,249,245);
-    doc.rect(18,166,50,9,'F');
-    doc.rect(123,166,52,9,'F');
-
+    // Arka planı bozan kapatma kutuları kaldırıldı.
     doc.setFont('helvetica','bold'); doc.setFontSize(8.4); doc.setTextColor(20,20,20);
     doc.text(turkishSafe(String(d.registerNo||'-')),43,171,{align:'center'});
     doc.text(turkishSafe(String(d.examDate||'-')),149,171,{align:'center'});
