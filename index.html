@@ -946,7 +946,7 @@ async function loadAllDiplomas() {
                     }
                 });
             }
-            renderDiplomaList();
+            filterDiplomas();
         } catch (error) {
             console.error('Kayıtlar yüklenemedi:', error);
             diplomaData = [];
@@ -1093,6 +1093,10 @@ function renderStats(){
   } else { statsBox.classList.add('hidden'); }
 }
 function renderDiplomaList(filtered, isFiltering){
+  if (!Array.isArray(filtered)) {
+    filtered = diplomaData.map(function(d,i){ return {d:d, i:i}; });
+    isFiltering = false;
+  }
   var box = document.getElementById('diploma-items');
   var countBox = document.getElementById('result-count');
   if(diplomaData.length === 0){ box.innerHTML = '<p>'+t('noRecordsYet')+'</p>'; countBox.textContent = ''; return; }
