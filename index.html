@@ -724,7 +724,8 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    return loadImageAsDataURL(files[i]).catch(function(){ return attempt(i+1); });
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-3';
+    return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
 }
@@ -749,33 +750,25 @@ function downloadPDF(record, lang){
   var d=record,isTR=lang==='tr';
   Promise.all([loadTemplate('diploma'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
-    // Yeni PNG 3:2 oranında; bozulmadan yatay PDF.
     var W=297,H=198;
     var doc=new jsPDF('l','mm',[H,W]);
     doc.addImage(bg,'PNG',0,0,W,H);
 
-    // Şablondaki orta boş satır: öğrenci adı + seviye.
     doc.setTextColor(15,15,15); doc.setFont('times','bold');
     var nm=turkishSafe(String(d.studentName||'').toUpperCase());
-    fitText(doc,nm,122,24,14);
-    doc.text(nm,W/2,126,{align:'center'});
+    fitText(doc,nm,122,22,14);
+    doc.text(nm,W/2,132,{align:'center'});
 
     doc.setFont('helvetica','bold'); doc.setTextColor(185,20,20);
     var lvl=turkishSafe(String(d.level||'').toUpperCase());
     fitText(doc,lvl,100,12,8);
-    doc.text(lvl,W/2,136,{align:'center'});
+    doc.text(lvl,W/2,146,{align:'center'});
 
-    // Sade alt alanlar: sadece REGISTER NO ve DATE değerleri.
-    // Arka planı bozan kapatma kutuları kaldırıldı.
     doc.setFont('helvetica','bold'); doc.setFontSize(8.4); doc.setTextColor(20,20,20);
-    doc.text(turkishSafe(String(d.registerNo||'-')),43,171,{align:'center'});
-    doc.text(turkishSafe(String(d.examDate||'-')),149,171,{align:'center'});
-    // INSTRUCTOR altında ikinci bir isim/yazı basılmaz.
+    doc.text(turkishSafe(String(d.registerNo||'-')),43,174,{align:'center'});
+    doc.text(turkishSafe(String(d.examDate||'-')),149,174,{align:'center'});
 
-    // Şablondaki eski QR alanını temizle ve yalnızca tek canlı doğrulama QR'ı bas.
-    doc.setFillColor(250,249,245);
-    doc.rect(244,103,38,38,'F');
-    if(qr) doc.addImage(qr,'PNG',249.5,108.5,27,27);
+    if(qr) doc.addImage(qr,'PNG',249.5,110.5,28,28);
 
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
