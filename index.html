@@ -923,32 +923,35 @@ function adminLogin(){
     else if(err && err.code!=='auth/popup-closed-by-user') showLoginForm('⚠️ Google girişi başarısız: '+(err.message||err.code||''));
   }).finally(function(){ btn.disabled=false; btn.textContent='🔐 Google ile Giriş Yap'; });
 }
-function loadAllDiplomas(){
-  var box = document.getElementById('diploma-items');
-  box.innerHTML = '<div class="spinner"></div>';
-  diplomaData = [];
-  return adminFetch('/diplomaData.json').then(function(res){ return res.json(); }).then(function(data){
-    var migrations = [];
-    if(data){
-      for(var key in data){
-        var record = data[key];
-        if(record && typeof record === 'object' && record.registerNo){
-          diplomaData.push(record);
-          if(key !== record.registerNo){ migrations.push({ oldKey: key, record: record }); }
+async function loadAllDiplomas() {
+        try {
+            if (!currentUser) {
+                diplomaData = [];
+                renderDiplomaList();
+                return;
+            }
+            const token = await currentUser.getIdToken(true);
+            const response = await fetch(`${FIREBASE_URL}/diplomaData.json?auth=${encodeURIComponent(token)}`);
+            if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
+            const data = await response.json();
+
+            diplomaData = [];
+            if (data && typeof data === 'object') {
+                Object.entries(data).forEach(([key, record]) => {
+                    if (record && typeof record === 'object') {
+                        diplomaData.push({ ...record, _firebaseKey: key });
+                    }
+                });
+            }
+            renderDiplomaList();
+        } catch (error) {
+            console.error('Kayıtlar yüklenemedi:', error);
+            diplomaData = [];
+            renderDiplomaList();
+            alert('Kayıtlı öğrenciler yüklenemedi. Firebase yetkisini kontrol edin.');
         }
-      }
     }
-    var chain = Promise.resolve();
-    migrations.forEach(function(m){
-      chain = chain.then(function(){
-        return adminFetch('/diplomaData/' + m.record.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)}).then(function(){
-          return adminFetch('/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
-        }).catch(function(){});
-      });
-    });
-    return chain;
-  }).catch(function(){ diplomaData = []; }).then(function(){ expandedRows = {}; filterDiplomas(); });
-}
+
 function logout(){
   auth.signOut().finally(function(){
     diplomaData=[]; hideAllForms(); showLoginForm('');
