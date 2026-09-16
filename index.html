@@ -702,10 +702,10 @@ function downloadStudentListPDF(){
 // PDF (Standart Sertifika) - filigran logosu artık tam sayfa ortasında
 
 // === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
-// ASCII isimler tercih edilir; eski Turkce dosya adlari da yedek olarak desteklenir.
+// GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
-  diploma: ['diploma-sablonu.png','diploma-şablonu.png'],
-  honor: ['onur-sablonu.png','onur-şablonu.png']
+  diploma: ['diploma-template.png'],
+  honor: ['honor-template.png']
 };
 var templateCache = {};
 function loadImageAsDataURL(url){
