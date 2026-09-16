@@ -6,6 +6,8 @@
 <title>Krav Maga International Registration</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;}
@@ -29,6 +31,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .btn:disabled{background:#ccc;cursor:not-allowed;}
 .btn-secondary{background:#666;}
 .btn-pdf{background:#2e7d32;}
+.btn-pdf-en{background:#1565c0;}
+.btn-id{background:#6a1b9a;}
+.btn-cert{background:#b8860b;}
 .btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
 .btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
 .btn-small{padding:7px 12px;font-size:12px;}
@@ -75,8 +80,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
-.download-menu{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:8px;}
-.dl-select{padding:7px;border-radius:5px;border:1px solid #ddd;font-size:12px;background:#fff;}
+.pdf-btn-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+.pdf-btn-row .btn{margin:0;padding:6px 10px;font-size:12px;}
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;background:#fff;}
@@ -124,26 +129,18 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" fill="white" opacity="0.9"/><path d="M9 12L11 14L15 10" stroke="#d32f2f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h2 id="txt-adminLoginHeading" style="color:#d32f2f;margin:0;">Güvenli Yönetici Girişi</h2>
+          <p style="margin-top:10px;color:#777;font-size:14px;">Yönetici hesabınızla Google üzerinden giriş yapın.</p>
         </div>
-        <div class="form-group">
-          <label id="txt-lblPassword">Yönetici Şifresi:</label>
-          <div class="password-container">
-            <input type="password" id="adminPass" placeholder="Şifrenizi girin">
-            <button type="button" class="password-toggle" onclick="togglePassword('adminPass',this)">👁️</button>
-          </div>
-        </div>
-        <div style="text-align:center;"><button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button></div>
+        <div style="text-align:center;"><button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔐 Google ile Giriş Yap</button></div>
         <div id="loginMessage"></div>
-        <div class="security-notice" id="txt-securityNotice">Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.</div>
+        <div class="security-notice" id="txt-securityNotice">Yönetici erişimi Firebase Authentication ile korunmaktadır.</div>
       </div>
 
       <div id="admin-panel" class="hidden">
         <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
         <div style="margin-bottom:20px;">
           <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
-          <button class="btn" id="btn-change-password" onclick="showPasswordForm()">Şifre Değiştir</button>
           <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
-          <button class="btn btn-secondary" id="btn-student-list" onclick="exportStudentListPDF()">📋 Öğrenci Listesi (PDF)</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
 
@@ -205,23 +202,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <button class="btn btn-secondary" id="btn-cancel-add" onclick="hideAddForm()">İptal</button>
         </div>
 
-        <div id="password-form" class="hidden">
-          <h3 id="txt-pwFormHeading">Şifre Değiştir</h3>
-          <div class="form-group">
-            <label id="txt-lblCurrentPass">Mevcut Şifre:</label>
-            <div class="password-container"><input type="password" id="currentPass"><button type="button" class="password-toggle" onclick="togglePassword('currentPass',this)">👁️</button></div>
-          </div>
-          <div class="form-group">
-            <label id="txt-lblNewPass">Yeni Şifre:</label>
-            <div class="password-container"><input type="password" id="newPass"><button type="button" class="password-toggle" onclick="togglePassword('newPass',this)">👁️</button></div>
-          </div>
-          <div class="form-group">
-            <label id="txt-lblConfirmPass">Yeni Şifre Tekrar:</label>
-            <div class="password-container"><input type="password" id="confirmPass"><button type="button" class="password-toggle" onclick="togglePassword('confirmPass',this)">👁️</button></div>
-          </div>
-          <button class="btn" id="pass-btn" onclick="changePassword()">Değiştir</button>
-          <button class="btn btn-secondary" id="btn-cancel-pw" onclick="hidePasswordForm()">İptal</button>
-        </div>
+
 
         <div id="diploma-list">
           <h3 id="txt-registeredStudentsHeading" style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
@@ -258,13 +239,25 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 
 <script>
 var FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
-var MAX_ATTEMPTS = 3;
-var LOCKOUT_MINUTES = 5;
+// === FIREBASE AUTH AYARLARI ===
+// Firebase Console > Project settings > Your apps > Web app bölümündeki değerleri girin.
+var firebaseConfig = {
+  apiKey: "AIzaSyAS8VB0ikbZXuhVQNzgn_ZbQWGXExijmKA",
+  authDomain: "kravmaga-diploma.firebaseapp.com",
+  databaseURL: FIREBASE_URL,
+  projectId: "kravmaga-diploma"
+};
+// Yalnızca bu Google hesabı yönetici paneline girebilir.
+var ADMIN_EMAIL = 'bulicet@gmail.com';
+
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var googleProvider = new firebase.auth.GoogleAuthProvider();
+var currentAdminUser = null;
 var SITE_URL = 'https://kravmagaturk.github.io/international-register/';
 var lockoutTimer = null;
 
 var diplomaData = [];
-var currentPasswordHash = null;
 var currentPhotoData = '';
 var editingIndex = -1;
 var expandedRows = {};
@@ -290,13 +283,13 @@ var UI_I18N = {
     foundTitle:'✅ Kayıt Bulundu', qrLabel:'Sorgulama Linki QR Kodu',
     lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:', lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
     statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
-    docTypeDiploma:'Diploma', docTypeId:'Kimlik', docTypeCert:'Teşekkür Belgesi', btnDownload:'⬇️ İndir',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:', placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
     errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
     securityNotice:'Giriş denemeleriniz güvenlik amacıyla IP adresi ile kayıt altına alınmaktadır.',
     legalWarningLockout:'⚠️ Bu, izinsiz erişim denemesi olarak değerlendirilebilir ve yasal işlem başlatılabilir. Giriş bilgileriniz (IP adresi ve konum) kayıt altına alınmıştır.',
     adminPanelHeading:'Yönetici Paneli', btnNewRecord:'Yeni Kayıt Ekle', btnChangePassword:'Şifre Değiştir', btnSecurityLogs:'📋 Güvenlik Kayıtları', btnLogout:'Çıkış',
-    btnStudentList:'📋 Öğrenci Listesi (PDF)', studentListTitle:'Öğrenci Listesi', studentListRegNo:'Sicil No', studentListName:'Adı Soyadı', studentListTotal:'Toplam Öğrenci: {n}',
     securityLogsHeading:'📋 Güvenlik ve İndirme Kayıtları', noLogsYet:'Henüz kayıt yok.', logsLoadError:'Kayıtlar yüklenemedi.',
     btnClearLogs:'🗑️ Logları Temizle', btnExportLogsPdf:'📄 Logları PDF Olarak İndir',
     confirmClearLogs:'Tüm güvenlik ve indirme kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
@@ -326,13 +319,13 @@ var UI_I18N = {
     foundTitle:'✅ Record Found', qrLabel:'Query Link QR Code',
     lblFullName:'Full Name:', lblJoinDate:'Academy Entry:', lblExamDate:'Exam Date:', lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
     statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
-    docTypeDiploma:'Diploma', docTypeId:'ID Card', docTypeCert:'Certificate', btnDownload:'⬇️ Download',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:', placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
     errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
     securityNotice:'Your login attempts are logged with your IP address for security purposes.',
     legalWarningLockout:'⚠️ This may be considered an unauthorized access attempt and could result in legal action.',
     adminPanelHeading:'Admin Panel', btnNewRecord:'Add New Record', btnChangePassword:'Change Password', btnSecurityLogs:'📋 Security Logs', btnLogout:'Log Out',
-    btnStudentList:'📋 Student List (PDF)', studentListTitle:'Student List', studentListRegNo:'Register No', studentListName:'Full Name', studentListTotal:'Total Students: {n}',
     securityLogsHeading:'📋 Security & Download Logs', noLogsYet:'No records yet.', logsLoadError:'Failed to load logs.',
     btnClearLogs:'🗑️ Clear Logs', btnExportLogsPdf:'📄 Export Logs as PDF',
     confirmClearLogs:'Are you sure you want to delete all logs? This action cannot be undone.',
@@ -382,15 +375,11 @@ function applyStaticLanguage(){
   document.getElementById('searchRegister').placeholder = t('placeholderRegisterNo');
   document.getElementById('search-btn').textContent = t('btnSearch');
   document.getElementById('txt-adminLoginHeading').textContent = t('adminLoginHeading');
-  document.getElementById('txt-lblPassword').textContent = t('lblPassword');
-  document.getElementById('adminPass').placeholder = t('placeholderPassword');
   document.getElementById('login-btn').textContent = t('btnLogin');
   document.getElementById('txt-securityNotice').textContent = t('securityNotice');
   document.getElementById('txt-adminPanelHeading').textContent = t('adminPanelHeading');
   document.getElementById('btn-new-record').textContent = t('btnNewRecord');
-  document.getElementById('btn-change-password').textContent = t('btnChangePassword');
   document.getElementById('btn-security-logs').textContent = t('btnSecurityLogs');
-  document.getElementById('btn-student-list').textContent = t('btnStudentList');
   document.getElementById('btn-logout').textContent = t('btnLogout');
   document.getElementById('txt-securityLogsHeading').textContent = t('securityLogsHeading');
   document.getElementById('btn-clear-logs').textContent = t('btnClearLogs');
@@ -410,12 +399,6 @@ function applyStaticLanguage(){
   document.getElementById('save-btn').textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
   document.getElementById('btn-cancel-add').textContent = t('btnCancel');
   document.getElementById('form-title').textContent = editingIndex >= 0 ? t('formTitleEdit') : t('formTitleNew');
-  document.getElementById('txt-pwFormHeading').textContent = t('pwFormHeading');
-  document.getElementById('txt-lblCurrentPass').textContent = t('lblCurrentPass');
-  document.getElementById('txt-lblNewPass').textContent = t('lblNewPass');
-  document.getElementById('txt-lblConfirmPass').textContent = t('lblConfirmPass');
-  document.getElementById('pass-btn').textContent = t('btnChange');
-  document.getElementById('btn-cancel-pw').textContent = t('btnCancel');
   document.getElementById('txt-registeredStudentsHeading').textContent = t('registeredStudentsHeading');
   document.getElementById('adminSearch').placeholder = t('placeholderAdminSearch');
   document.getElementById('opt-allLevels').textContent = t('allLevels');
@@ -426,46 +409,17 @@ var PDF_I18N = {
   tr:{diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:', level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif', footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.', rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875', noPhoto:'FOTOGRAF YOK', locale:'tr-TR'},
   en:{diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:', level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive', footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.', rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875', noPhoto:'NO PHOTO', locale:'en-US'}
 };
-var DIPLOMA_I18N = {
-  tr: { docTitle:'DİPLOMA', successText:'Yapılan Sınavda {DATE} Tarihinde {LEVEL} Seviyesini Alarak Başarılı Olmuştur.', signatureName:'BULENT CETIN', signatureTitle:'Antrenör' },
-  en: { docTitle:'DIPLOMA', successText:'Successfully passed the exam held on {DATE} and is hereby entitled to receive the {LEVEL} level certificate.', signatureName:'BULENT CETIN', signatureTitle:'Instructor' }
-};
-var LEVEL_MAIN_LABELS = {
-  tr: { 'Practitioner':'PRACTITIONER','Graduate':'GRADUATE','Expert':'EXPERT','Asistan':'ASİSTAN','Instructor':'ANTRENÖR','Close Protection':'YAKIN KORUMA','Representative':'TEMSİLCİ','Güvenlik':'GÜVENLİK','Teşekkür Belgesi':'TEŞEKKÜR BELGESİ' },
-  en: { 'Practitioner':'PRACTITIONER','Graduate':'GRADUATE','Expert':'EXPERT','Asistan':'ASSISTANT','Instructor':'INSTRUCTOR','Close Protection':'CLOSE PROTECTION','Representative':'REPRESENTATIVE','Güvenlik':'SECURITY','Teşekkür Belgesi':'CERTIFICATE OF APPRECIATION' }
-};
-function levelDisplayLabel(level, lang){
-  var parts = (level||'').split(' Level ');
-  var main = parts[0];
-  var sub = parts[1] ? ('LEVEL ' + parts[1]) : '';
-  var dict = LEVEL_MAIN_LABELS[lang] || LEVEL_MAIN_LABELS.tr;
-  var mainLabel = dict[main] || main.toUpperCase();
-  return sub ? (mainLabel + ' ' + sub) : mainLabel;
-}
-
 var ID_I18N = {
-  tr: { title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}' },
-  en: { title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}' }
+  tr:{title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
+  en:{title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}'}
 };
 var ID_ROLE_LABELS = {
-  tr: { 'Instructor':'Antrenör', 'Asistan':'Asistan', 'Güvenlik':'Güvenlik', 'Close Protection':'Yakın Koruma' },
-  en: { 'Instructor':'Instructor', 'Asistan':'Assistant', 'Güvenlik':'Security', 'Close Protection':'Close Protection' }
+  tr:{'Instructor':'Antrenör','Asistan':'Asistan','Güvenlik':'Güvenlik','Close Protection':'Yakın Koruma'},
+  en:{'Instructor':'Instructor','Asistan':'Assistant','Güvenlik':'Security','Close Protection':'Close Protection'}
 };
 var CERT_I18N = {
-  tr: {
-    title:'TEŞEKKÜR BELGESİ', subtitle:'TAKDİR SERTİFİKASI',
-    presentedTo:'Bu belge gururla asagidaki kisiye sunulmustur:',
-    thanksLine1:'Krav Maga Turk Academy bunyesinde gosterdigi ozveri, disiplin, sadakat ve katkilarindan dolayi kendisine tesekkur ederiz.',
-    thanksLine2:'"Her zaman disiplin, kararlilik ve mucadele ruhuyla ileri..."',
-    dateLabel:'TARIH:', signatureName:'BULENT CETIN', signatureTitle:'Antrenör', locale:'tr-TR'
-  },
-  en: {
-    title:'CERTIFICATE OF', subtitle:'APPRECIATION',
-    presentedTo:'This certificate is proudly presented to:',
-    thanksLine1:'We would like to thank them for their dedication, discipline, loyalty, and contributions within the Krav Maga Turk Academy.',
-    thanksLine2:'"Always forward with discipline, determination, and fighting spirit..."',
-    dateLabel:'DATE:', signatureName:'BULENT CETIN', signatureTitle:'Instructor', locale:'en-US'
-  }
+  tr:{title:'TEŞEKKÜR BELGESİ', subtitle:'TAKDİR SERTİFİKASI', presentedTo:'Bu belge gururla asagidaki kisiye sunulmustur:', thanksLine1:'Krav Maga Turk Academy bunyesinde gosterdigi ozveri, disiplin, sadakat ve katkilarindan dolayi kendisine tesekkur ederiz.', thanksLine2:'"Her zaman disiplin, kararlilik ve mucadele ruhuyla ileri..."', dateLabel:'TARIH:', signatureName:'BULENT CETIN', signatureTitle:'Antrenör', locale:'tr-TR'},
+  en:{title:'CERTIFICATE OF', subtitle:'APPRECIATION', presentedTo:'This certificate is proudly presented to:', thanksLine1:'We would like to thank them for their dedication, discipline, loyalty, and contributions within the Krav Maga Turk Academy.', thanksLine2:'"Always forward with discipline, determination, and fighting spirit..."', dateLabel:'DATE:', signatureName:'BULENT CETIN', signatureTitle:'Instructor', locale:'en-US'}
 };
 
 function turkishSafe(text){
@@ -481,32 +435,31 @@ function getClientInfo(){
   var timeoutPromise = new Promise(function(resolve){ setTimeout(function(){ resolve(null); }, 3000); });
   return Promise.race([fetchPromise, timeoutPromise]).then(function(data){
     if(!data) return { ip:'unknown', city:'', country:'' };
-    return { ip: data.ip || 'unknown', city: data.city || '', country: data.country_name || '' };
+    return { ip:data.ip||'unknown', city:data.city||'', country:data.country_name||'' };
   }).catch(function(){ return { ip:'unknown', city:'', country:'' }; });
 }
-function logSecurityEvent(type, details){
-  getClientInfo().then(function(client){
-    var payload = { type:type, ip:client.ip, city:client.city, country:client.country, timestamp:new Date().toISOString() };
-    if(details){ for(var k in details){ payload[k] = details[k]; } }
-    fetch(FIREBASE_URL + '/securityLogs.json', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).catch(function(){});
-  }).catch(function(){});
+function getAdminToken(){
+  if(!currentAdminUser) return Promise.reject(new Error('AUTH_REQUIRED'));
+  return currentAdminUser.getIdToken();
 }
-function sha256(text){
-  var encoder = new TextEncoder();
-  var data = encoder.encode(text);
-  return crypto.subtle.digest('SHA-256', data).then(function(hashBuffer){
-    var hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+function adminFetch(path, options){
+  options = options || {};
+  return getAdminToken().then(function(token){
+    var joiner = path.indexOf('?') >= 0 ? '&' : '?';
+    return fetch(FIREBASE_URL + path + joiner + 'auth=' + encodeURIComponent(token), options).then(function(res){
+      if(!res.ok) throw new Error('Firebase HTTP '+res.status);
+      return res;
+    });
   });
 }
-function generateRandomPassword(length){
-  length = length || 10;
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  var result = '';
-  for(var i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
-  return result;
+function logSecurityEvent(type, details){
+  if(!currentAdminUser) return Promise.resolve();
+  return getClientInfo().then(function(client){
+    var payload = {type:type, uid:currentAdminUser.uid, email:currentAdminUser.email||'', ip:client.ip, city:client.city, country:client.country, timestamp:new Date().toISOString()};
+    if(details){ for(var k in details){ payload[k]=details[k]; } }
+    return adminFetch('/securityLogs.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  }).catch(function(){});
 }
-function getStoredPasswordHash(){ return fetch(FIREBASE_URL + '/adminPasswordHash.json').then(function(res){ return res.json(); }); }
 function formatDateForDisplay(isoDate){
   var d = new Date(isoDate);
   return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
@@ -605,6 +558,8 @@ function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
     doc.restoreGraphicsState();
   } catch(e){}
 }
+
+// FİLİGRAN METNİ - dikey/yatay boşluklar sıkılaştırıldı, tam kaplama sağlandı
 function generateDiagonalTextLayer(pxW, pxH){
   pxW = pxW || 1000; pxH = pxH || 1414;
   var canvas = document.createElement('canvas');
@@ -643,31 +598,6 @@ function infoRow(doc, label, value, y, valueColor){
   doc.text(safeValue, 90, y);
 }
 
-function buildDocTypeOptions(level){
-  var html = '<option value="diploma">' + t('docTypeDiploma') + '</option>';
-  if(isIdEligibleLevel(level)) html += '<option value="id">' + t('docTypeId') + '</option>';
-  if(isCertEligibleLevel(level)) html += '<option value="cert">' + t('docTypeCert') + '</option>';
-  return html;
-}
-function buildLangOptionsHtml(){ return '<option value="tr">TR</option><option value="en">EN</option>'; }
-function handleSearchDownload(){
-  var type = document.getElementById('docType-search').value;
-  var lang = document.getElementById('docLang-search').value;
-  dispatchDownload(lastSearchedRecord, type, lang);
-}
-function handleAdminDownload(i){
-  var d = diplomaData[i];
-  var type = document.getElementById('docType-'+i).value;
-  var lang = document.getElementById('docLang-'+i).value;
-  dispatchDownload(d, type, lang);
-}
-function dispatchDownload(record, type, lang){
-  if(!record) return;
-  if(type === 'id') downloadInstructorID(record, lang);
-  else if(type === 'cert') downloadAppreciationCertificate(record, lang);
-  else downloadDiplomaPDF(record, lang);
-}
-
 function renderSearchResult(d){
   var resultDiv = document.getElementById('searchResult');
   var photoHtml = d.photo ?
@@ -675,7 +605,15 @@ function renderSearchResult(d){
     '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
 
-  var html = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
+  var extra = '';
+  if(isIdEligibleLevel(d.level)){
+    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'en\')">'+t('btnIdEn')+'</button></div>';
+  }
+  if(isCertEligibleLevel(d.level)){
+    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'en\')">'+t('btnCertEn')+'</button></div>';
+  }
+
+  resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
     '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
@@ -684,13 +622,8 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">'+t('lblExamLoc')+'</span><span>'+d.examLocation+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblLevel')+'</span><span>'+d.level+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    '<div class="download-menu">' +
-      '<select id="docType-search" class="dl-select">'+buildDocTypeOptions(d.level)+'</select>' +
-      '<select id="docLang-search" class="dl-select">'+buildLangOptionsHtml()+'</select>' +
-      '<button class="btn btn-pdf" onclick="handleSearchDownload()">'+t('btnDownload')+'</button>' +
-    '</div>' +
-  '</div>';
-  resultDiv.innerHTML = html;
+    '<div class="pdf-btn-row" style="margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button></div>' +
+    extra + '</div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
 
@@ -708,78 +641,31 @@ function searchDiploma(){
   .finally(function(){ btn.disabled = false; btn.textContent = t('btnSearch'); });
 }
 
-// ============================================
-// DİPLOMA PDF - Dikey, ÇERÇEVESİZ (güncel.jpeg referansı)
-// ============================================
-function downloadDiplomaPDF(record, lang){
+// PDF (Standart Sertifika) - filigran logosu artık tam sayfa ortasında
+function downloadPDF(record, lang){
+  record = record || lastSearchedRecord;
   lang = lang || 'tr';
   if(!record) return;
   var d = record;
   var T = PDF_I18N[lang] || PDF_I18N.tr;
-  var Dp = DIPLOMA_I18N[lang] || DIPLOMA_I18N.tr;
-  var levelLabel = levelDisplayLabel(d.level, lang);
 
   prepareLogoBase64().then(function(logoData){
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF('p','mm','a4');
     var pageW = 210, pageH = 297;
 
-    doc.setFillColor(255,255,255); doc.rect(0,0,pageW,pageH,'F');
     doc.addImage(generateDiagonalTextLayer(1000,1414), 'PNG', 0, 0, pageW, pageH);
     if(logoData){ drawWatermarkLogo(doc, logoData, pageW/2, pageH/2, 75, 0.08); }
 
-    var emY = 14, emSize = 32, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
+    var emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
+    var qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
+    var photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
+    var dLabelY = 138, dNumberY = 146, titleY = 160, subtitleY = 167, dashY = 165.5;
+    var rowStartY = 185, rowStep = 10, footerY = 262, footerDashY = 260.5, legal1Y = 272, legal2Y = 280;
+
     if(logoData){ drawCircularImage(doc, logoData, emCx, emCy, emR); }
     else { doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20); doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'}); }
 
-    var diplomaTitleY = emY + emSize + 12;
-    doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(211,47,47);
-    doc.text(turkishSafe(Dp.docTitle), pageW/2, diplomaTitleY, {align:'center'});
-
-    var photoY = diplomaTitleY + 10, photoSize = 42, photoX = (pageW-photoSize)/2;
-    if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
-    else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'}); }
-
-    var dLabelY = photoY + photoSize + 14, dNumberY = dLabelY + 8;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-    var dLabel = turkishSafe(T.diplomaNo);
-    var dLabelW = doc.getTextWidth(dLabel);
-    doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
-    doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-    doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
-    doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
-    doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
-
-    var titleY = dNumberY + 14, subtitleY = titleY + 7, dashY = titleY + 5.5;
-    doc.setFont('helvetica','bold'); doc.setFontSize(25);
-    var w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
-    var sx = pageW/2 - (w1+w2)/2;
-    doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
-    doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-    var ccLabel = T.contactCombat;
-    var ccW = doc.getTextWidth(ccLabel);
-    doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
-    doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
-    doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
-    doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
-
-    var rowStartY = subtitleY + 16, rowStep = 11;
-    var ry = rowStartY;
-    infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
-    if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
-    infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
-    infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
-    infoRow(doc, T.level, d.level, ry); ry += rowStep;
-    infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
-    var isActive = d.status !== 'pasif';
-    infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
-    var rowsEndY = ry;
-
-    var qrSize = 26, qrX = pageW - 26 - qrSize, qrY = rowsEndY + 8;
     var qrTemp = document.getElementById('pdf-qr-hidden');
     qrTemp.innerHTML = '';
     new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
@@ -790,18 +676,44 @@ function downloadDiplomaPDF(record, lang){
         if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize); }
       } catch(e){}
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(211,47,47);
-      doc.text(turkishSafe(Dp.signatureTitle.toUpperCase()), qrX+qrSize/2, qrY+qrSize+7, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
-      doc.text(turkishSafe(Dp.signatureName), qrX+qrSize/2, qrY+qrSize+12, {align:'center'});
+      if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
+      else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'}); }
 
-      var successStr = Dp.successText.replace('{DATE}', d.examDate || '-').replace('{LEVEL}', levelLabel);
-      var successY = qrY + qrSize + 22;
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30,30,30);
-      var wrapped = doc.splitTextToSize(turkishSafe(successStr), 165);
-      doc.text(wrapped, pageW/2, successY, {align:'center'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+      var dLabel = turkishSafe(T.diplomaNo);
+      var dLabelW = doc.getTextWidth(dLabel);
+      doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
+      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
+      doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
+      doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
 
-      var footerY = successY + (wrapped.length*6) + 12, footerDashY = footerY - 1.5;
+      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
+      doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(25);
+      var w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
+      var sx = pageW/2 - (w1+w2)/2;
+      doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
+      doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+      var ccLabel = T.contactCombat;
+      var ccW = doc.getTextWidth(ccLabel);
+      doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
+      doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
+      doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
+      doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
+
+      var ry = rowStartY;
+      infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
+      if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
+      infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
+      infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
+      infoRow(doc, T.level, d.level, ry); ry += rowStep;
+      infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
+      var isActive = d.status !== 'pasif';
+      infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
+
       doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
       var footerLabel = T.footer;
       var flW = doc.getTextWidth(footerLabel);
@@ -812,12 +724,12 @@ function downloadDiplomaPDF(record, lang){
 
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
       var dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
-      doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, Math.min(footerY+10, pageH-16), {align:'center'});
+      doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
       doc.setFontSize(7.5); doc.setTextColor(160,160,160);
-      doc.text(turkishSafe(T.rights), pageW/2, Math.min(footerY+17, pageH-9), {align:'center'});
+      doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
 
-      doc.save('diploma-' + d.registerNo + '-' + lang + '.pdf');
-      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'diploma' });
+      doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
+      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang });
     }, 200);
   });
 }
@@ -880,9 +792,6 @@ function downloadInstructorID(record, lang){
   });
 }
 
-// ============================================
-// TEŞEKKÜR BELGESİ - Altın çerçeve, alt blok YUKARI ÇEKİLDİ (çakışma yok)
-// ============================================
 function downloadAppreciationCertificate(record, lang){
   lang = lang || 'tr';
   if(!record) return;
@@ -908,33 +817,30 @@ function downloadAppreciationCertificate(record, lang){
     }
     cornerAccent(16,16,1,1); cornerAccent(pageW-16,16,-1,1); cornerAccent(16,pageH-16,1,-1); cornerAccent(pageW-16,pageH-16,-1,-1);
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(26); doc.setTextColor(20,30,90);
-    doc.text(turkishSafe(C.title), pageW/2, 34, {align:'center'});
-    doc.setFontSize(14); doc.setTextColor(40,60,140);
-    doc.text(turkishSafe(C.subtitle), pageW/2, 43, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(30); doc.setTextColor(20,30,90);
+    doc.text(turkishSafe(C.title), pageW/2, 42, {align:'center'});
+    doc.setFontSize(16); doc.setTextColor(40,60,140);
+    doc.text(turkishSafe(C.subtitle), pageW/2, 52, {align:'center'});
 
-    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(50,50,50);
-    doc.text(turkishSafe(C.presentedTo), pageW/2, 55, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(50,50,50);
+    doc.text(turkishSafe(C.presentedTo), pageW/2, 66, {align:'center'});
 
-    doc.setFont('helvetica','bolditalic'); doc.setFontSize(30); doc.setTextColor(20,30,120);
-    doc.text(turkishSafe(d.studentName), pageW/2, 72, {align:'center'});
+    doc.setFont('helvetica','bolditalic'); doc.setFontSize(34); doc.setTextColor(20,30,120);
+    doc.text(turkishSafe(d.studentName), pageW/2, 86, {align:'center'});
 
     doc.setDrawColor(20,30,120); doc.setLineWidth(0.4);
-    doc.line(pageW/2-55, 77, pageW/2+55, 77);
+    doc.line(pageW/2-55, 91, pageW/2+55, 91);
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(40,40,40);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
     var line1 = doc.splitTextToSize(turkishSafe(C.thanksLine1), pageW-90);
-    doc.text(line1, pageW/2, 88, {align:'center'});
-    var afterLine1Y = 88 + (line1.length*4.5) + 5;
-    doc.setFont('helvetica','bolditalic'); doc.setFontSize(8);
-    doc.text(turkishSafe(C.thanksLine2), pageW/2, afterLine1Y, {align:'center'});
+    doc.text(line1, pageW/2, 105, {align:'center'});
+    doc.setFont('helvetica','bolditalic'); doc.setFontSize(9);
+    doc.text(turkishSafe(C.thanksLine2), pageW/2, 105 + (line1.length*5) + 6, {align:'center'});
 
     var dateStr = new Date().toLocaleDateString(C.locale || 'tr-TR');
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(70,70,70);
-    doc.text(turkishSafe(C.dateLabel) + ' ' + dateStr, pageW-70, afterLine1Y + 12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(70,70,70);
+    doc.text(turkishSafe(C.dateLabel) + ' ' + dateStr, pageW-70, 130);
 
-    // Alt blok (QR sol, logo orta, imza sağ) - yukarı çekildi
-    var bottomRowY = 128;
     var qrTemp = document.getElementById('pdf-qr-hidden');
     qrTemp.innerHTML = '';
     new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
@@ -942,75 +848,25 @@ function downloadAppreciationCertificate(record, lang){
     setTimeout(function(){
       try {
         var qrCanvas = qrTemp.querySelector('canvas');
-        if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 32, bottomRowY, 24, 24); }
+        if(qrCanvas){ doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 30, 155, 28, 28); }
       } catch(e){}
 
-      if(logoData){ drawCircularImage(doc, logoData, pageW/2, bottomRowY+12, 13); }
+      if(logoData){ drawCircularImage(doc, logoData, pageW/2, 172, 16); }
 
       doc.setDrawColor(50,50,50); doc.setLineWidth(0.3);
-      doc.line(pageW-95, bottomRowY+12, pageW-25, bottomRowY+12);
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20,20,20);
-      doc.text(turkishSafe(C.signatureName), pageW-60, bottomRowY+18, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
-      doc.text(turkishSafe(C.signatureTitle), pageW-60, bottomRowY+23, {align:'center'});
+      doc.line(pageW-95, 172, pageW-25, 172);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
+      doc.text(turkishSafe(C.signatureName), pageW-60, 179, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+      doc.text(turkishSafe(C.signatureTitle), pageW-60, 185, {align:'center'});
 
-      // Footer - çerçeveden güvenli mesafede
-      var footerY = bottomRowY + 23 + 15;
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(140,140,140);
-      doc.text('© Krav Maga Turk Academy - Register No: ' + turkishSafe(d.registerNo), pageW/2, Math.min(footerY, pageH-16), {align:'center'});
+      doc.text('© Krav Maga Turk Academy - Register No: ' + turkishSafe(d.registerNo), pageW/2, pageH-12, {align:'center'});
 
       doc.save('tesekkur-belgesi-' + d.registerNo + '-' + lang + '.pdf');
       logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'appreciation_certificate' });
     }, 200);
   });
-}
-
-// ============================================
-// ÖĞRENCİ LİSTESİ PDF - Sicil No + Ad Soyad (tüm kayıtlar)
-// ============================================
-function exportStudentListPDF(){
-  if(!diplomaData || diplomaData.length === 0){ alert(t('noRecordsYet')); return; }
-  var jsPDF = window.jspdf.jsPDF;
-  var doc = new jsPDF('p','mm','a4');
-  var pageW = 210;
-  var y = 20;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(211,47,47);
-  doc.text(turkishSafe(t('studentListTitle')), pageW/2, y, {align:'center'});
-  y += 6;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,100,100);
-  doc.text(turkishSafe(t('studentListTotal',{n:diplomaData.length})), pageW/2, y, {align:'center'});
-  y += 8;
-  doc.setDrawColor(211,47,47); doc.setLineWidth(0.5); doc.line(15, y, 195, y);
-  y += 8;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(20,20,20);
-  doc.text('#', 18, y);
-  doc.text(turkishSafe(t('studentListRegNo')), 30, y);
-  doc.text(turkishSafe(t('studentListName')), 90, y);
-  y += 3;
-  doc.setDrawColor(150,150,150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
-  y += 6;
-
-  var sorted = diplomaData.slice().sort(function(a,b){ return a.registerNo.localeCompare(b.registerNo); });
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
-  sorted.forEach(function(d, idx){
-    if(y > 280){
-      doc.addPage();
-      y = 20;
-    }
-    doc.setTextColor(120,120,120);
-    doc.text(String(idx+1), 18, y);
-    doc.setTextColor(211,47,47); doc.setFont('helvetica','bold');
-    doc.text(turkishSafe(d.registerNo), 30, y);
-    doc.setTextColor(30,30,30); doc.setFont('helvetica','normal');
-    doc.text(turkishSafe(d.studentName), 90, y);
-    doc.setDrawColor(235,235,235); doc.setLineWidth(0.2);
-    doc.line(15, y+2.5, 195, y+2.5);
-    y += 8;
-  });
-
-  doc.save('ogrenci-listesi-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 
 function checkLockoutStatus(){
@@ -1037,57 +893,41 @@ function startLockoutCountdown(lockUntil){
   }
   updateDisplay(); lockoutTimer = setInterval(updateDisplay, 1000);
 }
+function showAdminPanel(user){
+  currentAdminUser = user;
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('admin-panel').classList.remove('hidden');
+  document.getElementById('loginMessage').innerHTML = '';
+  logSecurityEvent('login_success',{});
+  loadAllDiplomas();
+}
+function showLoginForm(message){
+  currentAdminUser = null;
+  document.getElementById('login-form').classList.remove('hidden');
+  document.getElementById('admin-panel').classList.add('hidden');
+  if(message) document.getElementById('loginMessage').innerHTML='<div class="message error">'+message+'</div>';
+}
 function adminLogin(){
-  if(checkLockoutStatus()) return;
-  var pass = document.getElementById('adminPass').value;
-  var msg = document.getElementById('loginMessage');
-  var btn = document.getElementById('login-btn');
-  btn.disabled = true; btn.textContent = t('loggingIn');
-
-  getStoredPasswordHash().then(function(storedHash){
-    if(!storedHash){
-      var newPass = generateRandomPassword();
-      return sha256(newPass).then(function(hash){
-        return fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hash)});
-      }).then(function(){
-        alert(t('firstSetupAlert',{pass:newPass}));
-        btn.disabled = false; btn.textContent = t('btnLogin');
-      });
+  var btn=document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='Google açılıyor...';
+  auth.signInWithPopup(googleProvider).then(function(result){
+    var user=result.user;
+    if(!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+      return logSecurityEvent('login_failed',{attemptedEmail:user&&user.email?user.email:''}).then(function(){
+        return auth.signOut();
+      }).then(function(){ throw new Error('UNAUTHORIZED_EMAIL'); });
     }
-    return sha256(pass).then(function(enteredHash){
-      if(enteredHash === storedHash){
-        currentPasswordHash = storedHash;
-        localStorage.removeItem('loginAttempts'); localStorage.removeItem('loginLockUntil');
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('admin-panel').classList.remove('hidden');
-        msg.innerHTML = '';
-        logSecurityEvent('login_success', {});
-        return loadAllDiplomas();
-      } else {
-        var attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
-        localStorage.setItem('loginAttempts', attempts);
-        logSecurityEvent('login_failed', { attemptNumber: attempts });
-        if(attempts >= MAX_ATTEMPTS){
-          var lockUntil = Date.now() + (LOCKOUT_MINUTES * 60 * 1000);
-          localStorage.setItem('loginLockUntil', lockUntil);
-          startLockoutCountdown(lockUntil);
-        } else {
-          var remaining = MAX_ATTEMPTS - attempts;
-          msg.innerHTML = '<div class="message error">'+t('errWrongPass',{n:remaining})+'</div>';
-          btn.disabled = false; btn.textContent = t('btnLogin');
-        }
-      }
-    });
-  }).catch(function(){
-    msg.innerHTML = '<div class="message error">'+t('errConnGeneric')+'</div>';
-    btn.disabled = false; btn.textContent = t('btnLogin');
-  });
+    showAdminPanel(user);
+  }).catch(function(err){
+    if(err && err.message==='UNAUTHORIZED_EMAIL') showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
+    else if(err && err.code!=='auth/popup-closed-by-user') showLoginForm('⚠️ Google girişi başarısız: '+(err.message||err.code||''));
+  }).finally(function(){ btn.disabled=false; btn.textContent='🔐 Google ile Giriş Yap'; });
 }
 function loadAllDiplomas(){
   var box = document.getElementById('diploma-items');
   box.innerHTML = '<div class="spinner"></div>';
   diplomaData = [];
-  return fetch(FIREBASE_URL + '/diplomaData.json').then(function(res){ return res.json(); }).then(function(data){
+  return adminFetch('/diplomaData.json').then(function(res){ return res.json(); }).then(function(data){
     var migrations = [];
     if(data){
       for(var key in data){
@@ -1101,8 +941,8 @@ function loadAllDiplomas(){
     var chain = Promise.resolve();
     migrations.forEach(function(m){
       chain = chain.then(function(){
-        return fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)}).then(function(){
-          return fetch(FIREBASE_URL + '/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
+        return adminFetch('/diplomaData/' + m.record.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)}).then(function(){
+          return adminFetch('/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
         }).catch(function(){});
       });
     });
@@ -1110,11 +950,9 @@ function loadAllDiplomas(){
   }).catch(function(){ diplomaData = []; }).then(function(){ expandedRows = {}; filterDiplomas(); });
 }
 function logout(){
-  document.getElementById('login-form').classList.remove('hidden');
-  document.getElementById('admin-panel').classList.add('hidden');
-  document.getElementById('adminPass').value = '';
-  diplomaData = []; currentPasswordHash = null;
-  hideAllForms();
+  auth.signOut().finally(function(){
+    diplomaData=[]; hideAllForms(); showLoginForm('');
+  });
 }
 function showAddForm(){
   editingIndex = -1;
@@ -1127,9 +965,7 @@ function hideAddForm(){
   document.getElementById('add-form').classList.add('hidden');
   clearAddForm(); editingIndex = -1;
 }
-function showPasswordForm(){ hideAllForms(); document.getElementById('password-form').classList.remove('hidden'); }
-function hidePasswordForm(){ document.getElementById('password-form').classList.add('hidden'); clearPasswordForm(); }
-function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); document.getElementById('password-form').classList.add('hidden'); }
+function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); }
 function clearAddForm(){
   document.getElementById('studentName').value='';
   document.getElementById('joinDate').value='';
@@ -1139,11 +975,6 @@ function clearAddForm(){
   document.getElementById('subLevel').value='';
   document.getElementById('sub-level-group').classList.add('hidden');
   clearPhotoPreview();
-}
-function clearPasswordForm(){
-  document.getElementById('currentPass').value='';
-  document.getElementById('newPass').value='';
-  document.getElementById('confirmPass').value='';
 }
 function updateSubLevels(){
   var level = document.getElementById('mainLevel').value;
@@ -1212,7 +1043,7 @@ function addDiploma(){
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
   }
-  fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)}).then(function(){
+  adminFetch('/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)}).then(function(){
     filterDiplomas();
     hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
@@ -1230,40 +1061,7 @@ function addDiploma(){
 function toggleStatus(index){
   var d = diplomaData[index];
   d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
-  fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
-}
-function changePassword(){
-  var cur = document.getElementById('currentPass').value;
-  var nw = document.getElementById('newPass').value;
-  var cf = document.getElementById('confirmPass').value;
-  var btn = document.getElementById('pass-btn');
-  if(!cur||!nw||!cf){ alert(t('errFillAll')); return; }
-  btn.disabled = true; btn.textContent = t('changing');
-  sha256(cur).then(function(curHash){
-    if(curHash !== currentPasswordHash){
-      alert(t('errWrongCurrentPass'));
-      btn.disabled = false; btn.textContent = t('btnChange');
-      return Promise.reject('stop');
-    }
-    if(nw.length<6){ alert(t('errPassTooShort')); btn.disabled = false; btn.textContent = t('btnChange'); return Promise.reject('stop'); }
-    if(nw !== cf){ alert(t('errPassMismatch')); btn.disabled = false; btn.textContent = t('btnChange'); return Promise.reject('stop'); }
-    return sha256(nw);
-  }).then(function(newHash){
-    if(!newHash) return;
-    return fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newHash)}).then(function(){
-      currentPasswordHash = newHash;
-      hidePasswordForm();
-      var panel = document.getElementById('admin-panel');
-      var msg = document.createElement('div');
-      msg.className='message success';
-      msg.textContent = t('msgPassChanged');
-      panel.insertBefore(msg, document.getElementById('diploma-list'));
-      setTimeout(function(){ msg.remove(); },3000);
-      btn.disabled = false; btn.textContent = t('btnChange');
-    });
-  }).catch(function(err){
-    if(err !== 'stop'){ alert(t('errPassSaveFail')); btn.disabled = false; btn.textContent = t('btnChange'); }
-  });
+  adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
 function filterDiplomas(){
   var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
@@ -1305,7 +1103,14 @@ function renderDiplomaList(filtered, isFiltering){
     var photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
-
+    var idButtons = '';
+    if(isIdEligibleLevel(d.level)){
+      idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
+    }
+    var certButtons = '';
+    if(isCertEligibleLevel(d.level)){
+      certButtons = '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'en\')">'+t('btnCertEn')+'</button>';
+    }
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
           '<span>'+statusDot+'</span>' +
@@ -1326,11 +1131,9 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<div class="download-menu">' +
-            '<select id="docType-'+i+'" class="dl-select">'+buildDocTypeOptions(d.level)+'</select>' +
-            '<select id="docLang-'+i+'" class="dl-select">'+buildLangOptionsHtml()+'</select>' +
-            '<button class="btn btn-pdf" onclick="handleAdminDownload('+i+')">'+t('btnDownload')+'</button>' +
-          '</div>' +
+          '<div class="pdf-btn-row"><button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button></div>' +
+          (idButtons ? ('<div class="pdf-btn-row">' + idButtons + '</div>') : '') +
+          (certButtons ? ('<div class="pdf-btn-row">' + certButtons + '</div>') : '') +
         '</div>' +
       '</div>';
   });
@@ -1348,7 +1151,7 @@ function toggleDetails(i){
 function deleteDiploma(i){
   var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
-    fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
+    adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
 var securityLogsVisible = false;
@@ -1368,7 +1171,7 @@ function logTypeBadge(type){
 function loadSecurityLogs(){
   var listEl = document.getElementById('security-logs-list');
   listEl.innerHTML = '<div class="spinner"></div>';
-  fetch(FIREBASE_URL + '/securityLogs.json').then(function(res){ return res.json(); }).then(function(data){
+  adminFetch('/securityLogs.json').then(function(res){ return res.json(); }).then(function(data){
     if(!data){ cachedSecurityLogEntries = []; listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>'; return; }
     var entries = Object.values(data).sort(function(a,b){ return new Date(b.timestamp) - new Date(a.timestamp); });
     cachedSecurityLogEntries = entries;
@@ -1386,7 +1189,7 @@ function loadSecurityLogs(){
 }
 function clearSecurityLogs(){
   if(!confirm(t('confirmClearLogs'))) return;
-  fetch(FIREBASE_URL + '/securityLogs.json', {method:'DELETE'}).then(function(){ cachedSecurityLogEntries = []; loadSecurityLogs(); }).catch(function(){ alert(t('msgDeleteError')); });
+  adminFetch('/securityLogs.json', {method:'DELETE'}).then(function(){ cachedSecurityLogEntries = []; loadSecurityLogs(); }).catch(function(){ alert(t('msgDeleteError')); });
 }
 function exportLogsAsPDF(){
   if(!cachedSecurityLogEntries || cachedSecurityLogEntries.length === 0){ alert(t('noLogsYet')); return; }
@@ -1413,7 +1216,13 @@ function exportLogsAsPDF(){
   doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 document.addEventListener('DOMContentLoaded', function(){
-  applyStaticLanguage();
+  auth.onAuthStateChanged(function(user){
+  if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+    currentAdminUser=user;
+  } else if(user){ auth.signOut(); }
+});
+
+applyStaticLanguage();
   var searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
   var passInput = document.getElementById('adminPass');
