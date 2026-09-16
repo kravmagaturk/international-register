@@ -750,28 +750,48 @@ function downloadPDF(record, lang){
     var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF('p','mm','a4'),W=210,H=297;
     doc.addImage(bg,'PNG',0,0,W,H);
-    // Basliklar ve degisken ogrenci bilgileri PNG'nin uzerine basilir.
-    doc.setTextColor(150,18,25); doc.setFont('times','bold'); doc.setFontSize(24);
-    doc.text(isTR?'DİPLOMA':'CERTIFICATE',W/2,77,{align:'center'});
-    doc.setTextColor(20,20,20); doc.setFont('times','bold');
-    var nm=turkishSafe(String(d.studentName||'').toUpperCase()); fitText(doc,nm,125,24,15);
-    doc.text(nm,W/2,108,{align:'center'});
-    doc.setTextColor(190,24,32); doc.setFont('helvetica','bold');
-    var lvl=turkishSafe(String(d.level||'').toUpperCase()); fitText(doc,lvl,105,14,10); doc.text(lvl,W/2,123,{align:'center'});
-    doc.setTextColor(35,35,35); doc.setFontSize(8.5);
-    function detail(label,value,x,y){doc.setFont('helvetica','bold');doc.text(turkishSafe(label),x,y,{align:'center'});doc.setFont('helvetica','normal');doc.text(turkishSafe(String(value||'-')),x,y+6,{align:'center',maxWidth:40});}
-    detail(isTR?'Sicil No':'Register No',d.registerNo,38,170);
-    detail(isTR?'Sınav Tarihi':'Exam Date',d.examDate,83,170);
-    detail(isTR?'Sınav Yeri':'Exam Venue',d.examLocation,128,170);
-    detail(isTR?'Akademiye Giriş':'Academy Entry',d.joinDate||'-',172,170);
-    if(qr)doc.addImage(qr,'PNG',W-48,211,27,27);
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(80,80,80);
-    doc.text(isTR?'Doğrulamak için tarayın':'Scan to verify',W-34.5,242,{align:'center'});
+
+    // Başlık: üst figürlerin altında, çizgilerden uzakta
+    doc.setTextColor(25,25,25); doc.setFont('times','bold'); doc.setFontSize(24);
+    doc.text(isTR?'DİPLOMA':'CERTIFICATE',W/2,99,{align:'center'});
+
+    // Öğrenci adı: orta boş alanda
+    doc.setFont('times','bold'); doc.setTextColor(15,15,15);
+    var nm=turkishSafe(String(d.studentName||'').toUpperCase());
+    fitText(doc,nm,130,23,15);
+    doc.text(nm,W/2,132,{align:'center'});
+
+    // Seviye: adın altında, kırmızı çizgiye bindirmeden
+    doc.setFont('helvetica','bold'); doc.setTextColor(55,55,55);
+    var lvl=turkishSafe(String(d.level||'').toUpperCase());
+    fitText(doc,lvl,105,13,9);
+    doc.text(lvl,W/2,148,{align:'center'});
+
+    // Kısa açıklama
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(75,75,75);
+    var desc=isTR?'Krav Maga eğitim programındaki başarı ve seviyesini belgelendirir.':
+                  'Certifies the achievement and level attained in the Krav Maga training program.';
+    doc.text(doc.splitTextToSize(turkishSafe(desc),120),W/2,158,{align:'center'});
+
+    // Alt bilgi alanı
+    function detail(label,value,x){
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.6); doc.setTextColor(45,45,45);
+      doc.text(turkishSafe(label),x,221,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
+      doc.text(turkishSafe(String(value||'-')),x,228,{align:'center',maxWidth:38});
+    }
+    detail(isTR?'Sicil No':'Register No',d.registerNo,32);
+    detail(isTR?'Sınav Tarihi':'Exam Date',d.examDate,79);
+    detail(isTR?'Sınav Yeri':'Exam Venue',d.examLocation,127);
+    detail(isTR?'Akademiye Giriş':'Academy Entry',d.joinDate||'-',174);
+
+    // Canlı QR, PNG'deki QR alanının TAM üstüne yerleşir.
+    if(qr) doc.addImage(qr,'PNG',168.5,244.0,25.0,25.0);
+
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
   }).catch(function(err){console.error(err);alert('Diploma şablonu yüklenemedi: '+err.message);});
 }
-
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
   if(!record) return;
@@ -831,22 +851,41 @@ function downloadInstructorID(record, lang){
 }
 
 function downloadAppreciationCertificate(record, lang){
-  lang=lang||'tr'; if(!record)return; var d=record,isTR=lang==='tr';
+  lang=lang||'tr'; if(!record)return;
+  var d=record,isTR=lang==='tr';
   Promise.all([loadTemplate('honor'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
-    var doc=new jsPDF('p','mm','a4'),W=210,H=297; doc.addImage(bg,'PNG',0,0,W,H);
-    doc.setTextColor(150,18,25);doc.setFont('times','bold');doc.setFontSize(isTR?20:18);
-    doc.text(isTR?'TEŞEKKÜR & ONUR BELGESİ':'APPRECIATION & HONOR',W/2,78,{align:'center'});
-    doc.setTextColor(20,20,20);doc.setFont('times','bold');
-    var nm=turkishSafe(String(d.studentName||'').toUpperCase());fitText(doc,nm,130,24,15);doc.text(nm,W/2,112,{align:'center'});
-    doc.setTextColor(65,65,65);doc.setFont('helvetica','normal');doc.setFontSize(9);
-    var msg=isTR?'Krav Maga Turk Academy bünyesinde gösterdiği özveri, disiplin ve değerli katkılarından dolayı kendisine teşekkür eder, bu belge ile onurlandırırız.':'In recognition of dedication, discipline and valuable contributions to Krav Maga Turk Academy, this certificate is presented with appreciation and honor.';
-    var lines=doc.splitTextToSize(turkishSafe(msg),125);doc.text(lines,W/2,132,{align:'center'});
-    doc.setFontSize(8.5);doc.setTextColor(35,35,35);
-    doc.setFont('helvetica','bold');doc.text(isTR?'Sicil No':'Register No',65,177,{align:'center'});doc.text(isTR?'Tarih':'Date',145,177,{align:'center'});
-    doc.setFont('helvetica','normal');doc.text(String(d.registerNo||'-'),65,184,{align:'center'});doc.text(String(d.examDate||d.joinDate||'-'),145,184,{align:'center'});
-    if(qr)doc.addImage(qr,'PNG',W-48,211,27,27);
-    doc.setFontSize(6.5);doc.setTextColor(80,80,80);doc.text(isTR?'Doğrulamak için tarayın':'Scan to verify',W-34.5,242,{align:'center'});
+    var doc=new jsPDF('p','mm','a4'),W=210,H=297;
+    doc.addImage(bg,'PNG',0,0,W,H);
+
+    doc.setTextColor(25,25,25); doc.setFont('times','bold');
+    doc.setFontSize(isTR?20:18);
+    doc.text(isTR?'TEŞEKKÜR & ONUR BELGESİ':'APPRECIATION & HONOR',W/2,99,{align:'center'});
+
+    doc.setFont('times','bold'); doc.setTextColor(15,15,15);
+    var nm=turkishSafe(String(d.studentName||'').toUpperCase());
+    fitText(doc,nm,132,23,15);
+    doc.text(nm,W/2,133,{align:'center'});
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.4); doc.setTextColor(65,65,65);
+    var msg=isTR
+      ?'Krav Maga Turk Academy bünyesinde gösterdiği özveri, disiplin ve değerli katkılarından dolayı teşekkür eder, bu belge ile onurlandırırız.'
+      :'Presented with appreciation and honor for dedication, discipline and valuable contributions to Krav Maga Turk Academy.';
+    doc.text(doc.splitTextToSize(turkishSafe(msg),126),W/2,151,{align:'center'});
+
+    function detail(label,value,x){
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.8); doc.setTextColor(45,45,45);
+      doc.text(turkishSafe(label),x,222,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
+      doc.text(turkishSafe(String(value||'-')),x,229,{align:'center',maxWidth:48});
+    }
+    detail(isTR?'Sicil No':'Register No',d.registerNo,55);
+    detail(isTR?'Tarih':'Date',d.examDate||d.joinDate||'-',105);
+    detail(isTR?'Yer':'Location',d.examLocation||'-',155);
+
+    // PNG'deki QR alanını canlı doğrulama QR'ı ile birebir kapat.
+    if(qr) doc.addImage(qr,'PNG',168.5,244.0,25.0,25.0);
+
     doc.save((isTR?'tesekkur-onur-':'appreciation-honor-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'honor'});
   }).catch(function(err){console.error(err);alert('Onur şablonu yüklenemedi: '+err.message);});
