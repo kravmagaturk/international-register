@@ -82,6 +82,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
 .pdf-btn-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
 .pdf-btn-row .btn{margin:0;padding:6px 10px;font-size:12px;}
+.pdf-output-select{min-width:190px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;}
+.admin-export-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 15px 0;}
+
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;background:#fff;}
@@ -206,6 +209,10 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 
         <div id="diploma-list">
           <h3 id="txt-registeredStudentsHeading" style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
+          <div class="admin-export-bar">
+            <button class="btn btn-pdf btn-small" onclick="downloadStudentListPDF()">📄 Toplu Öğrenci Listesi PDF</button>
+            <span style="font-size:12px;color:#777;">Sadece Ad Soyad + Sicil No</span>
+          </div>
           <div id="stats-display" class="stats-bar hidden"></div>
           <div class="search-filter-bar">
             <input type="text" id="adminSearch" placeholder="🔍 İsim veya Register No ile ara..." oninput="filterDiplomas()">
@@ -606,12 +613,6 @@ function renderSearchResult(d){
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
 
   var extra = '';
-  if(isIdEligibleLevel(d.level)){
-    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(lastSearchedRecord,\'en\')">'+t('btnIdEn')+'</button></div>';
-  }
-  if(isCertEligibleLevel(d.level)){
-    extra += '<div class="pdf-btn-row" style="margin-top:8px;"><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(lastSearchedRecord,\'en\')">'+t('btnCertEn')+'</button></div>';
-  }
 
   resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
@@ -622,7 +623,7 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">'+t('lblExamLoc')+'</span><span>'+d.examLocation+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblLevel')+'</span><span>'+d.level+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    '<div class="pdf-btn-row" style="margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button></div>' +
+    '<div style="text-align:center;margin-top:15px;"><select class="pdf-output-select" onchange="handlePublicPdfMenu(this)"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür Belgesi — Türkçe</option><option value="cert-en">Certificate — English</option>' : '') + '</select></div>' +
     extra + '</div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
@@ -639,6 +640,63 @@ function searchDiploma(){
     else { lastSearchedRecord = null; resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>'; }
   }).catch(function(){ resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>'; })
   .finally(function(){ btn.disabled = false; btn.textContent = t('btnSearch'); });
+}
+
+
+function runPdfAction(value, record){
+  if(!value || !record) return;
+  if(value === 'diploma-tr') downloadPDF(record,'tr');
+  else if(value === 'diploma-en') downloadPDF(record,'en');
+  else if(value === 'id-tr') downloadInstructorID(record,'tr');
+  else if(value === 'id-en') downloadInstructorID(record,'en');
+  else if(value === 'cert-tr') downloadAppreciationCertificate(record,'tr');
+  else if(value === 'cert-en') downloadAppreciationCertificate(record,'en');
+}
+function handlePublicPdfMenu(sel){
+  var value = sel.value; sel.selectedIndex = 0;
+  runPdfAction(value, lastSearchedRecord);
+}
+function handleAdminPdfMenu(sel, index){
+  var value = sel.value; sel.selectedIndex = 0;
+  runPdfAction(value, diplomaData[index]);
+}
+function downloadStudentListPDF(){
+  if(!diplomaData || diplomaData.length === 0){ alert('Kayıtlı öğrenci yok.'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF('p','mm','a4');
+  var pageW = 210, pageH = 297;
+  var left = 18, right = 18, y = 24;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(25,25,25);
+  doc.text('KAYITLI OGRENCI LISTESI', pageW/2, y, {align:'center'});
+  y += 8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110,110,110);
+  doc.text('Toplam: ' + diplomaData.length, pageW/2, y, {align:'center'});
+  y += 10;
+
+  function header(){
+    doc.setFillColor(235,235,235); doc.rect(left,y,pageW-left-right,8,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    doc.text('AD SOYAD', left+3, y+5.5);
+    doc.text('SICIL NO', pageW-right-3, y+5.5, {align:'right'});
+    y += 11;
+  }
+  header();
+
+  var rows = diplomaData.slice().sort(function(a,b){
+    return String(a.studentName||'').localeCompare(String(b.studentName||''),'tr');
+  });
+  rows.forEach(function(d, idx){
+    if(y > pageH-20){
+      doc.addPage(); y=18; header();
+    }
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(35,35,35);
+    doc.text(turkishSafe(String(d.studentName||'')), left+3, y);
+    doc.text(String(d.registerNo||''), pageW-right-3, y, {align:'right'});
+    doc.setDrawColor(225,225,225); doc.line(left,y+2,pageW-right,y+2);
+    y += 8;
+  });
+  doc.save('kayitli-ogrenciler-ad-soyad-sicil.pdf');
 }
 
 // PDF (Standart Sertifika) - filigran logosu artık tam sayfa ortasında
@@ -1141,9 +1199,7 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<div class="pdf-btn-row"><button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button><button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button></div>' +
-          (idButtons ? ('<div class="pdf-btn-row">' + idButtons + '</div>') : '') +
-          (certButtons ? ('<div class="pdf-btn-row">' + certButtons + '</div>') : '') +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür Belgesi — Türkçe</option><option value="cert-en">Certificate — English</option>' : '') + '</select>' +
         '</div>' +
       '</div>';
   });
