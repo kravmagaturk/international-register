@@ -705,7 +705,8 @@ function downloadStudentListPDF(){
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
   diploma: ['diploma-template.png'],
-  honor: ['honor-template.png']
+  honor: ['honor-template.png'],
+  instructorId: ['instructor-id-template.png']
 };
 var templateCache = {};
 function loadImageAsDataURL(url){
@@ -793,63 +794,94 @@ function downloadPDF(record, lang){
   }).catch(function(err){console.error(err);alert('Diploma şablonu yüklenemedi: '+err.message);});
 }
 function downloadInstructorID(record, lang){
-  lang = lang || 'tr';
-  if(!record) return;
-  var d = record;
-  var I = ID_I18N[lang] || ID_I18N.tr;
-  var roleLabel = (ID_ROLE_LABELS[lang] && ID_ROLE_LABELS[lang][d.level]) ? ID_ROLE_LABELS[lang][d.level] : d.level;
+  lang=lang||'tr'; if(!record)return;
+  var d=record,isTR=lang==='tr';
+  var roleLabel=(ID_ROLE_LABELS[lang]&&ID_ROLE_LABELS[lang][d.level])?
+    ID_ROLE_LABELS[lang][d.level]:d.level;
 
-  prepareLogoBase64().then(function(logoData){
-    var jsPDF = window.jspdf.jsPDF;
-    var cardW = 130, cardH = 82;
-    var doc = new jsPDF('l','mm',[cardH, cardW]);
+  Promise.all([
+    loadTemplate('instructorId'),
+    makeQrDataUrl(buildQrUrl(d.registerNo))
+  ]).then(function(parts){
+    var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
 
-    doc.addImage(generateDiagonalTextLayer(700,440), 'PNG', 0, 0, cardW, cardH);
-    if(logoData){ drawWatermarkLogo(doc, logoData, cardW/2, cardH/2, 30, 0.10); }
+    // PNG şablon oranına yakın yatay kimlik
+    var W=130,H=82;
+    var doc=new jsPDF('l','mm',[H,W]);
+    doc.addImage(bg,'PNG',0,0,W,H);
 
-    doc.setFillColor(211,47,47); doc.rect(0, 0, cardW, 14, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
-    doc.text(turkishSafe(I.title), cardW/2, 9.5, {align:'center'});
+    // Fotoğraf alanı
+    if(d.photo){
+      try{
+        doc.addImage(d.photo,'JPEG',5.2,27.2,28.0,39.0);
+      }catch(e){
+        try{ doc.addImage(d.photo,'PNG',5.2,27.2,28.0,39.0); }catch(e2){}
+      }
+    }
 
-    var photoX = 8, photoY = 20, photoSize = 34;
-    if(d.photo){ try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){} }
-    else { doc.setFillColor(240,240,240); doc.rect(photoX, photoY, photoSize, photoSize, 'F'); }
+    // Şablondaki örnek değişken yazıları temizleyip gerçek kayıt verisini bas.
+    // Açık gövde alanıyla uyumlu kapatma kutuları.
+    doc.setFillColor(250,250,248);
+    doc.rect(36.0,27.0,49.5,8.5,'F');   // örnek ad
+    doc.rect(36.0,40.0,49.5,8.5,'F');   // örnek rol
+    doc.rect(36.0,49.0,49.5,8.5,'F');   // örnek sicil
+    doc.rect(36.0,59.0,65.0,8.5,'F');   // örnek tarihler
 
-    var textX = photoX + photoSize + 8, textY = 27;
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(20,20,20);
-    doc.text(turkishSafe(d.studentName), textX, textY);
-    textY += 8;
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(211,47,47);
-    doc.text(turkishSafe(roleLabel), textX, textY);
-    textY += 9;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
-    doc.text(turkishSafe(I.regNo) + ':', textX, textY);
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
-    doc.text(turkishSafe(d.registerNo), textX, textY+6);
+    // Ad Soyad
+    doc.setTextColor(18,18,18);
+    doc.setFont('helvetica','bold');
+    var nm=turkishSafe(String(d.studentName||'').toUpperCase());
+    fitText(doc,nm,47,13,8.5);
+    doc.text(nm,37.0,33.0);
 
-    var qrTemp = document.getElementById('pdf-qr-hidden');
-    qrTemp.innerHTML = '';
-    new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+    // Rol
+    doc.setTextColor(205,25,25);
+    doc.setFont('helvetica','bold');
+    var role=turkishSafe(String(roleLabel||'').toUpperCase());
+    fitText(doc,role,46,12,8);
+    doc.text(role,37.0,45.5);
 
-    setTimeout(function(){
-      try {
-        var qrCanvas = qrTemp.querySelector('canvas');
-        if(qrCanvas){
-          var qrSize = 20, qrX = cardW - qrSize - 8, qrY = photoY + photoSize - qrSize;
-          doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', qrX, qrY, qrSize, qrSize);
-        }
-      } catch(e){}
+    // Sicil
+    doc.setTextColor(20,20,20);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(turkishSafe(String(d.registerNo||'')),37.0,55.0);
 
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(140,140,140);
-      var dateStr = new Date().toLocaleDateString(I.locale || 'tr-TR');
-      doc.text(turkishSafe(I.createdOn.replace('{date}', dateStr)), 8, cardH-4);
+    // Tarihler
+    var issueDate=new Date();
+    var validDate=new Date(issueDate);
+    validDate.setFullYear(validDate.getFullYear()+2);
+    var locale=isTR?'tr-TR':'en-GB';
+    var issueStr=issueDate.toLocaleDateString(locale);
+    var validStr=validDate.toLocaleDateString(locale);
 
-      doc.save('kimlik-' + d.registerNo + '-' + lang + '.pdf');
-      logSecurityEvent('download', { studentName: d.studentName, registerNo: d.registerNo, lang: lang, kind:'instructor_id' });
-    }, 200);
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.8); doc.setTextColor(70,70,70);
+    doc.text(turkishSafe(isTR?'DÜZENLEME TARİHİ':'ISSUE DATE'),37.0,61.0);
+    doc.text(turkishSafe(isTR?'GEÇERLİLİK TARİHİ':'VALID UNTIL'),67.0,61.0);
+    doc.setFontSize(8.2); doc.setTextColor(20,20,20);
+    doc.text(turkishSafe(issueStr),37.0,66.0);
+    doc.text(turkishSafe(validStr),67.0,66.0);
+
+    // Gerçek doğrulama QR'ı, şablondaki örnek QR'ın üstüne
+    if(qr){
+      doc.setFillColor(255,255,255);
+      doc.rect(106.0,43.0,20.0,23.0,'F');
+      doc.addImage(qr,'PNG',107.0,44.0,18.0,18.0);
+      doc.setFont('helvetica','bold'); doc.setFontSize(4.5); doc.setTextColor(45,45,45);
+      doc.text(isTR?'DOĞRULA / VERIFY':'VERIFY',116.0,64.0,{align:'center'});
+    }
+
+    doc.save((isTR?'kimlik-':'id-card-')+d.registerNo+'-'+lang+'.pdf');
+    logSecurityEvent('download',{
+      studentName:d.studentName,
+      registerNo:d.registerNo,
+      lang:lang,
+      kind:'instructor_id_png'
+    });
+  }).catch(function(err){
+    console.error(err);
+    alert('Kimlik şablonu yüklenemedi: '+err.message);
   });
 }
-
 function downloadAppreciationCertificate(record, lang){
   lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
