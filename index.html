@@ -700,90 +700,78 @@ function downloadStudentListPDF(){
 }
 
 // PDF (Standart Sertifika) - filigran logosu artık tam sayfa ortasında
-function downloadPDF(record, lang){
-  record = record || lastSearchedRecord;
-  lang = lang || 'tr';
-  if(!record) return;
-  var d = record, isTR = lang === 'tr';
 
-  prepareLogoBase64().then(function(logoData){
-    var jsPDF = window.jspdf.jsPDF;
-    var doc = new jsPDF('l','mm','a4'), W=297, H=210;
-
-    doc.setFillColor(252,250,245); doc.rect(0,0,W,H,'F');
-
-    // Repeating KRAV MAGA watermark
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(238,237,233);
-    for(var yy=25; yy<H; yy+=28) for(var xx=-8; xx<W; xx+=60)
-      doc.text('KRAV MAGA',xx,yy,{angle:32});
-
-    // Large faded central logo
-    if(logoData){ try{ drawWatermarkLogo(doc,logoData,W/2,H/2+5,96,0.045); }catch(e){} }
-
-    // Frames
-    doc.setDrawColor(20,20,20); doc.setLineWidth(1.0); doc.rect(7,7,W-14,H-14);
-    doc.setDrawColor(205,25,35); doc.setLineWidth(0.6); doc.rect(11,11,W-22,H-22);
-    doc.setDrawColor(35,35,35); doc.setLineWidth(0.22); doc.rect(13.5,13.5,W-27,H-27);
-
-    // Professional silhouette artwork + embossed gold medal from approved visual
-    try { doc.addImage(PREMIUM_FIGHTER_LEFT,'PNG',13,68,66,88); } catch(e){}
-    try { doc.addImage(PREMIUM_FIGHTER_RIGHT,'PNG',W-79,68,66,88); } catch(e){}
-    try { doc.addImage(PREMIUM_MEDAL,'PNG',W/2-20,8,40,37); } catch(e){}
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(15.5); doc.setTextColor(20,20,20);
-    doc.text('KRAV MAGA TURK ACADEMY',W/2,54,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(95,95,95);
-    doc.text('INTERNATIONAL REGISTRATION SYSTEM',W/2,60,{align:'center'});
-    doc.setDrawColor(205,25,35); doc.setLineWidth(0.7); doc.line(W/2-48,64,W/2+48,64);
-
-    doc.setFont('times','bold'); doc.setFontSize(26); doc.setTextColor(145,15,20);
-    doc.text(isTR?'DIPLOMA':'CERTIFICATE',W/2,79,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(55,55,55);
-    doc.text(isTR?'Bu belge asagida bilgileri bulunan kisiye verilmistir.':'This certificate is presented to:',W/2,87,{align:'center'});
-
-    doc.setFont('times','bold'); doc.setFontSize(25); doc.setTextColor(15,15,15);
-    doc.text(turkishSafe(String(d.studentName||'').toUpperCase()),W/2,104,{align:'center',maxWidth:165});
-    doc.setDrawColor(40,40,40); doc.setLineWidth(0.35); doc.line(W/2-70,109,W/2+70,109);
-    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(205,25,35);
-    doc.text(turkishSafe(String(d.level||'').toUpperCase()),W/2,120,{align:'center'});
-
-    // Details
-    var y=139;
-    function detail(label,value,x){
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(45,45,45); doc.text(turkishSafe(label),x,y,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.text(turkishSafe(String(value||'-')),x,y+6,{align:'center'});
-    }
-    detail(isTR?'Sicil No':'Register No',d.registerNo,54);
-    detail(isTR?'Sinav Tarihi':'Exam Date',d.examDate,115);
-    detail(isTR?'Sinav Yeri':'Exam Venue',d.examLocation,182);
-    detail(isTR?'Akademiye Giris':'Academy Entry',d.joinDate||'-',243);
-
-    // QR
-    var qrTemp=document.getElementById('pdf-qr-hidden'); qrTemp.innerHTML='';
-    new QRCode(qrTemp,{text:buildQrUrl(d.registerNo),width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
-    setTimeout(function(){
-      try{
-        var c=qrTemp.querySelector('canvas');
-        if(c){ doc.addImage(c.toDataURL('image/png'),'PNG',W-42,H-49,24,24); }
-      }catch(e){}
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.3); doc.setTextColor(80,80,80);
-      doc.text(isTR?'Dogrulamak icin tarayin':'Scan to verify',W-30,H-21,{align:'center'});
-
-      doc.setDrawColor(185,185,185); doc.setLineWidth(0.25); doc.line(28,157,W-28,157);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.4); doc.setTextColor(90,90,90);
-      doc.text(isTR?'Bu belgenin gecerliligi QR kod veya sicil numarasi ile online olarak dogrulanabilir.':
-                    'This certificate can be verified online using the QR code or register number.',W/2,165,{align:'center'});
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(30,30,30);
-      doc.text('KRAV MAGA TURK',W/2,178,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(110,110,110);
-      doc.text('International Registration • '+String(d.registerNo||''),W/2,184,{align:'center'});
-      doc.text(isTR?'DAHA FAZLASI BIR SPOR DEGIL • BIR YASAM BICIMIDIR':'MORE THAN A SPORT • A WAY OF LIFE',W/2,197,{align:'center'});
-
-      doc.save('diploma-'+d.registerNo+'-'+lang+'.pdf');
-      logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
-    },220);
+// === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
+// ASCII isimler tercih edilir; eski Turkce dosya adlari da yedek olarak desteklenir.
+var TEMPLATE_FILES = {
+  diploma: ['diploma-sablonu.png','diploma-şablonu.png'],
+  honor: ['onur-sablonu.png','onur-şablonu.png']
+};
+var templateCache = {};
+function loadImageAsDataURL(url){
+  return fetch(url,{cache:'no-store'}).then(function(res){
+    if(!res.ok) throw new Error(url+' bulunamadi (HTTP '+res.status+')');
+    return res.blob();
+  }).then(function(blob){
+    return new Promise(function(resolve,reject){
+      var r=new FileReader(); r.onloadend=function(){resolve(r.result);}; r.onerror=reject; r.readAsDataURL(blob);
+    });
   });
 }
+function loadTemplate(kind){
+  if(templateCache[kind]) return Promise.resolve(templateCache[kind]);
+  var files=TEMPLATE_FILES[kind]||[];
+  function attempt(i){
+    if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
+    return loadImageAsDataURL(files[i]).catch(function(){ return attempt(i+1); });
+  }
+  return attempt(0).then(function(data){templateCache[kind]=data; return data;});
+}
+function makeQrDataUrl(text){
+  return new Promise(function(resolve){
+    var el=document.getElementById('pdf-qr-hidden'); el.innerHTML='';
+    new QRCode(el,{text:text,width:360,height:360,correctLevel:QRCode.CorrectLevel.M});
+    setTimeout(function(){
+      var c=el.querySelector('canvas');
+      if(c) return resolve(c.toDataURL('image/png'));
+      var img=el.querySelector('img'); resolve(img?img.src:null);
+    },180);
+  });
+}
+function fitText(doc,text,maxWidth,startSize,minSize){
+  var size=startSize; doc.setFontSize(size);
+  while(size>minSize && doc.getTextWidth(text)>maxWidth){size-=0.5; doc.setFontSize(size);}
+  return size;
+}
+function downloadPDF(record, lang){
+  record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
+  var d=record,isTR=lang==='tr';
+  Promise.all([loadTemplate('diploma'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
+    var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF('p','mm','a4'),W=210,H=297;
+    doc.addImage(bg,'PNG',0,0,W,H);
+    // Basliklar ve degisken ogrenci bilgileri PNG'nin uzerine basilir.
+    doc.setTextColor(150,18,25); doc.setFont('times','bold'); doc.setFontSize(24);
+    doc.text(isTR?'DİPLOMA':'CERTIFICATE',W/2,77,{align:'center'});
+    doc.setTextColor(20,20,20); doc.setFont('times','bold');
+    var nm=turkishSafe(String(d.studentName||'').toUpperCase()); fitText(doc,nm,125,24,15);
+    doc.text(nm,W/2,108,{align:'center'});
+    doc.setTextColor(190,24,32); doc.setFont('helvetica','bold');
+    var lvl=turkishSafe(String(d.level||'').toUpperCase()); fitText(doc,lvl,105,14,10); doc.text(lvl,W/2,123,{align:'center'});
+    doc.setTextColor(35,35,35); doc.setFontSize(8.5);
+    function detail(label,value,x,y){doc.setFont('helvetica','bold');doc.text(turkishSafe(label),x,y,{align:'center'});doc.setFont('helvetica','normal');doc.text(turkishSafe(String(value||'-')),x,y+6,{align:'center',maxWidth:40});}
+    detail(isTR?'Sicil No':'Register No',d.registerNo,38,170);
+    detail(isTR?'Sınav Tarihi':'Exam Date',d.examDate,83,170);
+    detail(isTR?'Sınav Yeri':'Exam Venue',d.examLocation,128,170);
+    detail(isTR?'Akademiye Giriş':'Academy Entry',d.joinDate||'-',172,170);
+    if(qr)doc.addImage(qr,'PNG',W-48,211,27,27);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(80,80,80);
+    doc.text(isTR?'Doğrulamak için tarayın':'Scan to verify',W-34.5,242,{align:'center'});
+    doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
+  }).catch(function(err){console.error(err);alert('Diploma şablonu yüklenemedi: '+err.message);});
+}
+
 function downloadInstructorID(record, lang){
   lang = lang || 'tr';
   if(!record) return;
@@ -843,67 +831,25 @@ function downloadInstructorID(record, lang){
 }
 
 function downloadAppreciationCertificate(record, lang){
-  lang = lang || 'tr';
-  if(!record) return;
-  var d=record, isTR=lang==='tr';
-
-  prepareLogoBase64().then(function(logoData){
-    var jsPDF=window.jspdf.jsPDF, doc=new jsPDF('l','mm','a4'), W=297,H=210;
-    doc.setFillColor(252,250,245); doc.rect(0,0,W,H,'F');
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(239,237,233);
-    for(var yy=24;yy<H;yy+=28) for(var xx=-8;xx<W;xx+=60) doc.text('KRAV MAGA',xx,yy,{angle:32});
-    if(logoData){ try{drawWatermarkLogo(doc,logoData,W/2,H/2+8,105,0.04);}catch(e){} }
-
-    doc.setDrawColor(20,20,20); doc.setLineWidth(1); doc.rect(7,7,W-14,H-14);
-    doc.setDrawColor(205,25,35); doc.setLineWidth(.6); doc.rect(11,11,W-22,H-22);
-    doc.setDrawColor(35,35,35); doc.setLineWidth(.22); doc.rect(13.5,13.5,W-27,H-27);
-
-    // Professional silhouette artwork + embossed gold honor medal
-    try { doc.addImage(PREMIUM_FIGHTER_LEFT,'PNG',13,72,66,88); } catch(e){}
-    try { doc.addImage(PREMIUM_FIGHTER_RIGHT,'PNG',W-79,72,66,88); } catch(e){}
-    try { doc.addImage(PREMIUM_MEDAL,'PNG',W/2-20,9,40,37); } catch(e){}
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(20,20,20);
-    doc.text('KRAV MAGA TURK ACADEMY',W/2,57,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.3); doc.setTextColor(95,95,95);
-    doc.text('INTERNATIONAL REGISTRATION SYSTEM',W/2,63,{align:'center'});
-    doc.setDrawColor(205,25,35); doc.setLineWidth(.65); doc.line(W/2-47,67,W/2+47,67);
-
-    doc.setFont('times','bold'); doc.setFontSize(23); doc.setTextColor(145,15,20);
-    doc.text(isTR?'TESEKKUR VE ONUR BELGESI':'CERTIFICATE OF APPRECIATION & HONOR',W/2,83,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(55,55,55);
-    doc.text(isTR?'Krav Maga topluluguna degerli katkilari ve ozverili emekleri nedeniyle':
-                  'In recognition of valuable contributions, dedication and service to the Krav Maga community',W/2,92,{align:'center'});
-
-    doc.setFont('times','bold'); doc.setFontSize(25); doc.setTextColor(15,15,15);
-    doc.text(turkishSafe(String(d.studentName||'').toUpperCase()),W/2,110,{align:'center',maxWidth:170});
-    doc.setDrawColor(40,40,40); doc.setLineWidth(.35); doc.line(W/2-68,115,W/2+68,115);
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(55,55,55);
-    var msg=isTR?'Bu belge ile onurlandirilmistir. Gosterdiginiz emek, disiplin ve ilham verici durus icin tesekkur ederiz.':
-                 'This certificate is presented with honor and appreciation for your dedication, discipline and inspiring contribution.';
-    var lines=doc.splitTextToSize(turkishSafe(msg),150);
-    doc.text(lines,W/2,126,{align:'center'});
-
-    var qrTemp=document.getElementById('pdf-qr-hidden'); qrTemp.innerHTML='';
-    new QRCode(qrTemp,{text:buildQrUrl(d.registerNo),width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
-    setTimeout(function(){
-      try{var c=qrTemp.querySelector('canvas'); if(c)doc.addImage(c.toDataURL('image/png'),'PNG',W-42,H-49,24,24);}catch(e){}
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.3); doc.setTextColor(80,80,80);
-      doc.text(isTR?'Dogrulamak icin tarayin':'Scan to verify',W-30,H-21,{align:'center'});
-
-      doc.setDrawColor(185,185,185); doc.line(35,155,W-35,155);
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(30,30,30);
-      doc.text('KRAV MAGA TURK',W/2,170,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(110,110,110);
-      doc.text((isTR?'Sicil No: ':'Register No: ')+String(d.registerNo||''),W/2,177,{align:'center'});
-      doc.text(isTR?'DAHA FAZLASI BIR SPOR DEGIL • BIR YASAM BICIMIDIR':'MORE THAN A SPORT • A WAY OF LIFE',W/2,197,{align:'center'});
-
-      doc.save((isTR?'tesekkur-onur-':'appreciation-honor-')+d.registerNo+'-'+lang+'.pdf');
-      logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'honor'});
-    },220);
-  });
+  lang=lang||'tr'; if(!record)return; var d=record,isTR=lang==='tr';
+  Promise.all([loadTemplate('honor'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
+    var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF('p','mm','a4'),W=210,H=297; doc.addImage(bg,'PNG',0,0,W,H);
+    doc.setTextColor(150,18,25);doc.setFont('times','bold');doc.setFontSize(isTR?20:18);
+    doc.text(isTR?'TEŞEKKÜR & ONUR BELGESİ':'APPRECIATION & HONOR',W/2,78,{align:'center'});
+    doc.setTextColor(20,20,20);doc.setFont('times','bold');
+    var nm=turkishSafe(String(d.studentName||'').toUpperCase());fitText(doc,nm,130,24,15);doc.text(nm,W/2,112,{align:'center'});
+    doc.setTextColor(65,65,65);doc.setFont('helvetica','normal');doc.setFontSize(9);
+    var msg=isTR?'Krav Maga Turk Academy bünyesinde gösterdiği özveri, disiplin ve değerli katkılarından dolayı kendisine teşekkür eder, bu belge ile onurlandırırız.':'In recognition of dedication, discipline and valuable contributions to Krav Maga Turk Academy, this certificate is presented with appreciation and honor.';
+    var lines=doc.splitTextToSize(turkishSafe(msg),125);doc.text(lines,W/2,132,{align:'center'});
+    doc.setFontSize(8.5);doc.setTextColor(35,35,35);
+    doc.setFont('helvetica','bold');doc.text(isTR?'Sicil No':'Register No',65,177,{align:'center'});doc.text(isTR?'Tarih':'Date',145,177,{align:'center'});
+    doc.setFont('helvetica','normal');doc.text(String(d.registerNo||'-'),65,184,{align:'center'});doc.text(String(d.examDate||d.joinDate||'-'),145,184,{align:'center'});
+    if(qr)doc.addImage(qr,'PNG',W-48,211,27,27);
+    doc.setFontSize(6.5);doc.setTextColor(80,80,80);doc.text(isTR?'Doğrulamak için tarayın':'Scan to verify',W-34.5,242,{align:'center'});
+    doc.save((isTR?'tesekkur-onur-':'appreciation-honor-')+d.registerNo+'-'+lang+'.pdf');
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'honor'});
+  }).catch(function(err){console.error(err);alert('Onur şablonu yüklenemedi: '+err.message);});
 }
 function checkLockoutStatus(){
   var lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
