@@ -765,16 +765,21 @@ function downloadPDF(record, lang){
     fitText(doc,lvl,100,12,8);
     doc.text(lvl,W/2,136,{align:'center'});
 
-    // Alt alanlar: REGISTER NO / DATE / INSTRUCTOR.
+    // Sade alt alanlar: sadece REGISTER NO ve DATE değerleri.
+    // Şablondaki eski çizgileri temiz bir zeminle kapatıyoruz.
+    doc.setFillColor(250,249,245);
+    doc.rect(18,166,50,9,'F');
+    doc.rect(123,166,52,9,'F');
+
     doc.setFont('helvetica','bold'); doc.setFontSize(8.4); doc.setTextColor(20,20,20);
     doc.text(turkishSafe(String(d.registerNo||'-')),43,171,{align:'center'});
     doc.text(turkishSafe(String(d.examDate||'-')),149,171,{align:'center'});
-    var instructor=turkishSafe(String(d.instructor||d.instructorName||'KRAV MAGA TURK'));
-    fitText(doc,instructor,48,9,6.5);
-    doc.text(instructor,247,171,{align:'center'});
+    // INSTRUCTOR altında ikinci bir isim/yazı basılmaz.
 
-    // Canlı doğrulama QR: şablondaki sağ QR alanına.
-    if(qr) doc.addImage(qr,'PNG',249,108,27,27);
+    // Şablondaki eski QR alanını temizle ve yalnızca tek canlı doğrulama QR'ı bas.
+    doc.setFillColor(250,249,245);
+    doc.rect(244,103,38,38,'F');
+    if(qr) doc.addImage(qr,'PNG',249.5,108.5,27,27);
 
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
