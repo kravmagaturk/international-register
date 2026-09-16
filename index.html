@@ -932,8 +932,11 @@ async function loadAllDiplomas() {
             }
             const token = await currentAdminUser.getIdToken(true);
             const response = await fetch(`${FIREBASE_URL}/diplomaData.json?auth=${encodeURIComponent(token)}`);
-            if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
-            const data = await response.json();
+            const raw = await response.text();
+            if (!response.ok) {
+                throw new Error(`Firebase HTTP ${response.status}: ${raw}`);
+            }
+            const data = raw ? JSON.parse(raw) : null;
 
             diplomaData = [];
             if (data && typeof data === 'object') {
@@ -948,7 +951,7 @@ async function loadAllDiplomas() {
             console.error('Kayıtlar yüklenemedi:', error);
             diplomaData = [];
             renderDiplomaList();
-            alert('Kayıtlı öğrenciler yüklenemedi. Firebase yetkisini kontrol edin.');
+            alert('Kayıtlar yüklenemedi:\n' + (error && error.message ? error.message : String(error)));
         }
     }
 
