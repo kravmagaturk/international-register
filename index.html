@@ -707,10 +707,29 @@ function downloadRegistryInfoPDF(record){
       drawCircularImage(doc, logo, W/2, 27, 13);
     }
 
-    // Öğrenci fotoğrafı — çerçevesiz.
+    // Öğrenci fotoğrafı — oranı bozmadan, çerçevesiz.
+    // Kaydedilmiş görsel kare/kimlik kartı gibi olsa bile A4 üzerinde esnetilmez.
     if(d.photo){
-      try { doc.addImage(d.photo,'JPEG',80,48,50,58); }
-      catch(e1){ try { doc.addImage(d.photo,80,48,50,58); }catch(e2){} }
+      try {
+        var pImg = new Image();
+        pImg.onload = function(){};
+        pImg.src = d.photo;
+
+        var props = doc.getImageProperties(d.photo);
+        var maxW = 42, maxH = 42;
+        var ratio = props.width / props.height;
+        var pW = maxW, pH = maxH;
+        if(ratio >= 1){
+          pH = maxW / ratio;
+        } else {
+          pW = maxH * ratio;
+        }
+        var pX = (W - pW) / 2;
+        var pY = 55 + (maxH - pH) / 2;
+        doc.addImage(d.photo, props.fileType || 'JPEG', pX, pY, pW, pH);
+      } catch(e1){
+        try { doc.addImage(d.photo,84,55,42,42); }catch(e2){}
+      }
     }
 
     addPdfUnicodeText(doc,'DİPLOMA NO',W/2,118,{fontSize:9,bold:true,color:'#555555'});
