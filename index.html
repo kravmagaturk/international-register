@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-20';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-21';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -864,19 +864,15 @@ function downloadPDF(record, lang){
 
       var nm=String(d.studentName||'').toLocaleUpperCase('tr-TR');
       addPdfUnicodeText(doc,nm,W/2,149,{fontSize:30,bold:true,family:'Georgia'});
-      addPdfUnicodeText(doc,'SEVİYE',W/2,171,{fontSize:11,bold:true});
       var levelRaw=String(d.level||'').trim(),levelKey=levelRaw.toUpperCase();
       var levelTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
       var lvl=String(levelTR[levelKey]||levelRaw).toLocaleUpperCase('tr-TR');
-      addPdfUnicodeText(doc,lvl,W/2,185,{fontSize:20,bold:true,color:'#b9141c'});
+      addPdfUnicodeText(doc,lvl,W/2,184,{fontSize:20,bold:true,color:'#b9141c'});
 
-      addPdfUnicodeText(doc,'SİCİL NUMARASI',37,238,{fontSize:7.2,bold:true});
-      addPdfUnicodeText(doc,String(d.registerNo||'-'),37,247,{fontSize:11,bold:true});
-      addPdfUnicodeText(doc,'TARİH',174,238,{fontSize:7.2,bold:true});
-      addPdfUnicodeText(doc,String(d.examDate||'-'),174,247,{fontSize:11,bold:true});
+      addPdfUnicodeText(doc,String(d.registerNo||'-'),37,247,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,String(d.examDate||'-'),174,247,{fontSize:10.5,bold:true});
 
-      if(qr) doc.addImage(qr,'PNG',161,255,25,25);
-      addPdfUnicodeText(doc,'DOĞRULAMA',173.5,284,{fontSize:4.8,bold:true});
+      if(qr) doc.addImage(qr,'PNG',161,253,25,25);
     }else{
       // İngilizce / fallback: mevcut kodla çizilen premium tasarım.
       drawCertificateFrame(doc,W,H,logo);
@@ -904,7 +900,7 @@ function downloadPDF(record, lang){
       addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     }
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_premium_clean_v20'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_premium_clean_v21'});
   }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
 }
 function downloadInstructorID(record, lang){
