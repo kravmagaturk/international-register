@@ -974,7 +974,7 @@ function downloadPDF(record, lang){
     var mapTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
     var mapHE={'INSTRUCTOR':'מדריך','INSTRUCTOR 1':'מדריך 1','INSTRUCTOR 2':'מדריך 2','INSTRUCTOR 3':'מדריך 3','MASTER INSTRUCTOR':'מדריך ראשי','EXPERT':'מומחה','GRADUATE':'בוגר','PRACTITIONER':'מתאמן'};
     var lv=isTR?String(mapTR[lk]||lr).toLocaleUpperCase('tr-TR'):(isHE?String(mapHE[lk]||lr):lr.toUpperCase());
-    addPdfUnicodeText(doc,lv,W/2,136,{fontSize:isHE?30:19,bold:true,color:'#b9141c'});
+    addPdfUnicodeText(doc,lv,W/2,isHE?142:136,{fontSize:isHE?30:19,bold:true,color:'#b9141c'});
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
     addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:isHE?22:7.5,bold:true});
