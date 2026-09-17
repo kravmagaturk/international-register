@@ -4,19 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga International Registration</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
-/* GUNCEL_SABLON_ALT_YERLESIM_V51
-   Diploma TR/EN + Onur/Teşekkür TR/EN ortak alt alan geometrisi.
-   Şablon görseli değiştirilmez. */
-const CURRENT_CERT_TEMPLATE = 'yeni_master_2.png';
-const CURRENT_CERT_LAYOUT = Object.freeze({
-  register: { labelX:18, valueX:46, y:178 },
-  date:     { labelX:18, valueX:46, y:186 },
-  instructor:{ x:232, y:184 },
-  qr:       { x:258, y:174, size:22 }
-});
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1066,12 +1054,15 @@ function downloadPDF(record, lang){
     addPdfUnicodeText(doc,lv,W/2,isHE?142:136,{fontSize:isHE?30:19,bold:true,color:'#b9141c'});
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:isHE?22:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),64,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),230,164,{fontSize:isHE?22:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.examDate||'-'),230,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),230,190,{fontSize:isHE?24:9.5,bold:true});
-    if(qr) doc.addImage(qr,'PNG',263,166,22,22);
+    // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
+    addPdfUnicodeText(doc,isTR?'SİCİL NO':(isHE?'מספר רישום':'REGISTER NO'),18,176,{fontSize:isHE?18:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
+    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),18,184,{fontSize:isHE?18:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,String(d.examDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
+
+    // Eğitmen alanı sağ altta orantılı konumunu korur.
+    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),232,184,{fontSize:isHE?20:9.5,bold:true});
+    if(qr) doc.addImage(qr,'PNG',263,174,22,22);
 
     doc.save('diploma-'+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'master_template_v27_hebrew_admin'});
@@ -1154,12 +1145,15 @@ function downloadAppreciationCertificate(record, lang){
     addPdfUnicodeText(doc,isTR?'TAKDİM EDİLMİŞTİR':'PRESENTED WITH APPRECIATION',W/2,133,{fontSize:13,bold:true,color:'#b9141c'});
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',64,164,{fontSize:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),64,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'TARİH':'DATE',230,164,{fontSize:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.examDate||d.joinDate||'-'),230,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',230,190,{fontSize:9.5,bold:true});
-    if(qr) doc.addImage(qr,'PNG',263,166,22,22);
+    // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
+    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',18,176,{fontSize:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
+    addPdfUnicodeText(doc,isTR?'TARİH':'DATE',18,184,{fontSize:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,String(d.examDate||d.joinDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
+
+    // Eğitmen alanı sağ altta orantılı konumunu korur.
+    addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',232,184,{fontSize:9.5,bold:true});
+    if(qr) doc.addImage(qr,'PNG',263,174,22,22);
 
     doc.save((isTR?'tesekkur-':'appreciation-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'master_appreciation_v25'});
