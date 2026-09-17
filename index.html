@@ -875,10 +875,10 @@ function downloadStudentListPDF(){
 // === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
-  diplomaTr: ['certificate-master-template.png'],
-  diplomaEn: ['certificate-master-template.png'],
-  honorTr: ['certificate-master-template.png'],
-  honorEn: ['certificate-master-template.png'],
+  diplomaTr: ['yeni_master_2.png'],
+  diplomaEn: ['yeni_master_2.png'],
+  honorTr: ['yeni_master_2.png'],
+  honorEn: ['yeni_master_2.png'],
   instructorId: ['instructor-id-template.png']
 };
 var templateCache = {};
@@ -1026,7 +1026,7 @@ function downloadPDF(record, lang){
   Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
     var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
-    if(!template) throw new Error('certificate-master-template.png bulunamadı');
+    if(!template) throw new Error('yeni_master_2.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':(isHE?'אקדמיית קרב מגע טורק':'KRAV MAGA TURK ACADEMY'),32,19,{fontSize:isHE?25:13,bold:true,align:'left'});
@@ -1122,7 +1122,7 @@ function downloadAppreciationCertificate(record, lang){
   Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
     var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
-    if(!template) throw new Error('certificate-master-template.png bulunamadı');
+    if(!template) throw new Error('yeni_master_2.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',32,19,{fontSize:13,bold:true,align:'left'});
