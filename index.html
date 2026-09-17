@@ -670,30 +670,37 @@ function downloadRegistryInfoPDF(record){
     var logo=parts[0], qr=parts[1];
     var doc=new jsPDF('p','mm','a4'), W=210;
 
+    // Sade beyaz A4 — çerçeve ve köşe grafikleri yok.
     doc.setFillColor(255,255,255); doc.rect(0,0,210,297,'F');
 
-    // Büyük silik akademi logosu: sayfanın arkasında filigran.
+    // Büyük, çok açık merkez filigran.
     if(logo){
       try{
         doc.saveGraphicsState();
-        if(doc.GState) doc.setGState(new doc.GState({opacity:0.055}));
-        doc.addImage(logo,'PNG',35,72,140,140);
+        if(doc.GState) doc.setGState(new doc.GState({opacity:0.025}));
+        doc.addImage(logo,'PNG',25,62,160,160);
         doc.restoreGraphicsState();
       }catch(e){}
-      // Üst logo PNG olarak doğrudan gömülü.
-      try{ doc.addImage(logo,'PNG',W/2-15,14,30,30); }catch(e){}
+      try{
+        doc.setFillColor(255,255,255); doc.circle(W/2,27,15,'F');
+        doc.addImage(logo,'PNG',W/2-13,14,26,26);
+      }catch(e){}
     }
 
+    // Öğrenci fotoğrafı — çerçevesiz.
     if(d.photo){
-      try{ doc.addImage(d.photo,78,55,54,54); }catch(e){}
+      try{ doc.addImage(d.photo,80,48,50,58); }catch(e){}
     }
 
-    addPdfUnicodeText(doc,'DİPLOMA NO',W/2,121,{fontSize:9,bold:true,color:'#444444'});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,131,{fontSize:17,bold:true});
+    addPdfUnicodeText(doc,'DİPLOMA NO',W/2,118,{fontSize:9,bold:true,color:'#555555'});
+    addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,129,{fontSize:18,bold:true});
 
-    // KRAV MAGA tek blok olarak tam ortalı.
-    addPdfUnicodeText(doc,'KRAV MAGA',W/2,145,{fontSize:22,bold:true});
-    addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,153,{fontSize:9,bold:true,color:'#444444'});
+    // KRAV MAGA tam ortalı; MAGA kırmızı.
+    addPdfUnicodeText(doc,'KRAV',103,145,{fontSize:22,bold:true,align:'right'});
+    addPdfUnicodeText(doc,'MAGA',107,145,{fontSize:22,bold:true,color:'#d1121b',align:'left'});
+    doc.setDrawColor(85,85,85); doc.setLineWidth(0.35);
+    doc.line(48,153,78,153); doc.line(132,153,162,153);
+    addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,155,{fontSize:9,bold:true,color:'#555555'});
 
     var rows=[
       ['Ad Soyad:', String(d.studentName||'-')],
@@ -704,23 +711,26 @@ function downloadRegistryInfoPDF(record){
       ['Sicil No:', String(d.registerNo||'-')],
       ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
     ];
-    var y=174;
+    var y=178;
     rows.forEach(function(r,idx){
-      addPdfUnicodeText(doc,r[0],28,y,{fontSize:9.5,bold:true,align:'left'});
-      addPdfUnicodeText(doc,r[1],82,y,{fontSize:10,align:'left',color:(idx===6?(d.status==='pasif'?'#b9141c':'#238b45'):'#444444')});
+      addPdfUnicodeText(doc,r[0],25,y,{fontSize:10,bold:true,align:'left'});
+      addPdfUnicodeText(doc,r[1],72,y,{fontSize:10,align:'left',
+        color:(idx===6?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
       y+=10;
     });
 
     if(qr){
-      doc.addImage(qr,'PNG',158,176,28,28);
-      addPdfUnicodeText(doc,'DOĞRULA',172,210,{fontSize:7,bold:true});
+      doc.addImage(qr,'PNG',160,183,30,30);
+      addPdfUnicodeText(doc,'DOĞRULA',175,219,{fontSize:7.5,bold:true});
     }
 
-    addPdfUnicodeText(doc,'YAPILAN SINAVDA BAŞARILI OLMUŞTUR',W/2,249,{fontSize:10.5,bold:true});
-    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,270,{fontSize:9.5,bold:true});
+    addPdfUnicodeText(doc,'YAPILAN SINAVDA BAŞARILI OLMUŞTUR',W/2,252,{fontSize:11,bold:true});
+    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,270,{fontSize:10,bold:true});
+    addPdfUnicodeText(doc,'www.kravmagaturk.com',W/2,277,{fontSize:8.5,color:'#444444'});
+    addPdfUnicodeText(doc,'Bu belge '+new Date().toLocaleDateString('tr-TR')+' tarihinde oluşturulmuştur.',W/2,286,{fontSize:7.5,color:'#777777'});
 
     doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf_watermark'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf_final'});
   }).catch(function(err){
     console.error(err);
     alert('Sicil bilgi PDF oluşturulamadı: '+err.message);
