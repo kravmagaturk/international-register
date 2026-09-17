@@ -688,12 +688,60 @@ function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
   } catch(e){}
 }
 
+
+function prepareRegistryPortrait(photoData){
+  return new Promise(function(resolve){
+    if(!photoData){ resolve(false); return; }
+    try{
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var sw=img.naturalWidth||img.width, sh=img.naturalHeight||img.height;
+          if(!sw || !sh){ resolve(false); return; }
+
+          var sx=0, sy=0, cw=sw, ch=sh;
+
+          // Firebase photo alanında komple yatay kimlik kartı varsa,
+          // kimlik kartındaki vesikalık bölümü alınır.
+          // Kart geometrisi: 130x82; fotoğraf alanı yaklaşık x=8,y=20,w=34,h=34.
+          if(sw/sh > 1.25){
+            sx=sw*(8/130);
+            sy=sh*(20/82);
+            cw=sw*(34/130);
+            ch=sh*(34/82);
+          }
+
+          var canvas=document.createElement('canvas');
+          canvas.width=600; canvas.height=800;
+          var ctx=canvas.getContext('2d');
+
+          // Çerçevesiz vesikalık: resmi kırpmadan kutuya "cover" olarak oturt.
+          var srcRatio=cw/ch, dstRatio=canvas.width/canvas.height;
+          var fx=sx, fy=sy, fw=cw, fh=ch;
+          if(srcRatio>dstRatio){
+            fw=ch*dstRatio;
+            fx=sx+(cw-fw)/2;
+          }else{
+            fh=cw/dstRatio;
+            fy=sy+(ch-fh)/2;
+          }
+
+          ctx.drawImage(img,fx,fy,fw,fh,0,0,canvas.width,canvas.height);
+          resolve(canvas.toDataURL('image/jpeg',0.92));
+        }catch(e){ resolve(false); }
+      };
+      img.onerror=function(){ resolve(false); };
+      img.src=photoData;
+    }catch(e){ resolve(false); }
+  });
+}
+
 function downloadRegistryInfoPDF(record){
   if(!record) return;
   var d=record, jsPDF=window.jspdf.jsPDF;
 
-  Promise.all([prepareLogoBase64(), makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
-    var logo=parts[0], qr=parts[1];
+  Promise.all([prepareLogoBase64(), makeQrDataUrl(buildQrUrl(d.registerNo)), prepareRegistryPortrait(d.photo)]).then(function(parts){
+    var logo=parts[0], qr=parts[1], portrait=parts[2];
     var doc=new jsPDF('p','mm','a4'), W=210;
 
     // Sade beyaz A4 — çerçeve/köşe yok.
@@ -707,20 +755,13 @@ function downloadRegistryInfoPDF(record){
       drawCircularImage(doc, logo, W/2, 27, 13);
     }
 
-    // Öğrenci fotoğrafı — Sicil Bilgi PDF'de soldaki beyaz alanda.
-        // Merkez filigrana/logoya temas etmemesi için x=18..58 aralığında tutulur.
-        if(d.photo){
-          try{
-            const props=doc.getImageProperties(d.photo);
-            const boxW=40, boxH=52, boxX=18, boxY=112;
-            const ratio=props.width/props.height;
-            let imgW=boxW, imgH=imgW/ratio;
-            if(imgH>boxH){ imgH=boxH; imgW=imgH*ratio; }
-            const imgX=boxX+(boxW-imgW)/2;
-            const imgY=boxY+(boxH-imgH)/2;
-            doc.addImage(d.photo, props.fileType||'JPEG', imgX, imgY, imgW, imgH);
-          }catch(e){ console.warn('Sicil fotoğrafı basılamadı',e); }
-        }
+    // Öğrenci vesikalığı — sol üst beyaz alan, çerçevesiz.
+    // Filigran merkezinden tamamen uzak tutulur; arkasına beyaz kutu çizilmez.
+    if(portrait){
+      try{
+        doc.addImage(portrait,'JPEG',20,28,30,40);
+      }catch(e){ console.warn('Sicil vesikalığı basılamadı',e); }
+    }
 
     addPdfUnicodeText(doc,'DİPLOMA NO',W/2,92,{fontSize:9,bold:true,color:'#555555'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,103,{fontSize:18,bold:true});
