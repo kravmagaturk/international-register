@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-18';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-19';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -861,13 +861,6 @@ function downloadPDF(record, lang){
       doc.addImage(template,'PNG',0,0,W,H);
 
       // Şablondaki değişken örnek alanları kapat; gerçek veriyi yalnız kod basar.
-      doc.setFillColor(253,252,248);
-      doc.rect(37,132,136,24,'F');
-      doc.rect(66,163,78,30,'F');
-      doc.rect(12,231,52,22,'F');
-      doc.rect(151,231,47,22,'F');
-      doc.rect(156,252,35,35,'F');
-      doc.rect(74,272,62,14,'F');
 
       var nm=String(d.studentName||'').toLocaleUpperCase('tr-TR');
       addPdfUnicodeText(doc,nm,W/2,149,{fontSize:30,bold:true,family:'Georgia'});
@@ -884,7 +877,6 @@ function downloadPDF(record, lang){
 
       if(qr) doc.addImage(qr,'PNG',161,255,25,25);
       addPdfUnicodeText(doc,'DOĞRULAMA',173.5,284,{fontSize:4.8,bold:true});
-      addPdfUnicodeText(doc,'EĞİTMEN',W/2,279,{fontSize:9,bold:true});
     }else{
       // İngilizce / fallback: mevcut kodla çizilen premium tasarım.
       drawCertificateFrame(doc,W,H,logo);
@@ -912,7 +904,7 @@ function downloadPDF(record, lang){
       addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     }
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_hybrid_v17'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_hybrid_v19'});
   }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
 }
 function downloadInstructorID(record, lang){
