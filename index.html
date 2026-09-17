@@ -267,6 +267,7 @@ var lockoutTimer = null;
 var diplomaData = [];
 var currentPhotoData = '';
 var editingIndex = -1;
+var addingDocumentIndex = -1;
 var expandedRows = {};
 var lastSearchedRecord = null;
 var cachedLogoBase64 = null;
@@ -611,23 +612,30 @@ function renderSearchResult(d){
     '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
     '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
-
-  var extra = '';
+  var docs = recordDocuments(d);
+  var docsHtml = '';
+  docs.forEach(function(x,di){
+    docsHtml += '<div class="result-item"><span class="result-label">Belge / Seviye '+(di+1)+':</span><span>'+documentLabel(x)+'</span></div>';
+    docsHtml += '<div style="text-align:center;margin:8px 0 12px;"><select class="pdf-output-select" onchange="handlePublicDocumentPdfMenu(this,'+di+')">'+
+      '<option value="">📄 '+documentLabel(x)+'</option>'+
+      (x.type==='honor' || isCertEligibleLevel(x.level)
+        ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>'
+        : '<option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>')+
+      '</select></div>';
+  });
+  var idHtml = recordHasIdEligibility(d)
+    ? '<div style="text-align:center;margin-top:10px;"><select class="pdf-output-select" onchange="handlePublicPdfMenu(this)"><option value="">🪪 Kimlik</option><option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option></select></div>'
+    : '';
 
   resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
     '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
     (d.joinDate ? '<div class="result-item"><span class="result-label">'+t('lblJoinDate')+'</span><span>'+d.joinDate+'</span></div>' : '') +
-    '<div class="result-item"><span class="result-label">'+t('lblExamDate')+'</span><span>'+d.examDate+'</span></div>' +
-    '<div class="result-item"><span class="result-label">'+t('lblExamLoc')+'</span><span>'+d.examLocation+'</span></div>' +
-    '<div class="result-item"><span class="result-label">'+t('lblLevel')+'</span><span>'+d.level+'</span></div>' +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    '<div style="text-align:center;margin-top:15px;"><select class="pdf-output-select" onchange="handlePublicPdfMenu(this)"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select></div>' +
-    extra + '</div>';
+    docsHtml + idHtml + '</div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
-
 function searchDiploma(){
   var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   var resultDiv = document.getElementById('searchResult');
@@ -658,10 +666,20 @@ function handlePublicPdfMenu(sel){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, lastSearchedRecord);
 }
+function handlePublicDocumentPdfMenu(sel, docIndex){
+  var value = sel.value; sel.selectedIndex = 0;
+  runPdfAction(value, recordForDocument(lastSearchedRecord, docIndex));
+}
+
 function handleAdminPdfMenu(sel, index){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, diplomaData[index]);
 }
+function handleAdminDocumentPdfMenu(sel, index, docIndex){
+  var value = sel.value; sel.selectedIndex = 0;
+  runPdfAction(value, recordForDocument(diplomaData[index], docIndex));
+}
+
 
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
@@ -1250,8 +1268,77 @@ function logout(){
     diplomaData=[]; hideAllForms(); showLoginForm('');
   });
 }
+
+// ============================================
+// TEK SİCİL / ÇOKLU BELGE MODELİ (v53)
+// Eski kayıtlar bozulmaz: eski level/examDate alanı otomatik ilk belge sayılır.
+// Yeni belgeler aynı Firebase sicil düğümünde documents[] altında tutulur.
+// ============================================
+function recordDocuments(d){
+  if(!d) return [];
+  if(Array.isArray(d.documents) && d.documents.length){
+    return d.documents.filter(Boolean);
+  }
+  if(d.level){
+    return [{
+      level:d.level,
+      examDate:d.examDate || '',
+      examLocation:d.examLocation || '',
+      type:isCertEligibleLevel(d.level)?'honor':'diploma'
+    }];
+  }
+  return [];
+}
+function docTypeForLevel(level){
+  return isCertEligibleLevel(level) ? 'honor' : 'diploma';
+}
+function recordHasLevel(d, level){
+  return recordDocuments(d).some(function(x){ return x.level === level; });
+}
+function recordHasIdEligibility(d){
+  return recordDocuments(d).some(function(x){ return isIdEligibleLevel(x.level); });
+}
+function recordHasHonor(d){
+  return recordDocuments(d).some(function(x){ return isCertEligibleLevel(x.level) || x.type === 'honor'; });
+}
+function recordForDocument(d, docIndex){
+  var docs = recordDocuments(d);
+  var x = docs[docIndex];
+  if(!x) return d;
+  return Object.assign({}, d, {
+    level:x.level || d.level,
+    examDate:x.examDate || d.examDate,
+    examLocation:x.examLocation || d.examLocation,
+    _documentIndex:docIndex
+  });
+}
+function documentLabel(x){
+  return (x && x.level) ? x.level : 'Belge';
+}
+function addDocumentToRecord(index){
+  var d = diplomaData[index];
+  if(!d) return;
+  addingDocumentIndex = index;
+  editingIndex = -1;
+  clearAddForm();
+  document.getElementById('form-title').textContent = 'Belge / Seviye Ekle — ' + d.registerNo;
+  document.getElementById('save-btn').textContent = 'Belgeyi Ekle';
+  document.getElementById('studentName').value = d.studentName || '';
+  document.getElementById('studentName').readOnly = true;
+  document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
+  if(d.photo){
+    currentPhotoData = d.photo;
+    document.getElementById('photoPreviewImg').src = d.photo;
+    document.getElementById('photoPreviewBox').classList.remove('hidden');
+  }
+  hideAllForms();
+  document.getElementById('add-form').classList.remove('hidden');
+}
+
 function showAddForm(){
   editingIndex = -1;
+  addingDocumentIndex = -1;
+  document.getElementById('studentName').readOnly = false;
   document.getElementById('form-title').textContent = t('formTitleNew');
   document.getElementById('save-btn').textContent = t('btnSave');
   hideAllForms();
@@ -1259,10 +1346,12 @@ function showAddForm(){
 }
 function hideAddForm(){
   document.getElementById('add-form').classList.add('hidden');
-  clearAddForm(); editingIndex = -1;
+  clearAddForm(); editingIndex = -1; addingDocumentIndex = -1;
+  document.getElementById('studentName').readOnly = false;
 }
 function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); }
 function clearAddForm(){
+  document.getElementById('studentName').readOnly = false;
   document.getElementById('studentName').value='';
   document.getElementById('joinDate').value='';
   document.getElementById('examDate').value='';
@@ -1287,7 +1376,9 @@ function updateSubLevels(){
 }
 function editDiploma(index){
   var d = diplomaData[index];
+  addingDocumentIndex = -1;
   editingIndex = index;
+  document.getElementById('studentName').readOnly = false;
   document.getElementById('form-title').textContent = t('formTitleEdit');
   document.getElementById('save-btn').textContent = t('btnUpdate');
   document.getElementById('studentName').value = d.studentName;
@@ -1314,44 +1405,106 @@ function addDiploma(){
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
+
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
   var formattedExamDate = formatDateForDisplay(examDate);
   var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
+  var newDoc = { level:levelText, examDate:formattedExamDate, examLocation:examLocation, type:docTypeForLevel(levelText) };
+
   var saveBtn = document.getElementById('save-btn');
   saveBtn.disabled = true; saveBtn.textContent = t('saving');
   var panel = document.getElementById('admin-panel');
   var msg = document.createElement('div');
   msg.className = 'message success';
-  var record, registerNo;
-  if(editingIndex >= 0){
-    registerNo = diplomaData[editingIndex].registerNo;
-    record = { registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText, photo:currentPhotoData, status: diplomaData[editingIndex].status || 'aktif' };
-    diplomaData[editingIndex] = record;
+  var record, registerNo, targetIndex = -1;
+
+  if(addingDocumentIndex >= 0){
+    // Mevcut kişiye AYNI SİCİL altında yeni belge ekle.
+    targetIndex = addingDocumentIndex;
+    var base = diplomaData[targetIndex];
+    registerNo = base.registerNo;
+    var docs = recordDocuments(base).slice();
+
+    if(docs.some(function(x){ return x.level === levelText; })){
+      alert('⚠️ Bu sicilde "'+levelText+'" belgesi zaten kayıtlı.');
+      saveBtn.disabled = false; saveBtn.textContent = 'Belgeyi Ekle';
+      return;
+    }
+
+    docs.push(newDoc);
+    record = Object.assign({}, base, {
+      documents:docs,
+      // Geriye uyumluluk: ilk belge eski alanlarda kalır.
+      level:docs[0].level,
+      examDate:docs[0].examDate,
+      examLocation:docs[0].examLocation,
+      joinDate:formattedJoinDate || base.joinDate || '',
+      photo:currentPhotoData || base.photo || ''
+    });
+    delete record._firebaseKey;
+    diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:base._firebaseKey});
+    msg.innerHTML = '✅ Belge aynı sicile eklendi!<br><strong>'+registerNo+'</strong> — '+levelText;
+
+  } else if(editingIndex >= 0){
+    targetIndex = editingIndex;
+    var old = diplomaData[targetIndex];
+    registerNo = old.registerNo;
+    var oldDocs = recordDocuments(old).slice();
+    if(oldDocs.length){
+      oldDocs[0] = newDoc;
+    } else {
+      oldDocs = [newDoc];
+    }
+    record = {
+      registerNo:registerNo, studentName:studentName,
+      joinDate:formattedJoinDate, examDate:oldDocs[0].examDate,
+      examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
+      documents:oldDocs, photo:currentPhotoData,
+      status:old.status || 'aktif'
+    };
+    diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
     msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
+
   } else {
+    // Yeni kişi = yeni sicil. Aynı isim varsa yanlışlıkla ikinci sicil açmayı engelle.
+    var samePersonIndex = diplomaData.findIndex(function(x){
+      return (x.studentName||'').trim().toLocaleLowerCase('tr-TR') === studentName.toLocaleLowerCase('tr-TR');
+    });
+    if(samePersonIndex >= 0){
+      alert('⚠️ Bu kişi zaten '+diplomaData[samePersonIndex].registerNo+' sicilinde kayıtlı. Kayıt listesinden "Belge / Seviye Ekle" düğmesini kullanın.');
+      saveBtn.disabled = false; saveBtn.textContent = t('btnSave');
+      return;
+    }
+
     var year = new Date().getFullYear();
     var counter = diplomaData.length + 1;
     registerNo = 'KM'+year+String(counter).padStart(3,'0');
     while(diplomaData.some(function(x){ return x.registerNo === registerNo; })){
       counter++; registerNo = 'KM'+year+String(counter).padStart(3,'0');
     }
-    record = { registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText, photo:currentPhotoData, status:'aktif' };
+    record = {
+      registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate,
+      examDate:formattedExamDate, examLocation:examLocation, level:levelText,
+      documents:[newDoc], photo:currentPhotoData, status:'aktif'
+    };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
   }
-  adminFetch('/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)}).then(function(){
+
+  adminFetch('/diplomaData/' + registerNo + '.json', {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
+  }).then(function(){
     filterDiplomas();
     hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
   }).catch(function(){
-    msg.className = 'message error';
-    msg.innerHTML = t('msgSaveError');
+    msg.className = 'message error'; msg.innerHTML = t('msgSaveError');
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
   }).finally(function(){
     saveBtn.disabled = false;
-    saveBtn.textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
+    saveBtn.textContent = t('btnSave');
   });
 }
 function toggleStatus(index){
@@ -1368,7 +1521,7 @@ function filterDiplomas(){
       return item.d.studentName.toLowerCase().indexOf(searchText) !== -1 || item.d.registerNo.toLowerCase().indexOf(searchText) !== -1;
     });
   }
-  if(levelFilter){ filtered = filtered.filter(function(item){ return item.d.level.indexOf(levelFilter) === 0; }); }
+  if(levelFilter){ filtered = filtered.filter(function(item){ return recordDocuments(item.d).some(function(x){ return (x.level||'').indexOf(levelFilter) === 0; }); }); }
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
 }
@@ -1403,14 +1556,19 @@ function renderDiplomaList(filtered, isFiltering){
     var photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
-    var idButtons = '';
-    if(isIdEligibleLevel(d.level)){
-      idButtons = '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>';
-    }
+    var docs = recordDocuments(d);
+    var documentMenus = '';
+    docs.forEach(function(x,di){
+      documentMenus += '<select class="pdf-output-select" onchange="handleAdminDocumentPdfMenu(this,'+i+','+di+')"><option value="">📄 '+documentLabel(x)+'</option>' +
+        ((x.type==='honor' || isCertEligibleLevel(x.level))
+          ? '<option value="cert-tr">Onur/Teşekkür — TR</option><option value="cert-en">Appreciation/Honor — EN</option>'
+          : '<option value="diploma-tr">Diploma — TR</option><option value="diploma-en">Diploma — EN</option>') +
+        '</select>';
+    });
+    var idButtons = recordHasIdEligibility(d)
+      ? '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>'
+      : '';
     var certButtons = '';
-    if(isCertEligibleLevel(d.level)){
-      certButtons = '<button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'tr\')">'+t('btnCertTr')+'</button><button class="btn btn-cert" onclick="downloadAppreciationCertificate(diplomaData['+i+'],\'en\')">'+t('btnCertEn')+'</button>';
-    }
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
           '<span>'+statusDot+'</span>' +
@@ -1425,13 +1583,15 @@ function renderDiplomaList(filtered, isFiltering){
           (d.joinDate ? '<p><strong>'+t('lblJoinDate')+'</strong> '+d.joinDate+'</p>' : '') +
           '<p><strong>'+t('lblExamDate')+'</strong> '+d.examDate+'</p>' +
           '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
-          '<p><strong>'+t('lblLevel')+'</strong> '+d.level+'</p>' +
+          '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select>' +
+          documentMenus +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
+          '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
   });
