@@ -791,8 +791,12 @@ function downloadRegistryInfoPDF(record){
     });
 
     if(qr){
-      doc.addImage(qr,'PNG',160,170,32,32);
-      addPdfUnicodeText(doc,'DOĞRULA',176,208,{fontSize:10,bold:true});
+      // QR KOD — sağ alt, daha küçük
+      const qrSize = 24;
+      const qrX = W - 18 - qrSize;
+      const qrY = 238;
+      doc.addImage(qr,'PNG',qrX,qrY,qrSize,qrSize);
+      addPdfUnicodeText(doc,'DOĞRULA',qrX+(qrSize/2),qrY+qrSize+5,{fontSize:8,bold:true});
     }
 
     addPdfUnicodeText(doc,'YAPILAN SINAVDA BAŞARILI OLMUŞTUR',W/2,250,{fontSize:14,bold:true});
