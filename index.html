@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-14';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-15';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -802,6 +802,17 @@ function addCertificateWatermark(doc,W,H,logo){
   }
 }
 
+
+function drawGoldOrnament(doc,cx,y,halfW){
+  doc.setDrawColor(190,132,12); doc.setLineWidth(0.55);
+  doc.line(cx-halfW,y,cx-12,y); doc.line(cx+12,y,cx+halfW,y);
+  doc.setLineWidth(0.75);
+  doc.line(cx-8,y,cx-3,y-3); doc.line(cx-8,y,cx-3,y+3);
+  doc.line(cx+8,y,cx+3,y-3); doc.line(cx+8,y,cx+3,y+3);
+  doc.circle(cx,y,2.2,'S'); doc.circle(cx,y,0.8,'F');
+  doc.line(cx,y-2.2,cx,y-5); doc.line(cx,y+2.2,cx,y+5);
+}
+
 function drawGoldSeal(doc,cx,cy,r,logo){
   // Büyük, katmanlı altın akademi rozeti
   doc.setFillColor(154,101,8);
@@ -815,7 +826,9 @@ function drawGoldSeal(doc,cx,cy,r,logo){
   doc.setDrawColor(145,91,5); doc.setLineWidth(0.8); doc.circle(cx,cy,r*0.68,'S');
   doc.setFillColor(22,22,22); doc.circle(cx,cy,r*0.49,'F');
   doc.setDrawColor(238,190,48); doc.setLineWidth(1.0); doc.circle(cx,cy,r*0.49,'S');
-  if(logo){try{doc.addImage(logo,'PNG',cx-r*0.38,cy-r*0.38,r*0.76,r*0.76);}catch(e){}}
+  doc.setDrawColor(105,65,4); doc.setLineWidth(0.55); doc.circle(cx,cy,r*0.61,'S');
+  doc.setDrawColor(255,225,120); doc.setLineWidth(0.45); doc.circle(cx,cy,r*0.76,'S');
+  if(logo){try{doc.addImage(logo,'PNG',cx-r*0.40,cy-r*0.40,r*0.80,r*0.80);}catch(e){}}
   // Çift kırmızı kurdele
   doc.setFillColor(185,20,28);
   doc.triangle(cx-r*0.45,cy+r*0.65,cx-r*0.13,cy+r*1.42,cx+r*0.01,cy+r*0.68,'F');
@@ -845,8 +858,8 @@ function downloadPDF(record, lang){
 
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',16,22,{fontSize:13,bold:true,align:'left'});
     addPdfUnicodeText(doc,isTR?'ULUSLARARASI':'INTERNATIONAL',16,29,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'DİPLOMA':'DIPLOMA',W/2,68,{fontSize:39,bold:true,family:'Georgia'});
-    doc.setDrawColor(196,145,20); doc.setLineWidth(0.75); doc.line(42,80,168,80);
+    addPdfUnicodeText(doc,isTR?'DİPLOMA':'DIPLOMA',W/2,68,{fontSize:43,bold:true,family:'Georgia'});
+    drawGoldOrnament(doc,W/2,82,66);
 
     if(isTR){
       addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,96,{fontSize:11,bold:true});
@@ -857,15 +870,17 @@ function downloadPDF(record, lang){
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:29,bold:true,family:'Georgia'});
-    doc.setDrawColor(45,45,45); doc.setLineWidth(0.45); doc.line(42,146,168,146);
+    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:31,bold:true,family:'Georgia'});
+    drawGoldOrnament(doc,W/2,146,67);
 
-    addPdfUnicodeText(doc,isTR?'SEVİYE':'LEVEL',W/2,151,{fontSize:11,bold:true});
+    drawGoldOrnament(doc,W/2,153,36);
+    addPdfUnicodeText(doc,isTR?'SEVİYE':'LEVEL',W/2,151,{fontSize:12,bold:true});
     var levelRaw=String(d.level||'').trim(),levelKey=levelRaw.toUpperCase();
     var levelTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
     var lvl=isTR?String(levelTR[levelKey]||levelRaw).toLocaleUpperCase('tr-TR'):levelRaw.toUpperCase();
-    addPdfUnicodeText(doc,lvl,W/2,165,{fontSize:18,bold:true,color:'#b9141c'});
+    addPdfUnicodeText(doc,lvl,W/2,165,{fontSize:21,bold:true,color:'#b9141c'});
 
+    addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,192,{fontSize:6.8,bold:true,color:'#333333'});
     addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),38,236,{fontSize:11.5,bold:true});
     doc.setDrawColor(45,45,45); doc.setLineWidth(0.4); doc.line(18,244,58,244);
@@ -876,7 +891,9 @@ function downloadPDF(record, lang){
 
     if(qr) doc.addImage(qr,'PNG',158,248,28,28);
     addPdfUnicodeText(doc,isTR?'DOĞRULAMA':'VERIFY',172,282,{fontSize:5.5,bold:true});
-    drawGoldSeal(doc,W/2,243,18,logo);
+    doc.setDrawColor(190,132,12); doc.setLineWidth(0.6);
+    doc.line(W/2-52,241,W/2-24,241); doc.line(W/2+24,241,W/2+52,241);
+    drawGoldSeal(doc,W/2,241,21,logo);
     addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     doc.setDrawColor(60,60,60); doc.setLineWidth(0.35); doc.line(W/2-27,277,W/2+27,277);
 
@@ -944,8 +961,8 @@ function downloadAppreciationCertificate(record, lang){
 
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',16,22,{fontSize:13,bold:true,align:'left'});
     addPdfUnicodeText(doc,isTR?'ULUSLARARASI':'INTERNATIONAL',16,29,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,68,{fontSize:isTR?25:22,bold:true,family:'Georgia'});
-    doc.setDrawColor(196,145,20);doc.setLineWidth(0.75);doc.line(35,80,175,80);
+    addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,68,{fontSize:isTR?31:27,bold:true,family:'Georgia'});
+    drawGoldOrnament(doc,W/2,82,70);
 
     if(isTR){
       addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİYE SUNMUŞ OLDUĞU DEĞERLİ KATKI,',W/2,96,{fontSize:11,bold:true});
@@ -956,8 +973,8 @@ function downloadAppreciationCertificate(record, lang){
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:29,bold:true,family:'Georgia'});
-    doc.setDrawColor(45,45,45);doc.setLineWidth(0.45);doc.line(42,146,168,146);
+    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:31,bold:true,family:'Georgia'});
+    drawGoldOrnament(doc,W/2,146,67);
 
     addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),38,236,{fontSize:11,bold:true});
@@ -971,7 +988,9 @@ function downloadAppreciationCertificate(record, lang){
 
     if(qr) doc.addImage(qr,'PNG',158,248,28,28);
     addPdfUnicodeText(doc,isTR?'DOĞRULAMA':'VERIFY',172,282,{fontSize:5.5,bold:true});
-    drawGoldSeal(doc,W/2,243,18,logo);
+    doc.setDrawColor(190,132,12); doc.setLineWidth(0.6);
+    doc.line(W/2-52,241,W/2-24,241); doc.line(W/2+24,241,W/2+52,241);
+    drawGoldSeal(doc,W/2,241,21,logo);
     addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     doc.setDrawColor(60,60,60); doc.setLineWidth(0.35); doc.line(W/2-27,277,W/2+27,277);
 
