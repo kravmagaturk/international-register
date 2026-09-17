@@ -1052,14 +1052,14 @@ function downloadPDF(record, lang){
     addPdfUnicodeText(doc,isTR?'DİPLOMA':(isHE?'דיפלומה':'DIPLOMA'),W/2,61,{fontSize:isHE?58:42,bold:true,family:'Arial'});
 
     if(isTR){
-      addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,80,{fontSize:10.5,bold:true});
-      addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,87,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,80,{fontSize:13.5,bold:true});
+      addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,87,{fontSize:13,bold:true});
     }else if(isHE){
       addPdfUnicodeText(doc,'כהוקרה על השלמת ההכשרה בהצלחה ועל המאמץ והמסירות שהפגין/ה,',W/2,80,{fontSize:22,bold:true});
       addPdfUnicodeText(doc,'מוענקת בזאת דיפלומה זו.',W/2,89,{fontSize:22,bold:true});
     }else{
-      addPdfUnicodeText(doc,'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,80,{fontSize:10.5,bold:true});
-      addPdfUnicodeText(doc,'THIS DIPLOMA IS HEREBY AWARDED.',W/2,87,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,80,{fontSize:13.5,bold:true});
+      addPdfUnicodeText(doc,'THIS DIPLOMA IS HEREBY AWARDED.',W/2,87,{fontSize:13,bold:true});
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':(isHE?'he-IL':'en-US'));
@@ -1151,11 +1151,11 @@ function downloadAppreciationCertificate(record, lang){
     addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,61,{fontSize:isTR?30:26,bold:true,family:'Georgia'});
 
     if(isTR){
-      addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİYE SUNMUŞ OLDUĞU DEĞERLİ KATKI,',W/2,80,{fontSize:10.5,bold:true});
-      addPdfUnicodeText(doc,'ÖZVERİ VE DESTEĞİNDEN DOLAYI BU TEŞEKKÜR BELGESİ TAKDİM EDİLMİŞTİR.',W/2,87,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİYE SUNMUŞ OLDUĞU DEĞERLİ KATKI,',W/2,80,{fontSize:13.5,bold:true});
+      addPdfUnicodeText(doc,'ÖZVERİ VE DESTEĞİNDEN DOLAYI BU TEŞEKKÜR BELGESİ TAKDİM EDİLMİŞTİR.',W/2,87,{fontSize:13,bold:true});
     }else{
-      addPdfUnicodeText(doc,'THIS CERTIFICATE IS PRESENTED IN RECOGNITION OF VALUABLE CONTRIBUTIONS,',W/2,80,{fontSize:10,bold:true});
-      addPdfUnicodeText(doc,'DEDICATION AND SUPPORT TO KRAV MAGA TURK ACADEMY.',W/2,87,{fontSize:10,bold:true});
+      addPdfUnicodeText(doc,'THIS CERTIFICATE IS PRESENTED IN RECOGNITION OF VALUABLE CONTRIBUTIONS,',W/2,80,{fontSize:13.5,bold:true});
+      addPdfUnicodeText(doc,'DEDICATION AND SUPPORT TO KRAV MAGA TURK ACADEMY.',W/2,87,{fontSize:13,bold:true});
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
