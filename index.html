@@ -1425,7 +1425,7 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option><option value="diploma-he">Diploma — עברית</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select>' +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select>' +
         '</div>' +
       '</div>';
   });
