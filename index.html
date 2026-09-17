@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-11';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-12';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -782,13 +782,20 @@ function makeTransparentRoundLogo(dataUrl){
 }
 
 function addCertificateWatermark(doc,W,H,logo){
-  // Büyük, silik PNG akademi logosu: metin filigranı yok.
+  // Kopyalamayı zorlaştıran çoklu KRAV MAGA filigran deseni.
+  doc.setTextColor(242,242,242); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+  var wmRows=[58,92,126,160,194,228];
+  wmRows.forEach(function(yy,ri){
+    var xs=(ri%2===0)?[28,105,182]:[66,143];
+    xs.forEach(function(xx){ doc.text('KRAV MAGA',xx,yy,{align:'center',angle:-24}); });
+  });
+  // Büyük, silik PNG akademi logosu.
   if(logo){
     try{
       if(doc.GState){
         doc.saveGraphicsState();
-        doc.setGState(new doc.GState({opacity:0.075}));
-        doc.addImage(logo,'PNG',W/2-43,H/2-43,86,86);
+        doc.setGState(new doc.GState({opacity:0.065}));
+        doc.addImage(logo,'PNG',W/2-60,H/2-60,120,120);
         doc.restoreGraphicsState();
       }
     }catch(e){}
@@ -829,7 +836,7 @@ function downloadPDF(record, lang){
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:20,bold:true,family:'Georgia'});
+    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:25,bold:true,family:'Georgia'});
     doc.setDrawColor(45,45,45); doc.setLineWidth(0.45); doc.line(42,146,168,146);
 
     addPdfUnicodeText(doc,isTR?'SEVİYE':'LEVEL',W/2,160,{fontSize:7.5,bold:true});
@@ -863,14 +870,16 @@ function downloadInstructorID(record, lang){
   Promise.all([prepareLogoBase64().then(makeTransparentRoundLogo),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var logo=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF,W=130,H=82;
     var doc=new jsPDF({orientation:'landscape',unit:'mm',format:[H,W]});
-    doc.setFillColor(250,250,248); doc.rect(0,0,W,H,'F');
+    // Kart gövdesi dış çerçevenin dışına taşmasın.
+    doc.setFillColor(20,20,20); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(250,250,248); doc.rect(1.8,1.8,W-3.6,H-3.6,'F');
     // Kart filigranı
     doc.setTextColor(232,232,232); doc.setFont('helvetica','bold'); doc.setFontSize(25);
     doc.text('KRAV MAGA',68,54,{align:'center'});
     if(logo){try{if(doc.GState){doc.saveGraphicsState();doc.setGState(new doc.GState({opacity:0.05}));doc.addImage(logo,'PNG',52,25,35,35);doc.restoreGraphicsState();}}catch(e){}}
-    doc.setFillColor(20,20,20); doc.rect(0,0,W,20,'F');
-    doc.setFillColor(190,20,28); doc.rect(0,20,W,2.2,'F');
-    doc.setFillColor(20,20,20); doc.rect(0,72,W,10,'F');
+    doc.setFillColor(20,20,20); doc.rect(1.8,1.8,W-3.6,18.2,'F');
+    doc.setFillColor(190,20,28); doc.rect(1.8,20,W-3.6,2.2,'F');
+    doc.setFillColor(20,20,20); doc.rect(1.8,72,W-3.6,8.2,'F');
     doc.setDrawColor(190,20,28); doc.setLineWidth(0.7); doc.rect(1.2,1.2,W-2.4,H-2.4);
     if(logo){try{doc.addImage(logo,'PNG',5,3.2,13.5,13.5);}catch(e){}}
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK':'KRAV MAGA TURK',22,9.2,{fontSize:11,bold:true,color:'#ffffff',align:'left'});
@@ -926,7 +935,7 @@ function downloadAppreciationCertificate(record, lang){
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:20,bold:true,family:'Georgia'});
+    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:25,bold:true,family:'Georgia'});
     doc.setDrawColor(45,45,45);doc.setLineWidth(0.45);doc.line(42,146,168,146);
 
     addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
