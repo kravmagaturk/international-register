@@ -668,70 +668,54 @@ function downloadRegistryInfoPDF(record){
   var d=record, jsPDF=window.jspdf.jsPDF;
   Promise.all([prepareLogoBase64(), makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var logo=parts[0], qr=parts[1];
-    var doc=new jsPDF('p','mm','a4'), W=210, H=297;
+    var doc=new jsPDF('p','mm','a4'), W=210;
 
-    // Sade A4 çerçeve
-    doc.setDrawColor(190,20,28); doc.setLineWidth(1.0); doc.rect(7,7,W-14,H-14);
-    doc.setDrawColor(25,25,25); doc.setLineWidth(0.35); doc.rect(10,10,W-20,H-20);
+    // Sade beyaz A4: çerçeve ve köşe grafikleri yok.
+    doc.setFillColor(255,255,255); doc.rect(0,0,210,297,'F');
 
-    // Silik merkez logo
+    // Logo PNG doğrudan sayfaya gömülür.
     if(logo){
-      try{
-        doc.saveGraphicsState();
-        if(doc.GState) doc.setGState(new doc.GState({opacity:0.055}));
-        doc.addImage(logo,'PNG',55,88,100,100);
-        doc.restoreGraphicsState();
-      }catch(e){}
-      try{ doc.addImage(logo,'PNG',W/2-15,16,30,30); }catch(e){}
+      try{ doc.addImage(logo,'PNG',W/2-15,14,30,30); }catch(e){}
     }
 
-    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,54,{fontSize:17,bold:true});
-    addPdfUnicodeText(doc,'ÖĞRENCİ SİCİL BİLGİ FORMU',W/2,63,{fontSize:13,bold:true,color:'#b9141c'});
-    doc.setDrawColor(120,120,120); doc.setLineWidth(0.35); doc.line(25,69,W-25,69);
-
-    // Fotoğraf
+    // Fotoğraf: çerçevesiz.
     if(d.photo){
-      try{
-        doc.setDrawColor(130,130,130); doc.rect(24,78,42,52);
-        doc.addImage(d.photo,26,80,38,48);
-      }catch(e){}
-    }else{
-      doc.setDrawColor(170,170,170); doc.rect(24,78,42,52);
-      addPdfUnicodeText(doc,'FOTOĞRAF',45,106,{fontSize:8,bold:true,color:'#888888'});
+      try{ doc.addImage(d.photo,78,55,54,54); }catch(e){}
     }
 
-    // Sicil no öne çıkar
-    addPdfUnicodeText(doc,'SİCİL NO',91,82,{fontSize:8,bold:true,color:'#666666',align:'left'});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),91,92,{fontSize:18,bold:true,align:'left'});
+    addPdfUnicodeText(doc,'DİPLOMA NO',W/2,121,{fontSize:9,bold:true,color:'#444444'});
+    addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,131,{fontSize:17,bold:true});
+
+    addPdfUnicodeText(doc,'KRAV',92,145,{fontSize:22,bold:true,align:'right'});
+    addPdfUnicodeText(doc,'MAGA',94,145,{fontSize:22,bold:true,color:'#d1121b',align:'left'});
+    addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,153,{fontSize:9,bold:true,color:'#444444'});
 
     var rows=[
-      ['AD SOYAD', String(d.studentName||'-')],
-      ['AKADEMİYE GİRİŞ', String(d.joinDate||'-')],
-      ['SINAV TARİHİ', String(d.examDate||'-')],
-      ['SINAV YERİ', String(d.examLocation||'-')],
-      ['SEVİYE', String(d.level||'-')],
-      ['DURUM', d.status==='pasif'?'PASİF':'AKTİF']
+      ['Ad Soyad:', String(d.studentName||'-')],
+      ['Akademiye Giriş:', String(d.joinDate||'-')],
+      ['Sınav Tarihi:', String(d.examDate||'-')],
+      ['Sınav Yeri:', String(d.examLocation||'-')],
+      ['Seviye:', String(d.level||'-')],
+      ['Sicil No:', String(d.registerNo||'-')],
+      ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
     ];
-    var y=145;
+    var y=174;
     rows.forEach(function(r,idx){
-      addPdfUnicodeText(doc,r[0],28,y,{fontSize:9,bold:true,align:'left'});
-      addPdfUnicodeText(doc,r[1],82,y,{fontSize:10.5,bold:idx===0,align:'left',color:(idx===5?(d.status==='pasif'?'#b9141c':'#238b45'):'#333333')});
-      doc.setDrawColor(225,225,225); doc.setLineWidth(0.25); doc.line(28,y+4,150,y+4);
-      y+=14;
+      addPdfUnicodeText(doc,r[0],28,y,{fontSize:9.5,bold:true,align:'left'});
+      addPdfUnicodeText(doc,r[1],82,y,{fontSize:10,align:'left',color:(idx===6?(d.status==='pasif'?'#b9141c':'#238b45'):'#444444')});
+      y+=10;
     });
 
-    // QR
     if(qr){
-      doc.addImage(qr,'PNG',158,143,30,30);
-      addPdfUnicodeText(doc,'SİCİL DOĞRULAMA',173,179,{fontSize:7,bold:true});
+      doc.addImage(qr,'PNG',158,176,28,28);
+      addPdfUnicodeText(doc,'DOĞRULA',172,210,{fontSize:7,bold:true});
     }
 
-    doc.setDrawColor(120,120,120); doc.line(35,244,W-35,244);
-    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,254,{fontSize:10,bold:true});
-    addPdfUnicodeText(doc,'Bu belge yönetici panelindeki güncel sicil kaydından oluşturulmuştur.',W/2,263,{fontSize:7.5,color:'#777777'});
+    addPdfUnicodeText(doc,'YAPILAN SINAVDA BAŞARILI OLMUŞTUR',W/2,249,{fontSize:10.5,bold:true});
+    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,270,{fontSize:9.5,bold:true});
 
     doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf_clean'});
   }).catch(function(err){
     console.error(err);
     alert('Sicil bilgi PDF oluşturulamadı: '+err.message);
