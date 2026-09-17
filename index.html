@@ -704,7 +704,7 @@ function downloadStudentListPDF(){
 // === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
-  diplomaTr: ['diploma-template-tr.png','diploma-template.png'],
+  diplomaTr: ['diploma-premium-tr.png','diploma-template-tr.png','diploma-template.png'],
   diplomaEn: ['diploma-template-en.png','diploma-template.png'],
   honorTr: ['honor-template-tr.png','honor-template.png'],
   honorEn: ['honor-template-en.png','honor-template.png'],
@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-16';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-17';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -784,9 +784,9 @@ function makeTransparentRoundLogo(dataUrl){
 function addCertificateWatermark(doc,W,H,logo){
   // Kopyalamayı zorlaştıran çoklu KRAV MAGA filigran deseni.
   doc.setTextColor(235,235,235); doc.setFont('helvetica','bold'); doc.setFontSize(14);
-  var wmRows=[34,48,62,76,90,104,118,132,146,160,174,188,202,216,230,244,258,272];
+  var wmRows=[38,54,70,86,102,118,134,150,166,182,198,214,230,246,262];
   wmRows.forEach(function(yy,ri){
-    var xs=(ri%2===0)?[20,62,104,146,188]:[40,83,126,169];
+    var xs=(ri%2===0)?[24,78,132,186]:[50,105,160];
     xs.forEach(function(xx){ doc.text('KRAV MAGA',xx,yy,{align:'center',angle:-24}); });
   });
   // Büyük, silik PNG akademi logosu.
@@ -794,8 +794,8 @@ function addCertificateWatermark(doc,W,H,logo){
     try{
       if(doc.GState){
         doc.saveGraphicsState();
-        doc.setGState(new doc.GState({opacity:0.075}));
-        doc.addImage(logo,'PNG',W/2-64,H/2-64,128,128);
+        doc.setGState(new doc.GState({opacity:0.065}));
+        doc.addImage(logo,'PNG',W/2-60,H/2-60,120,120);
         doc.restoreGraphicsState();
       }
     }catch(e){}
@@ -851,54 +851,60 @@ function drawCertificateFrame(doc,W,H,logo){
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
-  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),prepareLogoBase64().then(makeTransparentRoundLogo)]).then(function(parts){
-    var qr=parts[0],logo=parts[1],jsPDF=window.jspdf.jsPDF;
+  var templatePromise=isTR?loadTemplate('diplomaTr').catch(function(){return null;}):Promise.resolve(null);
+  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),prepareLogoBase64().then(makeTransparentRoundLogo),templatePromise]).then(function(parts){
+    var qr=parts[0],logo=parts[1],template=parts[2],jsPDF=window.jspdf.jsPDF;
     var W=210,H=297,doc=new jsPDF('p','mm','a4');
-    drawCertificateFrame(doc,W,H,logo);
 
-    addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',16,22,{fontSize:13,bold:true,align:'left'});
-    addPdfUnicodeText(doc,isTR?'ULUSLARARASI':'INTERNATIONAL',16,29,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'DİPLOMA':'DIPLOMA',W/2,68,{fontSize:46,bold:true,family:'Georgia'});
-    drawGoldOrnament(doc,W/2,82,66);
+    if(isTR && template){
+      // Premium grafik arka plan: sadece sabit tasarım.
+      doc.addImage(template,'PNG',0,0,W,H);
 
-    if(isTR){
-      addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,96,{fontSize:11,bold:true});
-      addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,105,{fontSize:11,bold:true});
+      // Dinamik alanlar kodla basılır.
+      var nm=String(d.studentName||'').toLocaleUpperCase('tr-TR');
+      addPdfUnicodeText(doc,nm,W/2,148,{fontSize:31,bold:true,family:'Georgia'});
+      addPdfUnicodeText(doc,'SEVİYE',W/2,171,{fontSize:12,bold:true});
+      var levelRaw=String(d.level||'').trim(),levelKey=levelRaw.toUpperCase();
+      var levelTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
+      var lvl=String(levelTR[levelKey]||levelRaw).toLocaleUpperCase('tr-TR');
+      addPdfUnicodeText(doc,lvl,W/2,185,{fontSize:21,bold:true,color:'#b9141c'});
+
+      addPdfUnicodeText(doc,'SİCİL NUMARASI',37,236,{fontSize:7.5,bold:true});
+      addPdfUnicodeText(doc,String(d.registerNo||'-'),37,247,{fontSize:11.5,bold:true});
+      addPdfUnicodeText(doc,'TARİH',174,236,{fontSize:7.5,bold:true});
+      addPdfUnicodeText(doc,String(d.examDate||'-'),174,247,{fontSize:11.5,bold:true});
+
+      if(qr) doc.addImage(qr,'PNG',158,251,27,27);
+      addPdfUnicodeText(doc,'DOĞRULAMA',171.5,283,{fontSize:5,bold:true});
+      addPdfUnicodeText(doc,'EĞİTMEN',W/2,278,{fontSize:9.5,bold:true});
     }else{
-      addPdfUnicodeText(doc,'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,96,{fontSize:11,bold:true});
-      addPdfUnicodeText(doc,'THIS DIPLOMA IS HEREBY AWARDED.',W/2,105,{fontSize:11,bold:true});
+      // İngilizce / fallback: mevcut kodla çizilen premium tasarım.
+      drawCertificateFrame(doc,W,H,logo);
+      addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',16,22,{fontSize:13,bold:true,align:'left'});
+      addPdfUnicodeText(doc,isTR?'ULUSLARARASI':'INTERNATIONAL',16,29,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
+      addPdfUnicodeText(doc,isTR?'DİPLOMA':'DIPLOMA',W/2,68,{fontSize:43,bold:true,family:'Georgia'});
+      drawGoldOrnament(doc,W/2,82,66);
+      addPdfUnicodeText(doc,isTR?'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI':'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,96,{fontSize:11,bold:true});
+      addPdfUnicodeText(doc,isTR?'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.':'THIS DIPLOMA IS HEREBY AWARDED.',W/2,105,{fontSize:11,bold:true});
+      var nm2=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
+      addPdfUnicodeText(doc,nm2,W/2,137,{fontSize:31,bold:true,family:'Georgia'});
+      drawGoldOrnament(doc,W/2,146,67);
+      addPdfUnicodeText(doc,isTR?'SEVİYE':'LEVEL',W/2,151,{fontSize:12,bold:true});
+      var lr=String(d.level||'').trim(),lk=lr.toUpperCase();
+      var map={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
+      var lv=isTR?String(map[lk]||lr).toLocaleUpperCase('tr-TR'):lr.toUpperCase();
+      addPdfUnicodeText(doc,lv,W/2,165,{fontSize:21,bold:true,color:'#b9141c'});
+      addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,192,{fontSize:6.8,bold:true,color:'#333333'});
+      addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
+      addPdfUnicodeText(doc,String(d.registerNo||'-'),38,236,{fontSize:11.5,bold:true});
+      addPdfUnicodeText(doc,isTR?'TARİH':'DATE',172,224,{fontSize:7.5,bold:true});
+      addPdfUnicodeText(doc,String(d.examDate||'-'),172,236,{fontSize:11.5,bold:true});
+      if(qr) doc.addImage(qr,'PNG',158,248,28,28);
+      drawGoldSeal(doc,W/2,241,21,logo);
+      addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     }
-
-    var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:34,bold:true,family:'Georgia'});
-    drawGoldOrnament(doc,W/2,146,67);
-
-    drawGoldOrnament(doc,W/2,153,36);
-    addPdfUnicodeText(doc,isTR?'SEVİYE':'LEVEL',W/2,151,{fontSize:13,bold:true});
-    var levelRaw=String(d.level||'').trim(),levelKey=levelRaw.toUpperCase();
-    var levelTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
-    var lvl=isTR?String(levelTR[levelKey]||levelRaw).toLocaleUpperCase('tr-TR'):levelRaw.toUpperCase();
-    addPdfUnicodeText(doc,lvl,W/2,165,{fontSize:23,bold:true,color:'#b9141c'});
-
-    addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,192,{fontSize:6.8,bold:true,color:'#333333'});
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),38,236,{fontSize:11.5,bold:true});
-    doc.setDrawColor(45,45,45); doc.setLineWidth(0.4); doc.line(18,244,58,244);
-
-    addPdfUnicodeText(doc,isTR?'TARİH':'DATE',172,224,{fontSize:7.5,bold:true});
-    addPdfUnicodeText(doc,String(d.examDate||'-'),172,236,{fontSize:11.5,bold:true});
-    doc.line(152,244,192,244);
-
-    if(qr) doc.addImage(qr,'PNG',158,248,28,28);
-    addPdfUnicodeText(doc,isTR?'DOĞRULAMA':'VERIFY',172,282,{fontSize:5.5,bold:true});
-    doc.setDrawColor(190,132,12); doc.setLineWidth(0.6);
-    doc.line(W/2-55,239,W/2-26,239); doc.line(W/2+26,239,W/2+55,239);
-    drawGoldSeal(doc,W/2,239,23,logo);
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,273,{fontSize:10,bold:true});
-    doc.setDrawColor(60,60,60); doc.setLineWidth(0.35); doc.line(W/2-28,278,W/2+28,278);
-
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_code_v16'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_hybrid_v17'});
   }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
 }
 function downloadInstructorID(record, lang){
@@ -948,7 +954,7 @@ function downloadInstructorID(record, lang){
     addPdfUnicodeText(doc,isTR?'AKADEMİ ÜYELİĞİ / EĞİTİM KİMLİĞİ':'ACADEMY MEMBERSHIP / TRAINING CREDENTIAL',125,78.2,{fontSize:4.1,bold:true,color:'#ffffff',align:'right'});
 
     doc.save((isTR?'kimlik-':'id-card-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,kind:'instructor_id_code_v16'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,kind:'instructor_id_code_v9'});
   }).catch(function(err){console.error(err);alert('Kimlik oluşturulamadı: '+err.message);});
 }
 function downloadAppreciationCertificate(record, lang){
@@ -961,7 +967,7 @@ function downloadAppreciationCertificate(record, lang){
 
     addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':'KRAV MAGA TURK ACADEMY',16,22,{fontSize:13,bold:true,align:'left'});
     addPdfUnicodeText(doc,isTR?'ULUSLARARASI':'INTERNATIONAL',16,29,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,68,{fontSize:isTR?34:30,bold:true,family:'Georgia'});
+    addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,68,{fontSize:isTR?31:27,bold:true,family:'Georgia'});
     drawGoldOrnament(doc,W/2,82,70);
 
     if(isTR){
@@ -973,7 +979,7 @@ function downloadAppreciationCertificate(record, lang){
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
-    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:34,bold:true,family:'Georgia'});
+    addPdfUnicodeText(doc,nm,W/2,137,{fontSize:31,bold:true,family:'Georgia'});
     drawGoldOrnament(doc,W/2,146,67);
 
     addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NO',38,224,{fontSize:7.5,bold:true});
@@ -989,13 +995,13 @@ function downloadAppreciationCertificate(record, lang){
     if(qr) doc.addImage(qr,'PNG',158,248,28,28);
     addPdfUnicodeText(doc,isTR?'DOĞRULAMA':'VERIFY',172,282,{fontSize:5.5,bold:true});
     doc.setDrawColor(190,132,12); doc.setLineWidth(0.6);
-    doc.line(W/2-55,239,W/2-26,239); doc.line(W/2+26,239,W/2+55,239);
-    drawGoldSeal(doc,W/2,239,23,logo);
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,273,{fontSize:10,bold:true});
-    doc.setDrawColor(60,60,60); doc.setLineWidth(0.35); doc.line(W/2-28,278,W/2+28,278);
+    doc.line(W/2-52,241,W/2-24,241); doc.line(W/2+24,241,W/2+52,241);
+    drawGoldSeal(doc,W/2,241,21,logo);
+    addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
+    doc.setDrawColor(60,60,60); doc.setLineWidth(0.35); doc.line(W/2-27,277,W/2+27,277);
 
     doc.save((isTR?'tesekkur-':'appreciation-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'appreciation_code_v16'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'appreciation_code_v9'});
   }).catch(function(err){console.error(err);alert('Teşekkür belgesi oluşturulamadı: '+err.message);});
 }
 function checkLockoutStatus(){
