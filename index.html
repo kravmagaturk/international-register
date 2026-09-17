@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-6';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-7';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -759,12 +759,6 @@ function downloadPDF(record, lang){
     if(isTR){
       // Türkçe PNG'de örnek/duble küçük yazıları temizle.
       // Dinamik alanları beyaz zeminle sıfırla ve sadece kayıt verisini bir kez bas.
-      doc.setFillColor(255,255,255);
-      doc.rect(82,103,133,55,'F');       // isim + seviye alanı
-      doc.rect(16,158,55,20,'F');        // sicil alanı
-      doc.rect(119,158,58,20,'F');       // tarih alanı
-      doc.rect(242,108,39,42,'F');       // eski QR alanı
-
       doc.setTextColor(15,15,15); doc.setFont('times','bold');
       var nmTR=turkishSafe(String(d.studentName||'').toUpperCase());
       fitText(doc,nmTR,122,20,13);
