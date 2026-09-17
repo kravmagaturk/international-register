@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-7';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-8';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -747,54 +747,83 @@ function fitText(doc,text,maxWidth,startSize,minSize){
   while(size>minSize && doc.getTextWidth(text)>maxWidth){size-=0.5; doc.setFontSize(size);}
   return size;
 }
+function addPdfUnicodeText(doc,text,x,y,opts){
+  opts=opts||{};
+  var scale=4, fontSize=opts.fontSize||12, family=opts.family||'Arial', weight=opts.bold?'700':'400';
+  var c=document.createElement('canvas'),ctx=c.getContext('2d');
+  ctx.font=weight+' '+(fontSize*scale)+'px '+family;
+  var pad=12*scale,w=Math.ceil(ctx.measureText(String(text)).width+pad*2),h=Math.ceil(fontSize*1.55*scale);
+  c.width=w;c.height=h;ctx=c.getContext('2d');ctx.clearRect(0,0,w,h);
+  ctx.font=weight+' '+(fontSize*scale)+'px '+family;ctx.textBaseline='middle';ctx.textAlign='center';
+  ctx.fillStyle=opts.color||'#111111';ctx.fillText(String(text),w/2,h/2);
+  var mmW=w/scale*0.264583,mmH=h/scale*0.264583,xx=x-mmW/2;
+  if(opts.align==='left') xx=x;
+  if(opts.align==='right') xx=x-mmW;
+  doc.addImage(c.toDataURL('image/png'),'PNG',xx,y-mmH*0.72,mmW,mmH);
+}
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
-  Promise.all([loadTemplate(isTR?'diplomaTr':'diplomaEn'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
-    var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
+  var jobs=isTR ? Promise.all([Promise.resolve(null),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareLogoBase64()])
+                  : Promise.all([loadTemplate('diplomaEn'),makeQrDataUrl(buildQrUrl(d.registerNo)),Promise.resolve(null)]);
+  jobs.then(function(parts){
+    var bg=parts[0],qr=parts[1],logo=parts[2],jsPDF=window.jspdf.jsPDF;
     var W=297,H=198;
     var doc=new jsPDF('l','mm',[H,W]);
-    doc.addImage(bg,'PNG',0,0,W,H);
 
     if(isTR){
-      // Türkçe PNG'de örnek/duble küçük yazıları temizle.
-      // Dinamik alanları beyaz zeminle sıfırla ve sadece kayıt verisini bir kez bas.
-      doc.setTextColor(15,15,15); doc.setFont('times','bold');
-      var nmTR=turkishSafe(String(d.studentName||'').toUpperCase());
-      fitText(doc,nmTR,122,20,13);
-      doc.text(nmTR,W/2,119,{align:'center'});
-      doc.setDrawColor(30,30,30); doc.setLineWidth(0.35);
-      doc.line(84,123,213,123);
+      // TÜRKÇE DİPLOMA: PNG şablon kullanılmaz. Tasarım ve tüm bilgiler kodla çizilir.
+      doc.setFillColor(255,255,253); doc.rect(0,0,W,H,'F');
+      doc.setDrawColor(190,20,28); doc.setLineWidth(1.25); doc.rect(4,4,W-8,H-8);
+      doc.setDrawColor(20,20,20); doc.setLineWidth(0.65); doc.rect(7,7,W-14,H-14);
+      doc.setDrawColor(190,20,28); doc.setLineWidth(0.35); doc.rect(9,9,W-18,H-18);
 
-      var levelRaw=String(d.level||'').trim(), levelKey=levelRaw.toUpperCase();
-      var levelTR={
-        'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3',
-        'MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'
-      };
-      var lvlTR=turkishSafe(String(levelTR[levelKey]||levelRaw).toUpperCase());
-      doc.setFont('helvetica','bold'); doc.setTextColor(185,20,20);
-      fitText(doc,lvlTR,100,13,9);
-      doc.text(lvlTR,W/2,142,{align:'center'});
+      // Köşe çizgileri
+      doc.setDrawColor(20,20,20); doc.setLineWidth(1.4);
+      [[12,12,25,12,12,25],[W-12,12,W-25,12,W-12,25],[12,H-12,25,H-12,12,H-25],[W-12,H-12,W-25,H-12,W-12,H-25]].forEach(function(a){doc.line(a[0],a[1],a[2],a[3]);doc.line(a[0],a[1],a[4],a[5]);});
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20,20,20);
-      doc.text(turkishSafe(String(d.registerNo||'-')),43,169,{align:'center'});
-      doc.text(turkishSafe(String(d.examDate||'-')),149,169,{align:'center'});
-      doc.setDrawColor(30,30,30); doc.setLineWidth(0.35);
-      doc.line(22,173,64,173); doc.line(126,173,172,173);
+      if(logo){try{doc.addImage(logo,'PNG',W/2-13,9,26,26);}catch(e){}}
+      addPdfUnicodeText(doc,'KRAV MAGA TÜRK ACADEMY',20,18,{fontSize:13,bold:true,align:'left'});
+      addPdfUnicodeText(doc,'ULUSLARARASI',20,25,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
 
-      if(qr) doc.addImage(qr,'PNG',249.5,112,28,28);
+      addPdfUnicodeText(doc,'DİPLOMA',W/2,53,{fontSize:31,bold:true,family:'Georgia'});
+      doc.setDrawColor(196,145,20);doc.setLineWidth(0.75);doc.line(78,65,219,65);
+      addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,77,{fontSize:8,bold:true});
+      addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,84,{fontSize:8,bold:true});
+
+      var nmTR=String(d.studentName||'').toLocaleUpperCase('tr-TR');
+      addPdfUnicodeText(doc,nmTR,W/2,106,{fontSize:20,bold:true,family:'Georgia'});
+      doc.setDrawColor(45,45,45);doc.setLineWidth(0.45);doc.line(82,113,215,113);
+
+      addPdfUnicodeText(doc,'SEVİYE',W/2,124,{fontSize:7,bold:true});
+      var levelRaw=String(d.level||'').trim(),levelKey=levelRaw.toUpperCase();
+      var levelTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
+      var lvlTR=String(levelTR[levelKey]||levelRaw).toLocaleUpperCase('tr-TR');
+      addPdfUnicodeText(doc,lvlTR,W/2,135,{fontSize:13,bold:true,color:'#b9141c'});
+
+      // Sicil ve tarih yalnızca bir kez, altta.
+      addPdfUnicodeText(doc,'SİCİL NUMARASI',43,157,{fontSize:7,bold:true});
+      addPdfUnicodeText(doc,String(d.registerNo||'-'),43,167,{fontSize:11,bold:true});
+      doc.setDrawColor(45,45,45);doc.setLineWidth(0.4);doc.line(20,173,66,173);
+      addPdfUnicodeText(doc,'TARİH',236,157,{fontSize:7,bold:true});
+      addPdfUnicodeText(doc,String(d.examDate||'-'),236,167,{fontSize:11,bold:true});
+      doc.line(213,173,259,173);
+
+      // Tek QR
+      if(qr) doc.addImage(qr,'PNG',249,104,29,29);
+      addPdfUnicodeText(doc,'DOĞRULAMA',263.5,139,{fontSize:5,bold:true});
+
+      // Alt dekoratif imza çizgisi
+      doc.setFillColor(190,20,28);doc.rect(W/2-10,181,20,2.2,'F');
     }else{
-      // İngilizce diploma: mevcut çalışan yerleşimi korunur.
+      // İngilizce diploma: mevcut çalışan şablon ve yerleşim aynen korunur.
+      doc.addImage(bg,'PNG',0,0,W,H);
       doc.setTextColor(15,15,15); doc.setFont('times','bold');
       var nm=turkishSafe(String(d.studentName||'').toUpperCase());
-      fitText(doc,nm,122,22,14);
-      doc.text(nm,W/2,132,{align:'center'});
-
+      fitText(doc,nm,122,22,14); doc.text(nm,W/2,132,{align:'center'});
       doc.setFont('helvetica','bold'); doc.setTextColor(185,20,20);
       var lvl=turkishSafe(String(d.level||'').toUpperCase());
-      fitText(doc,lvl,100,12,8);
-      doc.text(lvl,W/2,146,{align:'center'});
-
+      fitText(doc,lvl,100,12,8); doc.text(lvl,W/2,146,{align:'center'});
       doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
       doc.text(turkishSafe(String(d.registerNo||'-')),43,166,{align:'center'});
       doc.text(turkishSafe(String(d.examDate||'-')),149,166,{align:'center'});
@@ -803,7 +832,7 @@ function downloadPDF(record, lang){
 
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma'});
-  }).catch(function(err){console.error(err);alert('Diploma şablonu yüklenemedi: '+err.message);});
+  }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
 }
 function downloadInstructorID(record, lang){
   lang=lang||'tr'; if(!record)return;
