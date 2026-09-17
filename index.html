@@ -648,6 +648,7 @@ function runPdfAction(value, record){
   if(value === 'diploma-tr') downloadPDF(record,'tr');
   else if(value === 'diploma-en') downloadPDF(record,'en');
   else if(value === 'diploma-he') downloadPDF(record,'he');
+  else if(value === 'registry-info') downloadRegistryInfoPDF(record);
   else if(value === 'id-tr') downloadInstructorID(record,'tr');
   else if(value === 'id-en') downloadInstructorID(record,'en');
   else if(value === 'cert-tr') downloadAppreciationCertificate(record,'tr');
@@ -661,6 +662,82 @@ function handleAdminPdfMenu(sel, index){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, diplomaData[index]);
 }
+
+function downloadRegistryInfoPDF(record){
+  if(!record) return;
+  var d=record, jsPDF=window.jspdf.jsPDF;
+  Promise.all([prepareLogoBase64(), makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
+    var logo=parts[0], qr=parts[1];
+    var doc=new jsPDF('p','mm','a4'), W=210, H=297;
+
+    // Sade A4 çerçeve
+    doc.setDrawColor(190,20,28); doc.setLineWidth(1.0); doc.rect(7,7,W-14,H-14);
+    doc.setDrawColor(25,25,25); doc.setLineWidth(0.35); doc.rect(10,10,W-20,H-20);
+
+    // Silik merkez logo
+    if(logo){
+      try{
+        doc.saveGraphicsState();
+        if(doc.GState) doc.setGState(new doc.GState({opacity:0.055}));
+        doc.addImage(logo,'PNG',55,88,100,100);
+        doc.restoreGraphicsState();
+      }catch(e){}
+      try{ doc.addImage(logo,'PNG',W/2-15,16,30,30); }catch(e){}
+    }
+
+    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,54,{fontSize:17,bold:true});
+    addPdfUnicodeText(doc,'ÖĞRENCİ SİCİL BİLGİ FORMU',W/2,63,{fontSize:13,bold:true,color:'#b9141c'});
+    doc.setDrawColor(120,120,120); doc.setLineWidth(0.35); doc.line(25,69,W-25,69);
+
+    // Fotoğraf
+    if(d.photo){
+      try{
+        doc.setDrawColor(130,130,130); doc.rect(24,78,42,52);
+        doc.addImage(d.photo,26,80,38,48);
+      }catch(e){}
+    }else{
+      doc.setDrawColor(170,170,170); doc.rect(24,78,42,52);
+      addPdfUnicodeText(doc,'FOTOĞRAF',45,106,{fontSize:8,bold:true,color:'#888888'});
+    }
+
+    // Sicil no öne çıkar
+    addPdfUnicodeText(doc,'SİCİL NO',91,82,{fontSize:8,bold:true,color:'#666666',align:'left'});
+    addPdfUnicodeText(doc,String(d.registerNo||'-'),91,92,{fontSize:18,bold:true,align:'left'});
+
+    var rows=[
+      ['AD SOYAD', String(d.studentName||'-')],
+      ['AKADEMİYE GİRİŞ', String(d.joinDate||'-')],
+      ['SINAV TARİHİ', String(d.examDate||'-')],
+      ['SINAV YERİ', String(d.examLocation||'-')],
+      ['SEVİYE', String(d.level||'-')],
+      ['DURUM', d.status==='pasif'?'PASİF':'AKTİF']
+    ];
+    var y=145;
+    rows.forEach(function(r,idx){
+      addPdfUnicodeText(doc,r[0],28,y,{fontSize:9,bold:true,align:'left'});
+      addPdfUnicodeText(doc,r[1],82,y,{fontSize:10.5,bold:idx===0,align:'left',color:(idx===5?(d.status==='pasif'?'#b9141c':'#238b45'):'#333333')});
+      doc.setDrawColor(225,225,225); doc.setLineWidth(0.25); doc.line(28,y+4,150,y+4);
+      y+=14;
+    });
+
+    // QR
+    if(qr){
+      doc.addImage(qr,'PNG',158,143,30,30);
+      addPdfUnicodeText(doc,'SİCİL DOĞRULAMA',173,179,{fontSize:7,bold:true});
+    }
+
+    doc.setDrawColor(120,120,120); doc.line(35,244,W-35,244);
+    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,254,{fontSize:10,bold:true});
+    addPdfUnicodeText(doc,'Bu belge yönetici panelindeki güncel sicil kaydından oluşturulmuştur.',W/2,263,{fontSize:7.5,color:'#777777'});
+
+    doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf'});
+  }).catch(function(err){
+    console.error(err);
+    alert('Sicil bilgi PDF oluşturulamadı: '+err.message);
+  });
+}
+
 function downloadStudentListPDF(){
   if(!diplomaData || diplomaData.length === 0){ alert('Kayıtlı öğrenci yok.'); return; }
   var jsPDF = window.jspdf.jsPDF;
@@ -1255,7 +1332,7 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option><option value="diploma-he">Diploma — עברית</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select>' +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📄 PDF Çıktıları</option><option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option><option value="diploma-he">Diploma — עברית</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (isIdEligibleLevel(d.level) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + (isCertEligibleLevel(d.level) ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>' : '') + '</select>' +
         '</div>' +
       '</div>';
   });
