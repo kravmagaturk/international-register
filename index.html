@@ -707,7 +707,20 @@ function downloadRegistryInfoPDF(record){
       drawCircularImage(doc, logo, W/2, 27, 13);
     }
 
-    // Sicil Bilgi PDF'de öğrenci fotoğrafı basılmaz.
+    // Öğrenci fotoğrafı — Sicil Bilgi PDF'de soldaki beyaz alanda.
+        // Merkez filigrana/logoya temas etmemesi için x=18..58 aralığında tutulur.
+        if(d.photo){
+          try{
+            const props=doc.getImageProperties(d.photo);
+            const boxW=40, boxH=52, boxX=18, boxY=112;
+            const ratio=props.width/props.height;
+            let imgW=boxW, imgH=imgW/ratio;
+            if(imgH>boxH){ imgH=boxH; imgW=imgH*ratio; }
+            const imgX=boxX+(boxW-imgW)/2;
+            const imgY=boxY+(boxH-imgH)/2;
+            doc.addImage(d.photo, props.fileType||'JPEG', imgX, imgY, imgW, imgH);
+          }catch(e){ console.warn('Sicil fotoğrafı basılamadı',e); }
+        }
 
     addPdfUnicodeText(doc,'DİPLOMA NO',W/2,92,{fontSize:9,bold:true,color:'#555555'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,103,{fontSize:18,bold:true});
