@@ -977,11 +977,11 @@ function downloadPDF(record, lang){
     addPdfUnicodeText(doc,lv,W/2,136,{fontSize:isHE?28:19,bold:true,color:'#b9141c'});
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:isHE?14:7.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:isHE?19:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),64,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),230,164,{fontSize:isHE?14:7.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),230,164,{fontSize:isHE?19:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.examDate||'-'),230,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),230,190,{fontSize:isHE?17:9.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),230,190,{fontSize:isHE?21:9.5,bold:true});
     if(qr) doc.addImage(qr,'PNG',263,166,22,22);
 
     doc.save('diploma-'+d.registerNo+'-'+lang+'.pdf');
