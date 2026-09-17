@@ -704,7 +704,7 @@ function downloadStudentListPDF(){
 // === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
-  diplomaTr: ['diploma-final-tr.png','diploma-template-tr.png','diploma-template.png'],
+  diplomaTr: ['diploma-premium-tr.png'],
   diplomaEn: ['diploma-template-en.png','diploma-template.png'],
   honorTr: ['honor-template-tr.png','honor-template.png'],
   honorEn: ['honor-template-en.png','honor-template.png'],
@@ -726,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-19';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-20';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -904,7 +904,7 @@ function downloadPDF(record, lang){
       addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',W/2,272,{fontSize:9.5,bold:true});
     }
     doc.save((isTR?'diploma-':'certificate-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_hybrid_v19'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'diploma_premium_clean_v20'});
   }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
 }
 function downloadInstructorID(record, lang){
