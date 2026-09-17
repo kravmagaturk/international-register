@@ -952,16 +952,16 @@ function downloadPDF(record, lang){
     if(!template) throw new Error('certificate-master-template.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
-    addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':(isHE?'אקדמיית קרב מגע טורק':'KRAV MAGA TURK ACADEMY'),32,19,{fontSize:13,bold:true,align:'left'});
-    addPdfUnicodeText(doc,isTR?'ULUSLARARASI':(isHE?'בינלאומי':'INTERNATIONAL'),32,25,{fontSize:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'DİPLOMA':(isHE?'דיפלומה':'DIPLOMA'),W/2,61,{fontSize:42,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':(isHE?'אקדמיית קרב מגע טורק':'KRAV MAGA TURK ACADEMY'),32,19,{fontSize:isHE?17:13,bold:true,align:'left'});
+    addPdfUnicodeText(doc,isTR?'ULUSLARARASI':(isHE?'בינלאומי':'INTERNATIONAL'),32,26,{fontSize:isHE?10:7,bold:true,color:'#c0141c',align:'left'});
+    addPdfUnicodeText(doc,isTR?'DİPLOMA':(isHE?'דיפלומה':'DIPLOMA'),W/2,61,{fontSize:isHE?48:42,bold:true,family:'Arial'});
 
     if(isTR){
       addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,80,{fontSize:10.5,bold:true});
       addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,87,{fontSize:10.5,bold:true});
     }else if(isHE){
-      addPdfUnicodeText(doc,'כהוקרה על השלמת ההכשרה בהצלחה ועל המאמץ והמסירות שהפגין/ה,',W/2,80,{fontSize:10.5,bold:true});
-      addPdfUnicodeText(doc,'מוענקת בזאת דיפלומה זו.',W/2,87,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,'כהוקרה על השלמת ההכשרה בהצלחה ועל המאמץ והמסירות שהפגין/ה,',W/2,80,{fontSize:15,bold:true});
+      addPdfUnicodeText(doc,'מוענקת בזאת דיפלומה זו.',W/2,89,{fontSize:15,bold:true});
     }else{
       addPdfUnicodeText(doc,'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,80,{fontSize:10.5,bold:true});
       addPdfUnicodeText(doc,'THIS DIPLOMA IS HEREBY AWARDED.',W/2,87,{fontSize:10.5,bold:true});
@@ -969,19 +969,19 @@ function downloadPDF(record, lang){
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':(isHE?'he-IL':'en-US'));
     addPdfUnicodeText(doc,nm,W/2,106,{fontSize:29,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,isTR?'SEVİYE':(isHE?'דרגה':'LEVEL'),W/2,127,{fontSize:11,bold:true});
+    addPdfUnicodeText(doc,isTR?'SEVİYE':(isHE?'דרגה':'LEVEL'),W/2,127,{fontSize:isHE?16:11,bold:true});
     var lr=String(d.level||'').trim(),lk=lr.toUpperCase();
     var mapTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
     var mapHE={'INSTRUCTOR':'מדריך','INSTRUCTOR 1':'מדריך 1','INSTRUCTOR 2':'מדריך 2','INSTRUCTOR 3':'מדריך 3','MASTER INSTRUCTOR':'מדריך ראשי','EXPERT':'מומחה','GRADUATE':'בוגר','PRACTITIONER':'מתאמן'};
     var lv=isTR?String(mapTR[lk]||lr).toLocaleUpperCase('tr-TR'):(isHE?String(mapHE[lk]||lr):lr.toUpperCase());
-    addPdfUnicodeText(doc,lv,W/2,134,{fontSize:19,bold:true,color:'#b9141c'});
+    addPdfUnicodeText(doc,lv,W/2,136,{fontSize:isHE?24:19,bold:true,color:'#b9141c'});
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:7.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':(isHE?'מספר רישום':'REGISTER NO'),64,164,{fontSize:isHE?11:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),64,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),230,164,{fontSize:7.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),230,164,{fontSize:isHE?11:7.5,bold:true});
     addPdfUnicodeText(doc,String(d.examDate||'-'),230,174,{fontSize:12.5,bold:true});
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),230,190,{fontSize:9.5,bold:true});
+    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),230,190,{fontSize:isHE?14:9.5,bold:true});
     if(qr) doc.addImage(qr,'PNG',263,166,22,22);
 
     doc.save('diploma-'+d.registerNo+'-'+lang+'.pdf');
