@@ -704,8 +704,10 @@ function downloadStudentListPDF(){
 // === A4 DIKEY PNG SERTIFIKA SABLONLARI ===
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
-  diploma: ['diploma-template.png'],
-  honor: ['honor-template.png'],
+  diplomaTr: ['diploma-template-tr.png','diploma-template.png'],
+  diplomaEn: ['diploma-template-en.png','diploma-template.png'],
+  honorTr: ['honor-template-tr.png','honor-template.png'],
+  honorEn: ['honor-template-en.png','honor-template.png'],
   instructorId: ['instructor-id-template.png']
 };
 var templateCache = {};
@@ -724,7 +726,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-3';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-4';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -748,7 +750,7 @@ function fitText(doc,text,maxWidth,startSize,minSize){
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
-  Promise.all([loadTemplate('diploma'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
+  Promise.all([loadTemplate(isTR?'diplomaTr':'diplomaEn'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=198;
     var doc=new jsPDF('l','mm',[H,W]);
@@ -862,7 +864,7 @@ function downloadInstructorID(record, lang){
 function downloadAppreciationCertificate(record, lang){
   lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
-  Promise.all([loadTemplate('honor'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
+  Promise.all([loadTemplate(isTR?'honorTr':'honorEn'),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
     var bg=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=198;
     var doc=new jsPDF('l','mm',[H,W]);
