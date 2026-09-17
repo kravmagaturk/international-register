@@ -810,6 +810,11 @@ function downloadRegistryInfoPDF(record){
     doc.line(42,138,75,138); doc.line(135,138,168,138);
     addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,141,{fontSize:12,bold:true,color:'#555555'});
 
+    // v55 — Tek sicile bağlı bütün belgeler/seviyeler Sicil Bilgi PDF'sinde ayrıca gösterilir.
+    var allDocumentLabels = recordDocuments(d).map(function(x){
+      return documentLabel(x);
+    }).filter(Boolean).join(' • ');
+
     var rows=[
       ['Ad Soyad:', String(d.studentName||'-')],
       ['Akademiye Giriş:', String(d.joinDate||'-')],
@@ -817,14 +822,15 @@ function downloadRegistryInfoPDF(record){
       ['Sınav Yeri:', String(d.examLocation||'-')],
       ['Seviye:', String(d.level||'-')],
       ['Sicil No:', String(d.registerNo||'-')],
+      ['Belgeler / Seviyeler:', allDocumentLabels || String(d.level||'-')],
       ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
     ];
     var y=165;
     rows.forEach(function(r,idx){
-      addPdfUnicodeText(doc,r[0],25,y,{fontSize:13,bold:true,align:'left'});
-      addPdfUnicodeText(doc,r[1],72,y,{fontSize:13,bold:true,align:'left',
-        color:(idx===6?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
-      y+=11;
+      addPdfUnicodeText(doc,r[0],25,y,{fontSize:12,bold:true,align:'left'});
+      addPdfUnicodeText(doc,r[1],72,y,{fontSize:(idx===6?10.5:12),bold:true,align:'left',
+        color:(idx===7?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
+      y+=10;
     });
 
     if(qr){
