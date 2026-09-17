@@ -751,7 +751,26 @@ function downloadRegistryInfoPDF(record){
     // Claude indexindeki çalışan jsPDF clipping yöntemi:
     // yalnız dairesel logo görünür, kare PNG köşeleri PDF'ye basılmaz.
     if(logo){
-      drawWatermarkLogo(doc, logo, W/2, 150, 72, 0.055);
+      // Arka plan: çoklu KRAV MAGA yazı filigranı
+      try{
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({opacity:0.035}));
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(18);
+        doc.setTextColor(90,90,90);
+
+        for(let y=18; y<292; y+=28){
+          for(let x=-8; x<215; x+=58){
+            doc.text('KRAV MAGA', x, y, {angle:25});
+          }
+        }
+        doc.restoreGraphicsState();
+      }catch(e){
+        console.warn('Yazı filigranı basılamadı',e);
+      }
+
+      // Ana yuvarlak logo filigranı korunur
+      drawWatermarkLogo(doc, logo, W/2, 150, 72, 0.045);
       drawCircularImage(doc, logo, W/2, 27, 13);
     }
 
