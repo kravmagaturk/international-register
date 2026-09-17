@@ -211,7 +211,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <h3 id="txt-registeredStudentsHeading" style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
           <div class="admin-export-bar">
             <button class="btn btn-pdf btn-small" onclick="downloadStudentListPDF()">📄 Toplu Öğrenci Listesi PDF</button>
-            <span style="font-size:12px;color:#777;">Sadece Ad Soyad + Sicil No</span>
+            <span style="font-size:12px;color:#777;">Sadece Ad Soyad + Kayıt No</span>
           </div>
           <div id="stats-display" class="stats-bar hidden"></div>
           <div class="search-filter-bar">
@@ -418,7 +418,7 @@ var PDF_I18N = {
   en:{diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:', level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive', footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.', rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875', noPhoto:'NO PHOTO', locale:'en-US'}
 };
 var ID_I18N = {
-  tr:{title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
+  tr:{title:'KRAV MAGA KİMLİK', regNo:'Kayıt No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
   en:{title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}'}
 };
 var ID_ROLE_LABELS = {
@@ -810,7 +810,7 @@ function downloadRegistryInfoPDF(record){
     doc.line(42,138,75,138); doc.line(135,138,168,138);
     addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,141,{fontSize:12,bold:true,color:'#555555'});
 
-    // v55 — Tek sicile bağlı bütün belgeler/seviyeler Sicil Bilgi PDF'sinde ayrıca gösterilir.
+    // v55 — Tek sicile bağlı bütün belgeler/seviyeler Kayıt Bilgi PDF'sinde ayrıca gösterilir.
     var allDocumentLabels = recordDocuments(d).map(function(x){
       return documentLabel(x);
     }).filter(Boolean).join(' • ');
@@ -820,8 +820,7 @@ function downloadRegistryInfoPDF(record){
       ['Akademiye Giriş:', String(d.joinDate||'-')],
       ['Sınav Tarihi:', String(d.examDate||'-')],
       ['Sınav Yeri:', String(d.examLocation||'-')],
-      ['Seviye:', String(d.level||'-')],
-      ['Sicil No:', String(d.registerNo||'-')],
+      ['Kayıt No:', String(d.registerNo||'-')],
       ['Belgeler / Seviyeler:', allDocumentLabels || String(d.level||'-')],
       ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
     ];
@@ -829,7 +828,7 @@ function downloadRegistryInfoPDF(record){
     rows.forEach(function(r,idx){
       addPdfUnicodeText(doc,r[0],25,y,{fontSize:12,bold:true,align:'left'});
       addPdfUnicodeText(doc,r[1],72,y,{fontSize:(idx===6?10.5:12),bold:true,align:'left',
-        color:(idx===7?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
+        color:(idx===6?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
       y+=10;
     });
 
@@ -1079,7 +1078,7 @@ function downloadPDF(record, lang){
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
     // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
-    addPdfUnicodeText(doc,isTR?'SİCİL NO':(isHE?'מספר רישום':'REGISTER NO'),18,176,{fontSize:isHE?18:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,isTR?'KAYIT NO':(isHE?'מספר רישום':'REGISTER NO'),18,176,{fontSize:isHE?18:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
     addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),18,184,{fontSize:isHE?18:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.examDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
@@ -1124,7 +1123,7 @@ function downloadInstructorID(record, lang){
     doc.setFillColor(190,20,28); doc.roundedRect(x,40,42,8,1.2,1.2,'F');
     addPdfUnicodeText(doc,String(roleLabel||'INSTRUCTOR').toLocaleUpperCase(isTR?'tr-TR':'en-US'),x+21,45.1,{fontSize:8.2,bold:true,color:'#ffffff'});
 
-    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',x,53,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
+    addPdfUnicodeText(doc,isTR?'KAYIT NO':'REGISTER NO',x,53,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),x,58.8,{fontSize:9.5,bold:true,align:'left'});
     var issueDate=new Date(),validDate=new Date(issueDate); validDate.setFullYear(validDate.getFullYear()+5),locale=isTR?'tr-TR':'en-GB';
     addPdfUnicodeText(doc,isTR?'DÜZENLEME':'ISSUED',x,64.2,{fontSize:5.5,bold:true,color:'#555555',align:'left'});
@@ -1170,7 +1169,7 @@ function downloadAppreciationCertificate(record, lang){
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
     // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
-    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',18,176,{fontSize:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,isTR?'KAYIT NO':'REGISTER NO',18,176,{fontSize:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
     addPdfUnicodeText(doc,isTR?'TARİH':'DATE',18,184,{fontSize:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.examDate||d.joinDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
@@ -1596,7 +1595,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
           documentMenus +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Kayıt Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
           '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
