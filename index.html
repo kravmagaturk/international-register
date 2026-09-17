@@ -4,7 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga International Registration</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+/* GUNCEL_SABLON_ALT_YERLESIM_V51
+   Diploma TR/EN + Onur/Teşekkür TR/EN ortak alt alan geometrisi.
+   Şablon görseli değiştirilmez. */
+const CURRENT_CERT_TEMPLATE = 'yeni_master_2.png';
+const CURRENT_CERT_LAYOUT = Object.freeze({
+  register: { labelX:18, valueX:46, y:178 },
+  date:     { labelX:18, valueX:46, y:186 },
+  instructor:{ x:232, y:184 },
+  qr:       { x:258, y:174, size:22 }
+});
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
