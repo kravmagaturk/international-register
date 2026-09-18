@@ -1031,10 +1031,10 @@ function downloadPDF(record, lang){
     doc.addImage(template,'PNG',0,0,W,H);
     // diploma-genel.png: veri kutularina sabit A4 koordinatlari
     addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,98.0,{fontSize:26,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,127.3,{fontSize:20,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.registerNo||''),18.5,143.8,{fontSize:13,bold:true,align:'left',family:'Arial'});
-    addPdfUnicodeText(doc,String(d.joinDate||''),18.5,161.5,{fontSize:12.5,bold:true,align:'left',family:'Arial'});
-    addPdfUnicodeText(doc,String(d.examDate||''),18.5,180.0,{fontSize:12.5,bold:true,align:'left',family:'Arial'});
+    addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),141.0,127.3,{fontSize:20,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.registerNo||''),18.5,143.8,{fontSize:15,bold:true,align:'left',family:'Arial'});
+    addPdfUnicodeText(doc,String(d.joinDate||''),18.5,161.5,{fontSize:14,bold:true,align:'left',family:'Arial'});
+    addPdfUnicodeText(doc,String(d.examDate||''),18.5,180.0,{fontSize:14,bold:true,align:'left',family:'Arial'});
     if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),148.5,170.8,{fontSize:14,bold:true,family:'Arial'});
     if(qr) doc.addImage(qr,'PNG',234.0,116.5,42.0,42.0);
     doc.save('diploma-'+d.registerNo+'.pdf');
