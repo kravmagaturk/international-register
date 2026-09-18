@@ -709,6 +709,15 @@ function handleAdminAllDocumentsMenu(sel, index){
   runPdfAction(action, recordForDocument(diplomaData[index], docIndex));
 }
 
+function handleAdminRegistryMenu(sel, index){
+  var raw = sel.value;
+  sel.selectedIndex = 0;
+  if(raw==='' || !diplomaData[index]) return;
+  var docIndex = parseInt(raw,10);
+  if(isNaN(docIndex)) return;
+  runPdfAction('registry-info', recordForDocument(diplomaData[index], docIndex));
+}
+
 
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
@@ -802,7 +811,7 @@ function downloadRegistryInfoPDF(record){
     if(portrait){ try{ doc.addImage(portrait,'JPEG',14.0,72.0,42.0,55.0); }catch(e){} }
     if(qr){ try{ doc.addImage(qr,'PNG',18.0,132.0,34.0,34.0); }catch(e){} }
 
-    var docs=recordDocuments(d),activeDoc=docs.length?docs[0]:{level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
+    var docs=recordDocuments(d),selectedDoc=(typeof d._documentIndex==='number' ? docs[d._documentIndex] : null);\n    var activeDoc=selectedDoc || {level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
     // Diploma adı ve alt seviye Sicil PDF'de ayrı satırlarda gösterilir.
     var registryFullLevel=String(activeDoc.level||d.level||'').trim();
     var registryParts=registryFullLevel.match(/^(.*?)\s+Level\s+(\d+)$/i);
@@ -1489,6 +1498,15 @@ function renderDiplomaList(filtered, isFiltering){
       });
       documentMenus += '</select>';
     }
+    var registryMenu = '';
+    if(docs.length){
+      registryMenu = '<select class="pdf-output-select" onchange="handleAdminRegistryMenu(this,'+i+')">' +
+        '<option value="">📋 Sicil Bilgi</option>';
+      docs.forEach(function(x,di){
+        registryMenu += '<option value="'+di+'">Sicil — '+documentMenuLabel(x)+'</option>';
+      });
+      registryMenu += '</select>';
+    }
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1511,7 +1529,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
           documentMenus +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — PDF</option></select>' +
+          registryMenu +
           '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
