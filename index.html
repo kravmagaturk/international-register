@@ -275,7 +275,6 @@ var auth = firebase.auth();
 var googleProvider = new firebase.auth.GoogleAuthProvider();
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmagaturk.github.io/international-register/';
-var lockoutTimer = null;
 
 var diplomaData = [];
 var currentPhotoData = '';
@@ -500,11 +499,6 @@ function showTab(name){
   var activeContent = document.getElementById(name+'-content');
   if(activeContent) activeContent.classList.add('active');
 }
-function togglePassword(id,btn){
-  var input = document.getElementById(id);
-  if(input.type==='password'){ input.type='text'; btn.textContent='🙈'; }
-  else { input.type='password'; btn.textContent='👁️'; }
-}
 function previewPhoto(event){
   var file = event.target.files[0];
   if(!file) return;
@@ -711,16 +705,6 @@ function handleAdminAllDocumentsMenu(sel, index){
   runPdfAction(action, recordForDocument(diplomaData[index], docIndex));
 }
 
-function handleAdminRegistryMenu(sel, index){
-  var raw = sel.value;
-  sel.selectedIndex = 0;
-  if(raw==='' || !diplomaData[index]) return;
-  var docIndex = parseInt(raw,10);
-  if(isNaN(docIndex)) return;
-  runPdfAction('registry-info', recordForDocument(diplomaData[index], docIndex));
-}
-
-
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
     doc.saveGraphicsState();
@@ -813,13 +797,13 @@ function downloadRegistryInfoPDF(record){
     if(portrait){ try{ doc.addImage(portrait,'JPEG',14.0,72.0,42.0,55.0); }catch(e){} }
     if(qr){ try{ doc.addImage(qr,'PNG',18.0,132.0,34.0,34.0); }catch(e){} }
 
-    var docs=recordDocuments(d),selectedDoc=(typeof d._documentIndex==='number' ? docs[d._documentIndex] : null);
-    var activeDoc=selectedDoc || {level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
-    // Diploma adı ve alt seviye Sicil PDF'de ayrı satırlarda gösterilir.
-    var registryFullLevel=String(activeDoc.level||d.level||'').trim();
-    var registryParts=registryFullLevel.match(/^(.*?)\s+Level\s+(\d+)$/i);
-    var registryDiploma=registryParts ? registryParts[1].trim() : registryFullLevel;
-    var registrySubLevel=registryParts ? ('Level '+registryParts[2]) : '-';
+    var docs=recordDocuments(d);
+    // Tek sicil: kişinin bütün belge/seviyeleri LEVEL alanında birlikte gösterilir.
+    var registryLevels=docs.map(function(x){ return String((x&&x.level)||'').trim(); }).filter(Boolean);
+    if(!registryLevels.length && d.level) registryLevels=[String(d.level).trim()];
+    var registryDiploma=registryLevels.join(' • ') || '-';
+    var registrySubLevel='-';
+    var activeDoc=docs.length ? docs[0] : {examDate:d.examDate||'',examLocation:d.examLocation||''};
     // Yeni şablondaki çizgilerin merkezlerine hizalı veri koordinatları.
     fitRegistry(d.studentName,119.0,78.5,100,13.5,9.5);
     fitRegistry(d.registerNo,119.0,89.5,100,12.5,9);
@@ -1088,30 +1072,6 @@ function downloadAppreciationCertificate(record, lang){
     doc.save((isTR?'tesekkur-':'appreciation-')+d.registerNo+'-'+lang+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'master_appreciation_v25'});
   }).catch(function(err){console.error(err);alert('Teşekkür belgesi oluşturulamadı: '+err.message);});
-}
-function checkLockoutStatus(){
-  var lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
-  var now = Date.now();
-  if(lockUntil > now){ startLockoutCountdown(lockUntil); return true; }
-  return false;
-}
-function startLockoutCountdown(lockUntil){
-  var btn = document.getElementById('login-btn');
-  var msg = document.getElementById('loginMessage');
-  btn.disabled = true;
-  if(lockoutTimer) clearInterval(lockoutTimer);
-  function updateDisplay(){
-    var remaining = lockUntil - Date.now();
-    if(remaining <= 0){
-      clearInterval(lockoutTimer);
-      localStorage.removeItem('loginLockUntil'); localStorage.removeItem('loginAttempts');
-      btn.disabled = false; btn.textContent = t('btnLogin'); msg.innerHTML = ''; return;
-    }
-    var mins = Math.floor(remaining / 60000);
-    var secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div><div class="legal-warning">'+t('legalWarningLockout')+'</div>';
-  }
-  updateDisplay(); lockoutTimer = setInterval(updateDisplay, 1000);
 }
 function showAdminPanel(user){
   currentAdminUser = user;
@@ -1501,15 +1461,8 @@ function renderDiplomaList(filtered, isFiltering){
       });
       documentMenus += '</select>';
     }
-    var registryMenu = '';
-    if(docs.length){
-      registryMenu = '<select class="pdf-output-select" onchange="handleAdminRegistryMenu(this,'+i+')">' +
-        '<option value="">📋 Sicil Bilgi</option>';
-      docs.forEach(function(x,di){
-        registryMenu += '<option value="'+di+'">Sicil — '+documentMenuLabel(x)+'</option>';
-      });
-      registryMenu += '</select>';
-    }
+    var registryMenu = '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')">' +
+      '<option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — Tüm Seviyeler</option></select>';
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1625,9 +1578,6 @@ document.addEventListener('DOMContentLoaded', function(){
 applyStaticLanguage();
   var searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
-  var passInput = document.getElementById('adminPass');
-  if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
-  checkLockoutStatus();
   var urlParams = new URLSearchParams(window.location.search);
   var regParam = urlParams.get('reg');
   if(regParam && searchInput){ searchInput.value = regParam; searchDiploma(); }
