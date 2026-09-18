@@ -813,7 +813,8 @@ function downloadRegistryInfoPDF(record){
     if(portrait){ try{ doc.addImage(portrait,'JPEG',14.0,72.0,42.0,55.0); }catch(e){} }
     if(qr){ try{ doc.addImage(qr,'PNG',18.0,132.0,34.0,34.0); }catch(e){} }
 
-    var docs=recordDocuments(d),selectedDoc=(typeof d._documentIndex==='number' ? docs[d._documentIndex] : null);\n    var activeDoc=selectedDoc || {level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
+    var docs=recordDocuments(d),selectedDoc=(typeof d._documentIndex==='number' ? docs[d._documentIndex] : null);
+    var activeDoc=selectedDoc || {level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
     // Diploma adı ve alt seviye Sicil PDF'de ayrı satırlarda gösterilir.
     var registryFullLevel=String(activeDoc.level||d.level||'').trim();
     var registryParts=registryFullLevel.match(/^(.*?)\s+Level\s+(\d+)$/i);
