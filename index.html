@@ -495,8 +495,10 @@ function showTab(name){
   for(var i=0;i<tabs.length;i++){ tabs[i].classList.remove('active'); }
   var contents = document.querySelectorAll('.tab-content');
   for(var j=0;j<contents.length;j++){ contents[j].classList.remove('active'); }
-  event.target.classList.add('active');
-  document.getElementById(name+'-content').classList.add('active');
+  var activeBtn = document.getElementById('tab-'+name+'-btn');
+  if(activeBtn) activeBtn.classList.add('active');
+  var activeContent = document.getElementById(name+'-content');
+  if(activeContent) activeContent.classList.add('active');
 }
 function togglePassword(id,btn){
   var input = document.getElementById(id);
