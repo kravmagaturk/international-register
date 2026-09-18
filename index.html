@@ -801,8 +801,17 @@ function downloadRegistryInfoPDF(record){
     // Tek sicil: kişinin bütün belge/seviyeleri LEVEL alanında birlikte gösterilir.
     var registryLevels=docs.map(function(x){ return String((x&&x.level)||'').trim(); }).filter(Boolean);
     if(!registryLevels.length && d.level) registryLevels=[String(d.level).trim()];
-    var registryDiploma=registryLevels.join(' • ') || '-';
-    var registrySubLevel='-';
+    // Diploma/Belge satırı ana belgeleri; Seviye satırı alt seviyeleri gösterir.
+    var registryMainLevels=[], registrySubLevels=[];
+    registryLevels.forEach(function(level){
+      var m=level.match(/^(.*?)\s+Level\s+(\d+)$/i);
+      var main=m ? m[1].trim() : level;
+      var sub=m ? ('Level '+m[2]) : '';
+      if(main && registryMainLevels.indexOf(main)===-1) registryMainLevels.push(main);
+      if(sub && registrySubLevels.indexOf(sub)===-1) registrySubLevels.push(sub);
+    });
+    var registryDiploma=registryMainLevels.join(' • ') || '-';
+    var registrySubLevel=registrySubLevels.join(' • ') || '-';
     var activeDoc=docs.length ? docs[0] : {examDate:d.examDate||'',examLocation:d.examLocation||''};
     // Yeni şablondaki çizgilerin merkezlerine hizalı veri koordinatları.
     fitRegistry(d.studentName,119.0,78.5,100,13.5,9.5);
