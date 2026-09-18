@@ -703,6 +703,16 @@ function handleAdminDocumentPdfMenu(sel, index, docIndex){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, recordForDocument(diplomaData[index], docIndex));
 }
+function handleAdminAllDocumentsMenu(sel, index){
+  var raw = sel.value;
+  sel.selectedIndex = 0;
+  if(!raw || !diplomaData[index]) return;
+  var parts = raw.split('|');
+  var docIndex = parseInt(parts[0],10);
+  var action = parts[1] || '';
+  if(isNaN(docIndex) || !action) return;
+  runPdfAction(action, recordForDocument(diplomaData[index], docIndex));
+}
 
 
 function drawCircularImage(doc, base64, cx, cy, r){
@@ -1505,13 +1515,21 @@ function renderDiplomaList(filtered, isFiltering){
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
     var docs = recordDocuments(d);
     var documentMenus = '';
-    docs.forEach(function(x,di){
-      documentMenus += '<select class="pdf-output-select" onchange="handleAdminDocumentPdfMenu(this,'+i+','+di+')"><option value="">📄 '+documentLabel(x)+'</option>' +
-        ((x.type==='honor' || isCertEligibleLevel(x.level))
-          ? '<option value="cert-tr">Onur/Teşekkür — TR</option><option value="cert-en">Appreciation/Honor — EN</option>'
-          : '<option value="diploma-tr">Diploma — TR</option><option value="diploma-en">Diploma — EN</option>') +
-        '</select>';
-    });
+    if(docs.length){
+      documentMenus = '<select class="pdf-output-select" onchange="handleAdminAllDocumentsMenu(this,'+i+')">' +
+        '<option value="">📄 Diplomalar / Belgeler</option>';
+      docs.forEach(function(x,di){
+        var label = documentLabel(x);
+        if(x.type==='honor' || isCertEligibleLevel(x.level)){
+          documentMenus += '<option value="'+di+'|cert-tr">'+label+' — TR</option>' +
+                           '<option value="'+di+'|cert-en">'+label+' — EN</option>';
+        } else {
+          documentMenus += '<option value="'+di+'|diploma-tr">'+label+' — TR</option>' +
+                           '<option value="'+di+'|diploma-en">'+label+' — EN</option>';
+        }
+      });
+      documentMenus += '</select>';
+    }
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
