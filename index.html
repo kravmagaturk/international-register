@@ -630,14 +630,8 @@ function renderSearchResult(d){
     docsHtml = '<div style="text-align:center;margin:14px 0 6px;"><select class="pdf-output-select" style="min-width:280px;max-width:100%;" onchange="handlePublicAllDocumentsMenu(this)">' +
       '<option value="">📄 Diplomalar / Belgeler</option>';
     docs.forEach(function(x,di){
-      var label = documentLabel(x);
-      if(x.type==='honor' || isCertEligibleLevel(x.level)){
-        docsHtml += '<option value="'+di+'|cert-tr">'+label+' — Türkçe</option>' +
-                    '<option value="'+di+'|cert-en">'+label+' — English</option>';
-      } else {
-        docsHtml += '<option value="'+di+'|diploma-tr">'+label+' — Türkçe</option>' +
-                    '<option value="'+di+'|diploma-en">'+label+' — English</option>';
-      }
+      var label = documentMenuLabel(x);
+      docsHtml += '<option value="'+di+'|'+documentDefaultAction(x)+'">'+label+'</option>';
     });
     docsHtml += '</select></div>';
   }
@@ -1272,6 +1266,25 @@ function recordForDocument(d, docIndex){
 function documentLabel(x){
   return (x && x.level) ? x.level : 'Belge';
 }
+function documentMenuLabel(x){
+  var level = String((x&&x.level)||'').trim();
+  var main = level.split(/\s+Level\s+/i)[0];
+  var names = {
+    'Close Protection':'Diploma-CPO (Yakın Koruma)',
+    'Instructor':'Instructor',
+    'Junior':'Junior',
+    'Teşekkür Belgesi':'Teşekkür Belgesi',
+    'Seminer':'Seminer',
+    'Katılım Belgesi':'Katılım Belgesi',
+    'Representative':'Temsilci',
+    'Kids':'Kids'
+  };
+  if(names[main]) return names[main] + (level!==main ? ' — '+level.replace(main,'').trim() : '');
+  return documentLabel(x);
+}
+function documentDefaultAction(x){
+  return (x && (x.type==='honor' || isCertEligibleLevel(x.level))) ? 'cert-en' : 'diploma-en';
+}
 function addDocumentToRecord(index){
   var d = diplomaData[index];
   if(!d) return;
@@ -1519,14 +1532,8 @@ function renderDiplomaList(filtered, isFiltering){
       documentMenus = '<select class="pdf-output-select" onchange="handleAdminAllDocumentsMenu(this,'+i+')">' +
         '<option value="">📄 Diplomalar / Belgeler</option>';
       docs.forEach(function(x,di){
-        var label = documentLabel(x);
-        if(x.type==='honor' || isCertEligibleLevel(x.level)){
-          documentMenus += '<option value="'+di+'|cert-tr">'+label+' — TR</option>' +
-                           '<option value="'+di+'|cert-en">'+label+' — EN</option>';
-        } else {
-          documentMenus += '<option value="'+di+'|diploma-tr">'+label+' — TR</option>' +
-                           '<option value="'+di+'|diploma-en">'+label+' — EN</option>';
-        }
+        var label = documentMenuLabel(x);
+        documentMenus += '<option value="'+di+'|'+documentDefaultAction(x)+'">'+label+'</option>';
       });
       documentMenus += '</select>';
     }
