@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga International Registration</title>
+<!-- v57: genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -187,6 +188,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <select id="mainLevel" onchange="updateSubLevels()">
               <option value="" id="opt-selectPlaceholder1">Seçiniz</option>
               <option value="Junior">Junior</option>
+              <option value="Kids">Kids</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
@@ -196,6 +198,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Representative">Representative</option>
               <option value="Güvenlik">Security</option>
               <option value="Teşekkür Belgesi">Certificate of Appreciation</option>
+              <option value="Katılım Belgesi">Katılım Belgesi</option>
+              <option value="Seminer">Seminer</option>
             </select>
           </div>
           <div class="form-group hidden" id="sub-level-group">
@@ -220,6 +224,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <select id="levelFilter" onchange="filterDiplomas()">
               <option value="" id="opt-allLevels">Tüm Seviyeler</option>
               <option value="Junior">Junior</option>
+              <option value="Kids">Kids</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
@@ -229,6 +234,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Representative">Representative</option>
               <option value="Güvenlik">Security</option>
               <option value="Teşekkür Belgesi">Certificate of Appreciation</option>
+              <option value="Katılım Belgesi">Katılım Belgesi</option>
+              <option value="Seminer">Seminer</option>
             </select>
           </div>
           <div id="result-count" class="result-count"></div>
@@ -276,11 +283,14 @@ var cachedLogoBase64 = null;
 var uiLang = localStorage.getItem('uiLang') || 'tr';
 
 var levelOptions = {
-  'Junior':[],
+  'Junior':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Kids':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
-  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[]
+  'Asistan':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Instructor':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[], 'Katılım Belgesi':[], 'Seminer':[]
 };
 var ID_ELIGIBLE_LEVELS = ['Instructor', 'Asistan', 'Güvenlik', 'Close Protection'];
 var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
@@ -1542,9 +1552,6 @@ function renderDiplomaList(filtered, isFiltering){
           : '<option value="diploma-tr">Diploma — TR</option><option value="diploma-en">Diploma — EN</option>') +
         '</select>';
     });
-    var idButtons = recordHasIdEligibility(d)
-      ? '<button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'tr\')">'+t('btnIdTr')+'</button><button class="btn btn-id" onclick="downloadInstructorID(diplomaData['+i+'],\'en\')">'+t('btnIdEn')+'</button>'
-      : '';
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1567,7 +1574,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
           documentMenus +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — PDF</option></select>' +
           '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
