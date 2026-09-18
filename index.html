@@ -186,6 +186,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <label id="txt-lblMainLevel">Ana Seviye:</label>
             <select id="mainLevel" onchange="updateSubLevels()">
               <option value="" id="opt-selectPlaceholder1">Seçiniz</option>
+              <option value="Junior">Junior</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
@@ -211,13 +212,14 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <h3 id="txt-registeredStudentsHeading" style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
           <div class="admin-export-bar">
             <button class="btn btn-pdf btn-small" onclick="downloadStudentListPDF()">📄 Toplu Öğrenci Listesi PDF</button>
-            <span style="font-size:12px;color:#777;">Sadece Ad Soyad + Kayıt No</span>
+            <span style="font-size:12px;color:#777;">Sadece Ad Soyad + Sicil No</span>
           </div>
           <div id="stats-display" class="stats-bar hidden"></div>
           <div class="search-filter-bar">
             <input type="text" id="adminSearch" placeholder="🔍 İsim veya Register No ile ara..." oninput="filterDiplomas()">
             <select id="levelFilter" onchange="filterDiplomas()">
               <option value="" id="opt-allLevels">Tüm Seviyeler</option>
+              <option value="Junior">Junior</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
@@ -274,6 +276,7 @@ var cachedLogoBase64 = null;
 var uiLang = localStorage.getItem('uiLang') || 'tr';
 
 var levelOptions = {
+  'Junior':[],
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
@@ -418,7 +421,7 @@ var PDF_I18N = {
   en:{diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:', level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive', footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.', rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875', noPhoto:'NO PHOTO', locale:'en-US'}
 };
 var ID_I18N = {
-  tr:{title:'KRAV MAGA KİMLİK', regNo:'Kayıt No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
+  tr:{title:'KRAV MAGA KİMLİK', regNo:'Sicil No', locale:'tr-TR', createdOn:'Duzenlenme: {date}'},
   en:{title:'KRAV MAGA ID', regNo:'Registry No', locale:'en-US', createdOn:'Issued: {date}'}
 };
 var ID_ROLE_LABELS = {
@@ -810,26 +813,21 @@ function downloadRegistryInfoPDF(record){
     doc.line(42,138,75,138); doc.line(135,138,168,138);
     addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,141,{fontSize:12,bold:true,color:'#555555'});
 
-    // v55 — Tek sicile bağlı bütün belgeler/seviyeler Kayıt Bilgi PDF'sinde ayrıca gösterilir.
-    var allDocumentLabels = recordDocuments(d).map(function(x){
-      return documentLabel(x);
-    }).filter(Boolean).join(' • ');
-
     var rows=[
       ['Ad Soyad:', String(d.studentName||'-')],
       ['Akademiye Giriş:', String(d.joinDate||'-')],
       ['Sınav Tarihi:', String(d.examDate||'-')],
       ['Sınav Yeri:', String(d.examLocation||'-')],
-      ['Kayıt No:', String(d.registerNo||'-')],
-      ['Belgeler / Seviyeler:', allDocumentLabels || String(d.level||'-')],
+      ['Seviye:', String(d.level||'-')],
+      ['Sicil No:', String(d.registerNo||'-')],
       ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
     ];
     var y=165;
     rows.forEach(function(r,idx){
-      addPdfUnicodeText(doc,r[0],25,y,{fontSize:12,bold:true,align:'left'});
-      addPdfUnicodeText(doc,r[1],72,y,{fontSize:(idx===6?10.5:12),bold:true,align:'left',
+      addPdfUnicodeText(doc,r[0],25,y,{fontSize:13,bold:true,align:'left'});
+      addPdfUnicodeText(doc,r[1],72,y,{fontSize:13,bold:true,align:'left',
         color:(idx===6?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
-      y+=10;
+      y+=11;
     });
 
     if(qr){
@@ -899,6 +897,7 @@ function downloadStudentListPDF(){
 // GitHub ana dizinindeki gerçek PNG şablon dosyaları.
 var TEMPLATE_FILES = {
   diplomaTr: ['yeni_master_2.png'],
+  diplomaGeneral: ['diploma-genel.png'],
   diplomaEn: ['yeni_master_2.png'],
   honorTr: ['yeni_master_2.png'],
   honorEn: ['yeni_master_2.png'],
@@ -920,7 +919,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260917-22';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260918-1010';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -1044,53 +1043,26 @@ function drawCertificateFrame(doc,W,H,logo){
 
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
-  var d=record,isTR=lang==='tr',isHE=lang==='he';
-  var templatePromise=loadTemplate(isTR?'diplomaTr':'diplomaEn').catch(function(){return null;});
+  var d=record;
+  var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
   Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
     var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
-    if(!template) throw new Error('yeni_master_2.png bulunamadı');
+    if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
-
-    addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK ACADEMY':(isHE?'אקדמיית קרב מגע טורק':'KRAV MAGA TURK ACADEMY'),32,19,{fontSize:isHE?25:13,bold:true,align:'left'});
-    addPdfUnicodeText(doc,isTR?'ULUSLARARASI':(isHE?'בינלאומי':'INTERNATIONAL'),32,26,{fontSize:isHE?16:7,bold:true,color:'#c0141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'DİPLOMA':(isHE?'דיפלומה':'DIPLOMA'),W/2,61,{fontSize:isHE?58:42,bold:true,family:'Arial'});
-
-    if(isTR){
-      addPdfUnicodeText(doc,'GÖSTERMİŞ OLDUĞU BAŞARI VE ÜSTÜN GAYRETLERİNDEN DOLAYI',W/2,80,{fontSize:13.5,bold:true});
-      addPdfUnicodeText(doc,'BU DİPLOMAYI ALMAYA HAK KAZANMIŞTIR.',W/2,87,{fontSize:13,bold:true});
-    }else if(isHE){
-      addPdfUnicodeText(doc,'כהוקרה על השלמת ההכשרה בהצלחה ועל המאמץ והמסירות שהפגין/ה,',W/2,80,{fontSize:22,bold:true});
-      addPdfUnicodeText(doc,'מוענקת בזאת דיפלומה זו.',W/2,89,{fontSize:22,bold:true});
-    }else{
-      addPdfUnicodeText(doc,'IN RECOGNITION OF SUCCESSFUL COMPLETION AND OUTSTANDING EFFORT,',W/2,80,{fontSize:13.5,bold:true});
-      addPdfUnicodeText(doc,'THIS DIPLOMA IS HEREBY AWARDED.',W/2,87,{fontSize:13,bold:true});
-    }
-
-    var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':(isHE?'he-IL':'en-US'));
-    addPdfUnicodeText(doc,nm,W/2,106,{fontSize:29,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,isTR?'SEVİYE':(isHE?'דרגה':'LEVEL'),W/2,127,{fontSize:isHE?24:11,bold:true});
-    var lr=String(d.level||'').trim(),lk=lr.toUpperCase();
-    var mapTR={'INSTRUCTOR':'EĞİTMEN','INSTRUCTOR 1':'EĞİTMEN 1','INSTRUCTOR 2':'EĞİTMEN 2','INSTRUCTOR 3':'EĞİTMEN 3','MASTER INSTRUCTOR':'BAŞ EĞİTMEN','EXPERT':'UZMAN','GRADUATE':'MEZUN','PRACTITIONER':'UYGULAYICI'};
-    var mapHE={'INSTRUCTOR':'מדריך','INSTRUCTOR 1':'מדריך 1','INSTRUCTOR 2':'מדריך 2','INSTRUCTOR 3':'מדריך 3','MASTER INSTRUCTOR':'מדריך ראשי','EXPERT':'מומחה','GRADUATE':'בוגר','PRACTITIONER':'מתאמן'};
-    var lv=isTR?String(mapTR[lk]||lr).toLocaleUpperCase('tr-TR'):(isHE?String(mapHE[lk]||lr):lr.toUpperCase());
-    addPdfUnicodeText(doc,lv,W/2,isHE?142:136,{fontSize:isHE?30:19,bold:true,color:'#b9141c'});
-    addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
-
-    // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
-    addPdfUnicodeText(doc,isTR?'KAYIT NO':(isHE?'מספר רישום':'REGISTER NO'),18,176,{fontSize:isHE?18:8,bold:true,align:'left'});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
-    addPdfUnicodeText(doc,isTR?'TARİH':(isHE?'תאריך':'DATE'),18,184,{fontSize:isHE?18:8,bold:true,align:'left'});
-    addPdfUnicodeText(doc,String(d.examDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
-
-    // Eğitmen alanı sağ altta orantılı konumunu korur.
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN':(isHE?'מדריך':'INSTRUCTOR'),232,184,{fontSize:isHE?20:9.5,bold:true});
-    if(qr) doc.addImage(qr,'PNG',263,174,22,22);
-
-    doc.save('diploma-'+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'master_template_v27_hebrew_admin'});
-  }).catch(function(err){console.error(err);alert('Diploma oluşturulamadı: '+err.message);});
+    // diploma-genel.png: veri kutularina sabit A4 koordinatlari
+    addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,98.0,{fontSize:20,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,127.3,{fontSize:15,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.registerNo||''),18.5,143.8,{fontSize:9.5,bold:true,align:'left',family:'Arial'});
+    addPdfUnicodeText(doc,String(d.joinDate||''),18.5,161.5,{fontSize:9,bold:true,align:'left',family:'Arial'});
+    addPdfUnicodeText(doc,String(d.examDate||''),18.5,180.0,{fontSize:9,bold:true,align:'left',family:'Arial'});
+    if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),148.5,170.8,{fontSize:10.5,bold:true,family:'Arial'});
+    if(qr) doc.addImage(qr,'PNG',234.0,116.5,42.0,42.0);
+    doc.save('diploma-'+d.registerNo+'.pdf');
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'general_template'});
+  }).catch(function(err){ alert('PDF oluşturulamadı: '+err.message); });
 }
+
 function downloadInstructorID(record, lang){
   lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
@@ -1123,7 +1095,7 @@ function downloadInstructorID(record, lang){
     doc.setFillColor(190,20,28); doc.roundedRect(x,40,42,8,1.2,1.2,'F');
     addPdfUnicodeText(doc,String(roleLabel||'INSTRUCTOR').toLocaleUpperCase(isTR?'tr-TR':'en-US'),x+21,45.1,{fontSize:8.2,bold:true,color:'#ffffff'});
 
-    addPdfUnicodeText(doc,isTR?'KAYIT NO':'REGISTER NO',x,53,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
+    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',x,53,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),x,58.8,{fontSize:9.5,bold:true,align:'left'});
     var issueDate=new Date(),validDate=new Date(issueDate); validDate.setFullYear(validDate.getFullYear()+5),locale=isTR?'tr-TR':'en-GB';
     addPdfUnicodeText(doc,isTR?'DÜZENLEME':'ISSUED',x,64.2,{fontSize:5.5,bold:true,color:'#555555',align:'left'});
@@ -1156,11 +1128,11 @@ function downloadAppreciationCertificate(record, lang){
     addPdfUnicodeText(doc,isTR?'TEŞEKKÜR BELGESİ':'CERTIFICATE OF APPRECIATION',W/2,61,{fontSize:isTR?30:26,bold:true,family:'Georgia'});
 
     if(isTR){
-      addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİYE SUNMUŞ OLDUĞU DEĞERLİ KATKI,',W/2,80,{fontSize:13.5,bold:true});
-      addPdfUnicodeText(doc,'ÖZVERİ VE DESTEĞİNDEN DOLAYI BU TEŞEKKÜR BELGESİ TAKDİM EDİLMİŞTİR.',W/2,87,{fontSize:13,bold:true});
+      addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİYE SUNMUŞ OLDUĞU DEĞERLİ KATKI,',W/2,80,{fontSize:10.5,bold:true});
+      addPdfUnicodeText(doc,'ÖZVERİ VE DESTEĞİNDEN DOLAYI BU TEŞEKKÜR BELGESİ TAKDİM EDİLMİŞTİR.',W/2,87,{fontSize:10.5,bold:true});
     }else{
-      addPdfUnicodeText(doc,'THIS CERTIFICATE IS PRESENTED IN RECOGNITION OF VALUABLE CONTRIBUTIONS,',W/2,80,{fontSize:13.5,bold:true});
-      addPdfUnicodeText(doc,'DEDICATION AND SUPPORT TO KRAV MAGA TURK ACADEMY.',W/2,87,{fontSize:13,bold:true});
+      addPdfUnicodeText(doc,'THIS CERTIFICATE IS PRESENTED IN RECOGNITION OF VALUABLE CONTRIBUTIONS,',W/2,80,{fontSize:10,bold:true});
+      addPdfUnicodeText(doc,'DEDICATION AND SUPPORT TO KRAV MAGA TURK ACADEMY.',W/2,87,{fontSize:10,bold:true});
     }
 
     var nm=String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US');
@@ -1169,7 +1141,7 @@ function downloadAppreciationCertificate(record, lang){
     addPdfUnicodeText(doc,'SELF DEFENCE  •  TACTICAL SKILLS  •  REAL WORLD TRAINING',W/2,148,{fontSize:6.8,bold:true,color:'#333333'});
 
     // Alt yerleşim: Sicil/Register + Tarih/Date SOL, Eğitmen/Instructor SAĞ.
-    addPdfUnicodeText(doc,isTR?'KAYIT NO':'REGISTER NO',18,176,{fontSize:8,bold:true,align:'left'});
+    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',18,176,{fontSize:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.registerNo||'-'),46,176,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
     addPdfUnicodeText(doc,isTR?'TARİH':'DATE',18,184,{fontSize:8,bold:true,align:'left'});
     addPdfUnicodeText(doc,String(d.examDate||d.joinDate||'-'),46,184,{fontSize:11,bold:true,color:'#b9141c',align:'left'});
@@ -1595,7 +1567,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
           documentMenus +
-          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Kayıt Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
+          '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')"><option value="">📋 Sicil / Kimlik</option><option value="registry-info">Sicil Bilgi — PDF</option>' + (recordHasIdEligibility(d) ? '<option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option>' : '') + '</select>' +
           '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
