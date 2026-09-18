@@ -658,26 +658,31 @@ function searchDiploma(){
   var btn = document.getElementById('search-btn');
   var registerNo = (input && input.value ? input.value : '').trim().toUpperCase();
   if(!registerNo){ resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>'; return; }
-  btn.disabled = true; btn.textContent = t('searching');
-  resultDiv.innerHTML = '<div class="spinner"></div>';
-  var url = FIREBASE_URL + '/diplomaData/' + encodeURIComponent(registerNo) + '.json?_=' + Date.now();
-  fetch(url, {cache:'no-store'})
-    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
-    .then(function(d){
-      if(d){ lastSearchedRecord = d; renderSearchResult(d); return; }
-      return fetch(FIREBASE_URL + '/diplomaData.json?_=' + Date.now(), {cache:'no-store'})
-        .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
-        .then(function(all){
-          var found = null;
-          if(all){ Object.keys(all).some(function(k){ var x=all[k]; if(x && String(x.registerNo||k).trim().toUpperCase()===registerNo){ found=x; return true; } return false; }); }
-          if(found){ lastSearchedRecord=found; renderSearchResult(found); }
-          else { lastSearchedRecord=null; resultDiv.innerHTML='<div class="message error">'+t('errNotFound')+'</div>'; }
-        });
-    })
-    .catch(function(err){ console.error('Sorgu hatası:',err); resultDiv.innerHTML='<div class="message error">'+t('errConn')+'</div>'; })
-    .finally(function(){ btn.disabled=false; btn.textContent=t('btnSearch'); });
-}
+  btn.disabled=true; btn.textContent=t('searching');
+  resultDiv.innerHTML='<div class="spinner"></div>';
 
+  // Firebase SDK ile doğrudan sorgu. REST fetch/CORS hatalarından etkilenmez.
+  firebase.database().ref('diplomaData').child(registerNo).once('value')
+    .then(function(snap){
+      var d=snap.val();
+      if(d){ lastSearchedRecord=d; renderSearchResult(d); return null; }
+      return firebase.database().ref('diplomaData').once('value').then(function(allSnap){
+        var all=allSnap.val(), found=null;
+        if(all){ Object.keys(all).some(function(k){
+          var x=all[k];
+          if(x && String(x.registerNo||k).trim().toUpperCase()===registerNo){ found=x; return true; }
+          return false;
+        }); }
+        if(found){ lastSearchedRecord=found; renderSearchResult(found); }
+        else { lastSearchedRecord=null; resultDiv.innerHTML='<div class="message error">'+t('errNotFound')+'</div>'; }
+      });
+    })
+    .catch(function(err){
+      console.error('Sorgu hatası:',err);
+      resultDiv.innerHTML='<div class="message error">'+t('errConn')+'</div>';
+    })
+    .then(function(){ btn.disabled=false; btn.textContent=t('btnSearch'); });
+}
 
 function runPdfAction(value, record){
   if(!value || !record) return;
