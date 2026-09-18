@@ -803,10 +803,16 @@ function downloadRegistryInfoPDF(record){
     if(qr){ try{ doc.addImage(qr,'PNG',18.0,132.0,34.0,34.0); }catch(e){} }
 
     var docs=recordDocuments(d),activeDoc=docs.length?docs[0]:{level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
+    // Diploma adı ve alt seviye Sicil PDF'de ayrı satırlarda gösterilir.
+    var registryFullLevel=String(activeDoc.level||d.level||'').trim();
+    var registryParts=registryFullLevel.match(/^(.*?)\s+Level\s+(\d+)$/i);
+    var registryDiploma=registryParts ? registryParts[1].trim() : registryFullLevel;
+    var registrySubLevel=registryParts ? ('Level '+registryParts[2]) : '-';
     // Yeni şablondaki çizgilerin merkezlerine hizalı veri koordinatları.
     fitRegistry(d.studentName,119.0,78.5,100,13.5,9.5);
     fitRegistry(d.registerNo,119.0,89.5,100,12.5,9);
-    fitRegistry(activeDoc.level||d.level,119.0,100.5,100,12.5,9);
+    fitRegistry(registryDiploma,119.0,100.5,100,12.5,9);
+    fitRegistry(registrySubLevel,119.0,111.0,100,11.5,9);
     fitRegistry(d.joinDate,119.0,122.0,100,11.5,9);
     fitRegistry(activeDoc.examDate||d.examDate,119.0,133.0,100,11.5,9);
     fitRegistry(activeDoc.examLocation||d.examLocation,119.0,144.0,100,11.5,8.5);
