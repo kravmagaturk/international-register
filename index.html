@@ -789,93 +789,67 @@ function prepareRegistryPortrait(photoData){
 function downloadRegistryInfoPDF(record){
   if(!record) return;
   var d=record, jsPDF=window.jspdf.jsPDF;
+  Promise.all([
+    loadImageAsDataUrl('sicil-pdf.png'),
+    makeQrDataUrl(buildQrUrl(d.registerNo)),
+    prepareRegistryPortrait(d.photo)
+  ]).then(function(parts){
+    var template=parts[0], qr=parts[1], portrait=parts[2];
+    var W=297,H=210,doc=new jsPDF('l','mm','a4');
+    if(!template) throw new Error('sicil-pdf.png bulunamadı');
 
-  Promise.all([prepareLogoBase64(), makeQrDataUrl(buildQrUrl(d.registerNo)), prepareRegistryPortrait(d.photo)]).then(function(parts){
-    var logo=parts[0], qr=parts[1], portrait=parts[2];
-    var doc=new jsPDF('p','mm','a4'), W=210;
+    // ŞABLONA DOKUNMA: PNG tek parça arka plan; yalnızca dinamik veriler üstüne basılır.
+    doc.addImage(template,'PNG',0,0,W,H);
 
-    // Sade beyaz A4 — çerçeve/köşe yok.
-    doc.setFillColor(255,255,255);
-    doc.rect(0,0,210,297,'F');
-
-    // Claude indexindeki çalışan jsPDF clipping yöntemi:
-    // yalnız dairesel logo görünür, kare PNG köşeleri PDF'ye basılmaz.
-    if(logo){
-      // Arka plan: çoklu KRAV MAGA yazı filigranı
-      try{
-        doc.saveGraphicsState();
-        doc.setGState(new doc.GState({opacity:0.035}));
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(18);
-        doc.setTextColor(90,90,90);
-
-        for(let y=18; y<292; y+=28){
-          for(let x=-8; x<215; x+=58){
-            doc.text('KRAV MAGA', x, y, {angle:25});
-          }
-        }
-        doc.restoreGraphicsState();
-      }catch(e){
-        console.warn('Yazı filigranı basılamadı',e);
-      }
-
-      // Ana yuvarlak logo filigranı korunur
-      drawWatermarkLogo(doc, logo, W/2, 150, 72, 0.045);
-      drawCircularImage(doc, logo, W/2, 27, 13);
-    }
-
-    // Öğrenci vesikalığı — sol üst beyaz alan, çerçevesiz.
-    // Filigran merkezinden tamamen uzak tutulur; arkasına beyaz kutu çizilmez.
+    // Fotoğraf: soldaki boş çerçeve içine taşmadan yerleşir.
     if(portrait){
-      try{
-        doc.addImage(portrait,'JPEG',20,28,30,40);
-      }catch(e){ console.warn('Sicil vesikalığı basılamadı',e); }
+      try{ doc.addImage(portrait,'JPEG',12.8,72.0,43.0,57.3); }
+      catch(e){ console.warn('Sicil fotoğrafı basılamadı',e); }
     }
 
-    addPdfUnicodeText(doc,'DİPLOMA NO',W/2,82,{fontSize:13,bold:true,color:'#555555'});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),W/2,95,{fontSize:28,bold:true,color:'#b9141c'});
+    // Veri alanları: büyük ve okunaklı; uzun metinlerde otomatik küçülür.
+    function fitText(text,x,y,maxWidth,startSize,minSize,opts){
+      text=String(text||'-'); opts=opts||{};
+      var size=startSize;
+      while(size>minSize){
+        doc.setFontSize(size);
+        if(doc.getTextWidth(turkishSafe(text))<=maxWidth) break;
+        size-=0.5;
+      }
+      addPdfUnicodeText(doc,text,x,y,Object.assign({fontSize:size,bold:true,align:'left',family:'Arial'},opts));
+    }
 
-    // KRAV MAGA tam ortalı; MAGA kırmızı.
-    addPdfUnicodeText(doc,'KRAV',103,128,{fontSize:34,bold:true,align:'right'});
-    addPdfUnicodeText(doc,'MAGA',107,128,{fontSize:34,bold:true,color:'#d1121b',align:'left'});
-    doc.setDrawColor(85,85,85); doc.setLineWidth(0.35);
-    doc.line(42,138,75,138); doc.line(135,138,168,138);
-    addPdfUnicodeText(doc,'CONTACT COMBAT',W/2,141,{fontSize:12,bold:true,color:'#555555'});
+    // Orta kayıt satırları.
+    fitText(d.studentName,115.0,80.0,105,13.5,9.5);
+    fitText(d.registerNo,115.0,91.0,105,13.0,9.5);
 
-    var rows=[
-      ['Ad Soyad:', String(d.studentName||'-')],
-      ['Akademiye Giriş:', String(d.joinDate||'-')],
-      ['KMG Instructor Kayıt:', String(d.kmgInstructorDate||'-')],
-      ['Sınav Tarihi:', String(d.examDate||'-')],
-      ['Sınav Yeri:', String(d.examLocation||'-')],
-      ['Seviye:', String(d.level||'-')],
-      ['Sicil No:', String(d.registerNo||'-')],
-      ['Durum:', d.status==='pasif'?'Pasif':'Aktif']
-    ];
-    var y=160;
-    rows.forEach(function(r,idx){
-      addPdfUnicodeText(doc,r[0],25,y,{fontSize:13,bold:true,align:'left'});
-      addPdfUnicodeText(doc,r[1],72,y,{fontSize:13,bold:true,align:'left',
-        color:(idx===6?(d.status==='pasif'?'#b9141c':'#159447'):'#333333')});
-      y+=10;
-    });
+    var docs=recordDocuments(d);
+    var activeDoc=docs.length ? docs[0] : {level:d.level||'',examDate:d.examDate||'',examLocation:d.examLocation||''};
+    fitText(activeDoc.level||d.level,115.0,102.0,105,12.5,9);
+    fitText(d.joinDate,115.0,113.0,105,11.5,9);
+    fitText(activeDoc.examDate||d.examDate,115.0,124.0,105,11.5,9);
+    fitText(activeDoc.examLocation||d.examLocation,115.0,135.0,105,11.5,8.5);
+    fitText(d.status==='pasif'?'PASİF / INACTIVE':'AKTİF / ACTIVE',115.0,146.0,105,11.5,9,
+      {color:d.status==='pasif'?'#b9141c':'#159447'});
+    fitText(d.instructorName||'-',115.0,157.0,105,11.5,8.5);
 
+    // Yeni yönetici alanı: KMG Instructor kayıt tarihi.
+    if(d.kmgInstructorDate){
+      addPdfUnicodeText(doc,'KMG INSTRUCTOR REGISTER DATE',224.0,75.0,{fontSize:7.5,bold:true,color:'#555555'});
+      fitText(d.kmgInstructorDate,224.0,84.0,48,11.5,9);
+    }
+
+    // Sağ alan: gerçek QR yalnızca kod tarafından basılır; şablonda QR yoktur.
     if(qr){
-      // QR KOD — sağ alt, daha küçük
-      const qrSize = 24;
-      const qrX = W - 18 - qrSize;
-      const qrY = 238;
-      doc.addImage(qr,'PNG',qrX,qrY,qrSize,qrSize);
-      addPdfUnicodeText(doc,'DOĞRULA',qrX+(qrSize/2),qrY+qrSize+5,{fontSize:8,bold:true});
+      try{ doc.addImage(qr,'PNG',238.0,91.0,32.0,32.0); }
+      catch(e){ console.warn('Sicil QR basılamadı',e); }
     }
 
-    addPdfUnicodeText(doc,'YAPILAN SINAVDA BAŞARILI OLMUŞTUR',W/2,250,{fontSize:14,bold:true});
-    addPdfUnicodeText(doc,'KRAV MAGA TÜRK AKADEMİ',W/2,269,{fontSize:12,bold:true});
-    addPdfUnicodeText(doc,'www.kravmagaturk.com',W/2,277,{fontSize:8.5,color:'#444444'});
-    addPdfUnicodeText(doc,'Bu belge '+new Date().toLocaleDateString('tr-TR')+' tarihinde oluşturulmuştur.',W/2,286,{fontSize:7.5,color:'#777777'});
+    // İmza alanı şablonda boş bırakılır; varsa eğitmen adı çizginin altına dinamik basılır.
+    if(d.instructorName) fitText(String(d.instructorName).toLocaleUpperCase('tr-TR'),238.0,160.0,38,8.5,6.5);
 
     doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_pdf_clipped_watermark'});
+    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_landscape_template'});
   }).catch(function(err){
     console.error(err);
     alert('Sicil bilgi PDF oluşturulamadı: '+err.message);
