@@ -270,12 +270,21 @@ var firebaseConfig = {
 // Yalnızca bu Google hesabı yönetici paneline girebilir.
 var ADMIN_EMAIL = 'bulicet@gmail.com';
 
-firebase.initializeApp(firebaseConfig);
-var auth = firebase.auth();
-var googleProvider = new firebase.auth.GoogleAuthProvider();
+// Firebase Auth yüklenemese bile öğrenci sorgusu ve sayfanın geri kalanı çalışmaya devam eder.
+var auth = null;
+var googleProvider = null;
+var firebaseAuthError = null;
+try {
+  if(typeof firebase === 'undefined') throw new Error('Firebase Auth kütüphanesi yüklenemedi');
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  googleProvider = new firebase.auth.GoogleAuthProvider();
+} catch(err) {
+  firebaseAuthError = err;
+  console.error('Firebase Auth başlatılamadı:', err);
+}
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmagaturk.github.io/international-register/';
-var lockoutTimer = null;
 
 var diplomaData = [];
 var currentPhotoData = '';
@@ -653,38 +662,22 @@ function searchDiploma(){
   if(!registerNo){ resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>'; return; }
   btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
-  lastSearchedRecord = null;
-
   var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var timeoutId = controller ? setTimeout(function(){ controller.abort(); }, 10000) : null;
-  var options = controller ? {signal:controller.signal, cache:'no-store'} : {cache:'no-store'};
-
-  fetch(FIREBASE_URL + '/diplomaData/' + encodeURIComponent(registerNo) + '.json', options)
-    .then(function(res){
-      if(!res.ok){
-        return res.text().then(function(body){
-          throw new Error('Firebase HTTP '+res.status+(body ? ': '+body : ''));
-        });
-      }
-      return res.json();
-    })
-    .then(function(d){
-      if(d && typeof d === 'object' && !d.error){
-        lastSearchedRecord = d;
-        renderSearchResult(d);
-      } else {
-        resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>';
-      }
-    })
-    .catch(function(err){
-      console.error('Sicil sorgusu başarısız:', err);
-      resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
-    })
-    .finally(function(){
-      if(timeoutId) clearTimeout(timeoutId);
-      btn.disabled = false;
-      btn.textContent = t('btnSearch');
-    });
+  fetch(FIREBASE_URL + '/diplomaData/' + encodeURIComponent(registerNo) + '.json', controller ? {signal:controller.signal,cache:'no-store'} : {cache:'no-store'})
+  .then(function(res){
+    if(!res.ok) throw new Error('Firebase HTTP '+res.status);
+    return res.json();
+  }).then(function(d){
+    if(d && typeof d === 'object' && !d.error){ lastSearchedRecord = d; renderSearchResult(d); }
+    else { lastSearchedRecord = null; resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>'; }
+  }).catch(function(err){
+    console.error('Sicil sorgusu başarısız:',err);
+    resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
+  }).finally(function(){
+    if(timeoutId) clearTimeout(timeoutId);
+    btn.disabled = false; btn.textContent = t('btnSearch');
+  });
 }
 
 
@@ -1113,30 +1106,6 @@ function downloadAppreciationCertificate(record, lang){
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'master_appreciation_v25'});
   }).catch(function(err){console.error(err);alert('Teşekkür belgesi oluşturulamadı: '+err.message);});
 }
-function checkLockoutStatus(){
-  var lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
-  var now = Date.now();
-  if(lockUntil > now){ startLockoutCountdown(lockUntil); return true; }
-  return false;
-}
-function startLockoutCountdown(lockUntil){
-  var btn = document.getElementById('login-btn');
-  var msg = document.getElementById('loginMessage');
-  btn.disabled = true;
-  if(lockoutTimer) clearInterval(lockoutTimer);
-  function updateDisplay(){
-    var remaining = lockUntil - Date.now();
-    if(remaining <= 0){
-      clearInterval(lockoutTimer);
-      localStorage.removeItem('loginLockUntil'); localStorage.removeItem('loginAttempts');
-      btn.disabled = false; btn.textContent = t('btnLogin'); msg.innerHTML = ''; return;
-    }
-    var mins = Math.floor(remaining / 60000);
-    var secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div><div class="legal-warning">'+t('legalWarningLockout')+'</div>';
-  }
-  updateDisplay(); lockoutTimer = setInterval(updateDisplay, 1000);
-}
 function showAdminPanel(user){
   currentAdminUser = user;
   document.getElementById('login-form').classList.add('hidden');
@@ -1153,24 +1122,22 @@ function showLoginForm(message){
 }
 function adminLogin(){
   var btn=document.getElementById('login-btn');
+  if(!auth || !googleProvider){
+    showLoginForm('⚠️ Google giriş servisi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
+    return;
+  }
   btn.disabled=true; btn.textContent='Google açılıyor...';
   auth.signInWithPopup(googleProvider).then(function(result){
     var user=result.user;
     if(!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-      currentAdminUser = user || null;
       return logSecurityEvent('login_failed',{attemptedEmail:user&&user.email?user.email:''}).then(function(){
         return auth.signOut();
       }).then(function(){ throw new Error('UNAUTHORIZED_EMAIL'); });
     }
-    currentAdminUser = user;
-    return user.getIdToken(true).then(function(){
-      showAdminPanel(user);
-    });
+    showAdminPanel(user);
   }).catch(function(err){
-    console.error('Google yönetici girişi başarısız:', err);
     if(err && err.message==='UNAUTHORIZED_EMAIL') showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
-    else if(err && err.code==='auth/popup-closed-by-user') showLoginForm('');
-    else showLoginForm('⚠️ Google girişi başarısız: '+(err && (err.message||err.code) ? (err.message||err.code) : 'Bilinmeyen hata'));
+    else if(err && err.code!=='auth/popup-closed-by-user') showLoginForm('⚠️ Google girişi başarısız: '+(err.message||err.code||''));
   }).finally(function(){ btn.disabled=false; btn.textContent='🔐 Google ile Giriş Yap'; });
 }
 async function loadAllDiplomas() {
@@ -1206,6 +1173,7 @@ async function loadAllDiplomas() {
     }
 
 function logout(){
+  if(!auth){ diplomaData=[]; hideAllForms(); showLoginForm(''); return; }
   auth.signOut().finally(function(){
     diplomaData=[]; hideAllForms(); showLoginForm('');
   });
@@ -1646,18 +1614,20 @@ function exportLogsAsPDF(){
   doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 document.addEventListener('DOMContentLoaded', function(){
-  auth.onAuthStateChanged(function(user){
-  if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
-    currentAdminUser=user;
-  } else if(user){ auth.signOut(); }
-});
+  if(auth){
+    auth.onAuthStateChanged(function(user){
+      if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+        currentAdminUser=user;
+      } else if(user){ auth.signOut(); }
+    });
+  } else {
+    var loginMessage=document.getElementById('loginMessage');
+    if(loginMessage) loginMessage.innerHTML='<div class="message error">⚠️ Google giriş servisi yüklenemedi. Öğrenci sorgusu kullanılabilir.</div>';
+  }
 
-applyStaticLanguage();
+  applyStaticLanguage();
   var searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
-  var passInput = document.getElementById('adminPass');
-  if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
-  checkLockoutStatus();
   var urlParams = new URLSearchParams(window.location.search);
   var regParam = urlParams.get('reg');
   if(regParam && searchInput){ searchInput.value = regParam; searchDiploma(); }
