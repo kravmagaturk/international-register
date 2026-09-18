@@ -626,15 +626,21 @@ function renderSearchResult(d){
   var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
   var docs = recordDocuments(d);
   var docsHtml = '';
-  docs.forEach(function(x,di){
-    docsHtml += '<div class="result-item"><span class="result-label">Belge / Seviye '+(di+1)+':</span><span>'+documentLabel(x)+'</span></div>';
-    docsHtml += '<div style="text-align:center;margin:8px 0 12px;"><select class="pdf-output-select" onchange="handlePublicDocumentPdfMenu(this,'+di+')">'+
-      '<option value="">📄 '+documentLabel(x)+'</option>'+
-      (x.type==='honor' || isCertEligibleLevel(x.level)
-        ? '<option value="cert-tr">Teşekkür & Onur — Türkçe</option><option value="cert-en">Appreciation & Honor — English</option>'
-        : '<option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>')+
-      '</select></div>';
-  });
+  if(docs.length){
+    docsHtml = '<div style="text-align:center;margin:14px 0 6px;"><select class="pdf-output-select" style="min-width:280px;max-width:100%;" onchange="handlePublicAllDocumentsMenu(this)">' +
+      '<option value="">📄 Diplomalar / Belgeler</option>';
+    docs.forEach(function(x,di){
+      var label = documentLabel(x);
+      if(x.type==='honor' || isCertEligibleLevel(x.level)){
+        docsHtml += '<option value="'+di+'|cert-tr">'+label+' — Türkçe</option>' +
+                    '<option value="'+di+'|cert-en">'+label+' — English</option>';
+      } else {
+        docsHtml += '<option value="'+di+'|diploma-tr">'+label+' — Türkçe</option>' +
+                    '<option value="'+di+'|diploma-en">'+label+' — English</option>';
+      }
+    });
+    docsHtml += '</select></div>';
+  }
 
   resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
@@ -677,6 +683,16 @@ function handlePublicPdfMenu(sel){
 function handlePublicDocumentPdfMenu(sel, docIndex){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, recordForDocument(lastSearchedRecord, docIndex));
+}
+function handlePublicAllDocumentsMenu(sel){
+  var raw = sel.value;
+  sel.selectedIndex = 0;
+  if(!raw) return;
+  var parts = raw.split('|');
+  var docIndex = parseInt(parts[0],10);
+  var action = parts[1] || '';
+  if(isNaN(docIndex) || !action) return;
+  runPdfAction(action, recordForDocument(lastSearchedRecord, docIndex));
 }
 
 function handleAdminPdfMenu(sel, index){
