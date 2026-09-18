@@ -176,10 +176,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <input type="date" id="joinDate">
           </div>
           <div class="form-group">
-            <label>KMG Instructor Kayıt Tarihi:</label>
-            <input type="date" id="kmgInstructorDate">
-          </div>
-          <div class="form-group">
             <label id="txt-lblExamDateForm">Sınav Tarihi:</label>
             <input type="date" id="examDate">
           </div>
@@ -819,12 +815,6 @@ function downloadRegistryInfoPDF(record){
     fitRegistry(activeDoc.examLocation||d.examLocation,119.0,144.0,100,11.5,8.5);
     fitRegistry(d.status==='pasif'?'PASİF / INACTIVE':'AKTİF / ACTIVE',119.0,155.0,100,11.5,9,{color:d.status==='pasif'?'#b9141c':'#159447'});
     fitRegistry(d.instructorName||'-',119.0,166.0,100,11.5,8.5);
-
-    // Seviye satırı ile akademiye giriş arasındaki boş satır: KMG kayıt tarihi varsa göster.
-    if(d.kmgInstructorDate){
-      addPdfUnicodeText(doc,'KMG Instructor Kayıt',66.0,111.0,{fontSize:7.5,bold:true,align:'left'});
-      fitRegistry(d.kmgInstructorDate,119.0,111.0,100,10.5,8.5);
-    }
     doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_landscape_template'});
   }).catch(function(err){console.error(err);alert('Sicil bilgi PDF oluşturulamadı: '+err.message);});
@@ -1250,7 +1240,6 @@ function addDocumentToRecord(index){
   document.getElementById('studentName').value = d.studentName || '';
   document.getElementById('studentName').readOnly = true;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
-  document.getElementById('kmgInstructorDate').value = formatDateForInput(d.kmgInstructorDate);
   document.getElementById('instructorName').value = d.instructorName || '';
   if(d.photo){
     currentPhotoData = d.photo;
@@ -1280,7 +1269,6 @@ function clearAddForm(){
   document.getElementById('studentName').readOnly = false;
   document.getElementById('studentName').value='';
   document.getElementById('joinDate').value='';
-  document.getElementById('kmgInstructorDate').value='';
   document.getElementById('examDate').value='';
   document.getElementById('examLocation').value='';
   document.getElementById('instructorName').value='';
@@ -1313,7 +1301,6 @@ function editDiploma(index){
   document.getElementById('examLocation').value = d.examLocation;
   document.getElementById('instructorName').value = d.instructorName || '';
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
-  document.getElementById('kmgInstructorDate').value = formatDateForInput(d.kmgInstructorDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
   var levelParts = d.level.split(' Level ');
   document.getElementById('mainLevel').value = levelParts[0];
@@ -1330,7 +1317,6 @@ function editDiploma(index){
 function addDiploma(){
   var studentName = document.getElementById('studentName').value.trim();
   var joinDateRaw = document.getElementById('joinDate').value;
-  var kmgInstructorDateRaw = document.getElementById('kmgInstructorDate').value;
   var examDate = document.getElementById('examDate').value;
   var examLocation = document.getElementById('examLocation').value.trim();
   var instructorName = document.getElementById('instructorName').value.trim();
@@ -1341,7 +1327,6 @@ function addDiploma(){
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
   var formattedExamDate = formatDateForDisplay(examDate);
   var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
-  var formattedKmgInstructorDate = kmgInstructorDateRaw ? formatDateForDisplay(kmgInstructorDateRaw) : '';
   var newDoc = { level:levelText, examDate:formattedExamDate, examLocation:examLocation, type:docTypeForLevel(levelText) };
 
   var saveBtn = document.getElementById('save-btn');
@@ -1372,7 +1357,6 @@ function addDiploma(){
       examDate:docs[0].examDate,
       examLocation:docs[0].examLocation,
       joinDate:formattedJoinDate || base.joinDate || '',
-      kmgInstructorDate:formattedKmgInstructorDate || base.kmgInstructorDate || '',
       instructorName:instructorName || base.instructorName || '',
       photo:currentPhotoData || base.photo || ''
     });
@@ -1392,7 +1376,7 @@ function addDiploma(){
     }
     record = {
       registerNo:registerNo, studentName:studentName,
-      joinDate:formattedJoinDate, kmgInstructorDate:formattedKmgInstructorDate || old.kmgInstructorDate || '', examDate:oldDocs[0].examDate,
+      joinDate:formattedJoinDate, examDate:oldDocs[0].examDate,
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
       instructorName:instructorName || old.instructorName || '',
@@ -1419,8 +1403,7 @@ function addDiploma(){
       counter++; registerNo = 'KM'+year+String(counter).padStart(3,'0');
     }
     record = {
-      registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate,
-      kmgInstructorDate:formattedKmgInstructorDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
+      registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, instructorName:instructorName, status:'aktif'
     };
     diplomaData.push(record);
