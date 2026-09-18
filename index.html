@@ -100,6 +100,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .log-badge-failed{background:#ffebee;color:#c62828;}
 .log-actions{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 @media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}.lang-toggle{position:static;margin-top:10px;text-align:center;}}
+.privacy-notice{margin:18px 0 22px;padding:16px 18px;border:1px solid #e0b04b;border-left:5px solid #d39a22;border-radius:10px;background:#fff9e8;color:#333;font-size:14px;line-height:1.55;text-align:left}.privacy-notice strong{display:block;margin-bottom:7px;font-size:15px;color:#7a5200}.privacy-notice p{margin:0}.privacy-notice .privacy-contact{margin-top:8px;font-weight:600}
 </style>
 </head>
 <body>
@@ -118,6 +119,12 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
     <div id="query-content" class="tab-content active">
       <h2 id="txt-queryHeading">Kayıtlı Öğrenci Sorgulama</h2>
       <p id="txt-queryDesc">Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.</p>
+      <div class="privacy-notice" id="privacyNotice">
+        <strong>⚠️ KİŞİSEL VERİLER VE YAYIN İZNİ BİLGİLENDİRMESİ</strong>
+        <p>Bu sistemde adınız, soyadınız, sicil (Register) numaranız ve Krav Maga Türk Akademi bünyesinde düzenlenmiş belgelerinize ilişkin bilgiler görüntülenebilir.</p>
+        <p class="privacy-contact">Adınızın, sicil numaranızın veya belgelerinize ilişkin bilgilerin bu sistemde yayınlanmasını istemiyorsanız, lütfen Krav Maga Türk Akademi ile iletişime geçerek kaldırılmasını talep ediniz.</p>
+        <p class="privacy-contact">Bilgilerinizin yayınlanmasına ilişkin açık rızanız alınmışsa kayıtlarınız sistemde görüntülenmeye devam eder. Verdiğiniz izni geri çekmek veya bilgilerinizin kaldırılmasını talep etmek için bizimle iletişime geçebilirsiniz.</p>
+      </div>
       <div class="form-group">
         <label id="txt-lblRegisterNo">Register Numarası:</label>
         <input type="text" id="searchRegister" placeholder="Register No">
