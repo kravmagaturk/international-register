@@ -292,7 +292,6 @@ var levelOptions = {
   'Instructor':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[], 'Katılım Belgesi':[], 'Seminer':[]
 };
-var ID_ELIGIBLE_LEVELS = ['Instructor', 'Asistan', 'Güvenlik', 'Close Protection'];
 var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
 
 var UI_I18N = {
@@ -304,7 +303,7 @@ var UI_I18N = {
     foundTitle:'✅ Kayıt Bulundu', qrLabel:'Sorgulama Linki QR Kodu',
     lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:', lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
     statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
-    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)',
     btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:', placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
     errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
@@ -340,7 +339,7 @@ var UI_I18N = {
     foundTitle:'✅ Record Found', qrLabel:'Query Link QR Code',
     lblFullName:'Full Name:', lblJoinDate:'Academy Entry:', lblExamDate:'Exam Date:', lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
     statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
-    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)', btnIdTr:'🪪 Kimlik (TR)', btnIdEn:'🪪 ID Card (EN)',
+    btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)',
     btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:', placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
     errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
@@ -448,7 +447,7 @@ function turkishSafe(text){
   return String(text).replace(/İ/g,'I').replace(/ı/g,'i').replace(/Ş/g,'S').replace(/ş/g,'s').replace(/Ğ/g,'G').replace(/ğ/g,'g');
 }
 function buildQrUrl(registerNo){ return SITE_URL + '?reg=' + encodeURIComponent(registerNo); }
-function isIdEligibleLevel(level){ return ID_ELIGIBLE_LEVELS.indexOf(level) !== -1; }
+
 function isCertEligibleLevel(level){ return level === CERT_ELIGIBLE_LEVEL; }
 
 function getClientInfo(){
@@ -636,9 +635,6 @@ function renderSearchResult(d){
         : '<option value="diploma-tr">Diploma — Türkçe</option><option value="diploma-en">Diploma — English</option>')+
       '</select></div>';
   });
-  var idHtml = recordHasIdEligibility(d)
-    ? '<div style="text-align:center;margin-top:10px;"><select class="pdf-output-select" onchange="handlePublicPdfMenu(this)"><option value="">🪪 Kimlik</option><option value="id-tr">Kimlik — Türkçe</option><option value="id-en">ID Card — English</option></select></div>'
-    : '';
 
   resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
     '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
@@ -646,7 +642,7 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
     (d.joinDate ? '<div class="result-item"><span class="result-label">'+t('lblJoinDate')+'</span><span>'+d.joinDate+'</span></div>' : '') +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    docsHtml + idHtml + '</div>';
+    docsHtml+ '</div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
 function searchDiploma(){
@@ -670,8 +666,7 @@ function runPdfAction(value, record){
   else if(value === 'diploma-en') downloadPDF(record,'en');
   else if(value === 'diploma-he') downloadPDF(record,'he');
   else if(value === 'registry-info') downloadRegistryInfoPDF(record);
-  else if(value === 'id-tr') downloadInstructorID(record,'tr');
-  else if(value === 'id-en') downloadInstructorID(record,'en');
+
   else if(value === 'cert-tr') downloadAppreciationCertificate(record,'tr');
   else if(value === 'cert-en') downloadAppreciationCertificate(record,'en');
 }
@@ -1073,56 +1068,7 @@ function downloadPDF(record, lang){
   }).catch(function(err){ alert('PDF oluşturulamadı: '+err.message); });
 }
 
-function downloadInstructorID(record, lang){
-  lang=lang||'tr'; if(!record)return;
-  var d=record,isTR=lang==='tr';
-  var roleLabel=(ID_ROLE_LABELS[lang]&&ID_ROLE_LABELS[lang][d.level])?ID_ROLE_LABELS[lang][d.level]:d.level;
-  Promise.all([prepareLogoBase64().then(makeTransparentRoundLogo),makeQrDataUrl(buildQrUrl(d.registerNo))]).then(function(parts){
-    var logo=parts[0],qr=parts[1],jsPDF=window.jspdf.jsPDF,W=130,H=82;
-    var doc=new jsPDF({orientation:'landscape',unit:'mm',format:[H,W]});
-    // Kart gövdesi dış çerçevenin dışına taşmasın.
-    doc.setFillColor(20,20,20); doc.rect(0,0,W,H,'F');
-    doc.setFillColor(250,250,248); doc.rect(1.8,1.8,W-3.6,H-3.6,'F');
-    // Kart filigranı
-    doc.setTextColor(232,232,232); doc.setFont('helvetica','bold'); doc.setFontSize(25);
-    doc.text('KRAV MAGA',68,54,{align:'center'});
-    if(logo){try{if(doc.GState){doc.saveGraphicsState();doc.setGState(new doc.GState({opacity:0.05}));doc.addImage(logo,'PNG',52,25,35,35);doc.restoreGraphicsState();}}catch(e){}}
-    doc.setFillColor(20,20,20); doc.rect(1.8,1.8,W-3.6,18.2,'F');
-    doc.setFillColor(190,20,28); doc.rect(1.8,20,W-3.6,2.2,'F');
-    doc.setFillColor(20,20,20); doc.rect(1.8,72,W-3.6,8.2,'F');
-    doc.setDrawColor(190,20,28); doc.setLineWidth(0.7); doc.rect(1.2,1.2,W-2.4,H-2.4);
-    if(logo){try{doc.addImage(logo,'PNG',5,3.2,13.5,13.5);}catch(e){}}
-    addPdfUnicodeText(doc,isTR?'KRAV MAGA TÜRK':'KRAV MAGA TURK',22,9.2,{fontSize:11,bold:true,color:'#ffffff',align:'left'});
-    addPdfUnicodeText(doc,isTR?'ULUSLARARASI AKADEMİ':'INTERNATIONAL ACADEMY',22,14.3,{fontSize:5.5,bold:true,color:'#ffffff',align:'left'});
 
-    doc.setFillColor(238,238,238); doc.setDrawColor(170,170,170); doc.setLineWidth(0.35); doc.rect(5,27,27,37,'FD');
-    if(d.photo){try{doc.addImage(d.photo,'JPEG',5.7,27.7,25.6,35.6);}catch(e){try{doc.addImage(d.photo,'PNG',5.7,27.7,25.6,35.6);}catch(e2){}}}
-    else addPdfUnicodeText(doc,isTR?'FOTOĞRAF':'PHOTO',18.5,46,{fontSize:5.5,bold:true,color:'#888888'});
-
-    var x=38;
-    addPdfUnicodeText(doc,isTR?'AD SOYAD':'NAME SURNAME',x,30,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
-    addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase(isTR?'tr-TR':'en-US'),x,36.2,{fontSize:11.5,bold:true,align:'left'});
-    doc.setFillColor(190,20,28); doc.roundedRect(x,40,42,8,1.2,1.2,'F');
-    addPdfUnicodeText(doc,String(roleLabel||'INSTRUCTOR').toLocaleUpperCase(isTR?'tr-TR':'en-US'),x+21,45.1,{fontSize:8.2,bold:true,color:'#ffffff'});
-
-    addPdfUnicodeText(doc,isTR?'SİCİL NO':'REGISTER NO',x,53,{fontSize:6.5,bold:true,color:'#555555',align:'left'});
-    addPdfUnicodeText(doc,String(d.registerNo||'-'),x,58.8,{fontSize:9.5,bold:true,align:'left'});
-    var issueDate=new Date(),validDate=new Date(issueDate); validDate.setFullYear(validDate.getFullYear()+5),locale=isTR?'tr-TR':'en-GB';
-    addPdfUnicodeText(doc,isTR?'DÜZENLEME':'ISSUED',x,64.2,{fontSize:5.5,bold:true,color:'#555555',align:'left'});
-    addPdfUnicodeText(doc,isTR?'GEÇERLİLİK':'VALID UNTIL',x+27,64.2,{fontSize:5.5,bold:true,color:'#555555',align:'left'});
-    addPdfUnicodeText(doc,issueDate.toLocaleDateString(locale),x,69,{fontSize:7.2,bold:true,align:'left'});
-    addPdfUnicodeText(doc,validDate.toLocaleDateString(locale),x+27,69,{fontSize:7.2,bold:true,align:'left'});
-
-    if(qr){doc.setFillColor(255,255,255);doc.setDrawColor(210,210,210);doc.rect(101,30,24,24,'FD');doc.addImage(qr,'PNG',103,32,20,20);}
-    addPdfUnicodeText(doc,isTR?'DOĞRULA':'VERIFY',113,58,{fontSize:6,bold:true});
-    addPdfUnicodeText(doc,'kravmagaturk.com',113,62,{fontSize:5,bold:true,color:'#444444'});
-    addPdfUnicodeText(doc,isTR?'EĞİTMEN ÜYELİK KARTI':'INSTRUCTOR MEMBERSHIP CARD',5,78.2,{fontSize:6.8,bold:true,color:'#ffffff',align:'left'});
-    addPdfUnicodeText(doc,isTR?'AKADEMİ ÜYELİĞİ / EĞİTİM KİMLİĞİ':'ACADEMY MEMBERSHIP / TRAINING CREDENTIAL',125,78.2,{fontSize:5,bold:true,color:'#ffffff',align:'right'});
-
-    doc.save((isTR?'kimlik-':'id-card-')+d.registerNo+'-'+lang+'.pdf');
-    logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,kind:'instructor_id_large_text_v10'});
-  }).catch(function(err){console.error(err);alert('Kimlik oluşturulamadı: '+err.message);});
-}
 function downloadAppreciationCertificate(record, lang){
   lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
@@ -1282,9 +1228,7 @@ function docTypeForLevel(level){
 function recordHasLevel(d, level){
   return recordDocuments(d).some(function(x){ return x.level === level; });
 }
-function recordHasIdEligibility(d){
-  return recordDocuments(d).some(function(x){ return isIdEligibleLevel(x.level); });
-}
+
 function recordHasHonor(d){
   return recordDocuments(d).some(function(x){ return isCertEligibleLevel(x.level) || x.type === 'honor'; });
 }
