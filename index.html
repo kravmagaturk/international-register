@@ -188,12 +188,22 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <input type="text" id="instructorName" placeholder="Yetkili eğitmen adı soyadı">
           </div>
           <div class="form-group">
-            <label>Şehir:</label>
-            <input type="text" id="city" placeholder="Örn. İstanbul">
+            <label>Ülke:</label>
+            <select id="country" onchange="updateLocationOptions()">
+              <option value="">Seçiniz</option>
+              <option value="Türkiye">Türkiye</option>
+              <option value="Almanya">Almanya</option>
+              <option value="Diğer">Diğer / Other</option>
+            </select>
           </div>
           <div class="form-group">
-            <label>İlçe:</label>
-            <input type="text" id="district" placeholder="Örn. Kadıköy">
+            <label>Şehir / Bölge:</label>
+            <input type="text" id="city" list="cityOptions" placeholder="Örn. İstanbul / Berlin">
+            <datalist id="cityOptions"></datalist>
+          </div>
+          <div class="form-group">
+            <label>İlçe / Şehir:</label>
+            <input type="text" id="district" placeholder="Örn. Kadıköy / Köln">
           </div>
           <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
             <label style="display:flex;align-items:center;gap:9px;margin:0;cursor:pointer;">
@@ -307,6 +317,18 @@ var levelOptions = {
   'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[], 'Katılım Belgesi':[], 'Seminer':[]
 };
 var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
+
+var LOCATION_OPTIONS = {
+  'Türkiye':['Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin','Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur','Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan','Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkâri','Hatay','Iğdır','Isparta','İstanbul','İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kırıkkale','Kırklareli','Kırşehir','Kilis','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş','Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Siirt','Sinop','Sivas','Şanlıurfa','Şırnak','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak'],
+  'Almanya':['Baden-Württemberg','Bayern','Berlin','Brandenburg','Bremen','Hamburg','Hessen','Mecklenburg-Vorpommern','Niedersachsen','Nordrhein-Westfalen','Rheinland-Pfalz','Saarland','Sachsen','Sachsen-Anhalt','Schleswig-Holstein','Thüringen']
+};
+function updateLocationOptions(){
+  var countryEl=document.getElementById('country');
+  var list=document.getElementById('cityOptions');
+  if(!countryEl || !list) return;
+  var opts=LOCATION_OPTIONS[countryEl.value]||[];
+  list.innerHTML=opts.map(function(x){return '<option value="'+x.replace(/"/g,'&quot;')+'"></option>';}).join('');
+}
 
 var UI_I18N = {
   tr: {
@@ -1265,6 +1287,11 @@ function addDocumentToRecord(index){
   document.getElementById('studentName').readOnly = true;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
   document.getElementById('instructorName').value = d.instructorName || '';
+  document.getElementById('country').value = d.country || (d.city || d.district ? 'Türkiye' : '');
+  updateLocationOptions();
+  document.getElementById('city').value = d.city || '';
+  document.getElementById('district').value = d.district || '';
+  document.getElementById('publicInstructor').checked = d.publicInstructor === true;
   if(d.photo){
     currentPhotoData = d.photo;
     document.getElementById('photoPreviewImg').src = d.photo;
@@ -1327,6 +1354,8 @@ function editDiploma(index){
   document.getElementById('studentName').value = d.studentName;
   document.getElementById('examLocation').value = d.examLocation;
   document.getElementById('instructorName').value = d.instructorName || '';
+  document.getElementById('country').value = d.country || (d.city || d.district ? 'Türkiye' : '');
+  updateLocationOptions();
   document.getElementById('city').value = d.city || '';
   document.getElementById('district').value = d.district || '';
   document.getElementById('publicInstructor').checked = d.publicInstructor === true;
@@ -1358,6 +1387,7 @@ function syncPublicInstructor(record){
     name:record.studentName || '',
     photo:record.photo || '',
     joinDate:record.joinDate || '',
+    country:record.country || '',
     city:record.city || '',
     district:record.district || '',
     role:'Krav Maga Eğitmeni',
@@ -1372,6 +1402,7 @@ function addDiploma(){
   var examDate = document.getElementById('examDate').value;
   var examLocation = document.getElementById('examLocation').value.trim();
   var instructorName = document.getElementById('instructorName').value.trim();
+  var country = document.getElementById('country').value;
   var city = document.getElementById('city').value.trim();
   var district = document.getElementById('district').value.trim();
   var publicInstructor = document.getElementById('publicInstructor').checked;
@@ -1413,9 +1444,10 @@ function addDiploma(){
       examLocation:docs[0].examLocation,
       joinDate:formattedJoinDate || base.joinDate || '',
       instructorName:instructorName || base.instructorName || '',
+      country:country || base.country || '',
       city:city || base.city || '',
       district:district || base.district || '',
-      publicInstructor:publicInstructor,
+      publicInstructor:(addingDocumentIndex >= 0 ? base.publicInstructor === true : publicInstructor),
       photo:currentPhotoData || base.photo || ''
     });
     delete record._firebaseKey;
@@ -1438,6 +1470,7 @@ function addDiploma(){
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
       instructorName:instructorName || old.instructorName || '',
+      country:country,
       city:city,
       district:district,
       publicInstructor:publicInstructor,
@@ -1466,7 +1499,7 @@ function addDiploma(){
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, instructorName:instructorName,
-      city:city, district:district, publicInstructor:publicInstructor, status:'aktif'
+      country:country, city:city, district:district, publicInstructor:publicInstructor, status:'aktif'
     };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1568,7 +1601,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>'+t('lblExamDate')+'</strong> '+d.examDate+'</p>' +
           '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
-          ((d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.district,d.city].filter(Boolean).join(' / ')+'</p>' : '') +
+          ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
           '<p><strong>Web Antrenör Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
