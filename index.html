@@ -1375,14 +1375,22 @@ function editDiploma(index){
 }
 function syncPublicInstructor(record){
   if(!record || !record.registerNo) return Promise.resolve();
-  var isInstructor = recordDocuments(record).some(function(x){
+  var docs = recordDocuments(record);
+  var isInstructor = docs.some(function(x){
     return String(x.level||'').indexOf('Instructor') === 0;
   });
-  var shouldPublish = record.publicInstructor === true && record.status !== 'pasif' && isInstructor;
+  var isRepresentative = docs.some(function(x){
+    return String(x.level||'').indexOf('Representative') === 0;
+  });
+  var isPublicProfessional = isInstructor || isRepresentative;
+  var shouldPublish = record.publicInstructor === true && record.status !== 'pasif' && isPublicProfessional;
   var path = '/publicInstructors/' + encodeURIComponent(record.registerNo) + '.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
   }
+  var role = isInstructor && isRepresentative
+    ? 'Krav Maga Eğitmeni • Temsilci'
+    : (isRepresentative ? 'Krav Maga Temsilcisi' : 'Krav Maga Eğitmeni');
   var publicRecord = {
     name:record.studentName || '',
     photo:record.photo || '',
@@ -1390,7 +1398,9 @@ function syncPublicInstructor(record){
     country:record.country || '',
     city:record.city || '',
     district:record.district || '',
-    role:'Krav Maga Eğitmeni',
+    role:role,
+    representative:isRepresentative,
+    instructor:isInstructor,
     status:'aktif'
   };
   return adminFetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)});
