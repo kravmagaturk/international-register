@@ -171,6 +171,15 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <button type="button" class="btn btn-danger" id="btn-remove-photo" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
             </div>
           </div>
+          <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
+            <label>Web Profil Çizimi:</label>
+            <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
+            <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
+              <div class="photo-frame-large" style="cursor:default;"><img id="webPortraitPreviewImg"></div>
+              <div style="font-size:12px;color:#777;margin:6px 0;">Sadece halka açık Eğitmen / Temsilci sayfasında kullanılır.</div>
+              <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
+            </div>
+          </div>
           <div class="form-group">
             <label id="txt-lblJoinDateForm">Akademiye Giriş Tarihi:</label>
             <input type="date" id="joinDate">
@@ -534,6 +543,45 @@ function showTab(name){
   if(activeBtn) activeBtn.classList.add('active');
   var activeContent = document.getElementById(name+'-content');
   if(activeContent) activeContent.classList.add('active');
+}
+var currentWebPortraitData = '';
+
+function previewWebPortrait(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  if(file.type && file.type.indexOf('image/') !== 0){
+    alert('Lütfen JPG, PNG veya WebP formatında bir çizim seçin.');
+    event.target.value = '';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var size = 800;
+      var canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+      var sourceSize = Math.min(iw, ih);
+      var sx = (iw-sourceSize)/2, sy = (ih-sourceSize)/2;
+      ctx.drawImage(img,sx,sy,sourceSize,sourceSize,0,0,size,size);
+      currentWebPortraitData = canvas.toDataURL('image/jpeg',0.86);
+      document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
+      document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearWebPortraitPreview(){
+  currentWebPortraitData='';
+  var input=document.getElementById('webPortrait');
+  if(input) input.value='';
+  var box=document.getElementById('webPortraitPreviewBox');
+  if(box) box.classList.add('hidden');
 }
 function previewPhoto(event){
   var file = event.target.files[0];
@@ -1324,6 +1372,7 @@ function addDocumentToRecord(index){
 }
 
 function showAddForm(){
+  clearWebPortraitPreview();
   editingIndex = -1;
   addingDocumentIndex = -1;
   document.getElementById('studentName').readOnly = false;
@@ -1392,6 +1441,11 @@ function editDiploma(index){
     document.getElementById('photoPreviewImg').src = d.photo;
     document.getElementById('photoPreviewBox').classList.remove('hidden');
   } else { clearPhotoPreview(); }
+  currentWebPortraitData = d.webPortrait || '';
+  if(currentWebPortraitData){
+    document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
+    document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
+  } else { clearWebPortraitPreview(); }
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
@@ -1415,7 +1469,8 @@ function syncPublicInstructor(record){
     : (isRepresentative ? 'Krav Maga Temsilcisi' : 'Krav Maga Eğitmeni');
   var publicRecord = {
     name:record.studentName || '',
-    photo:record.photo || '',
+    photo:record.webPortrait || '',
+    webPortrait:record.webPortrait || '',
     joinDate:record.joinDate || '',
     country:record.country || '',
     city:record.city || '',
@@ -1480,7 +1535,8 @@ function addDiploma(){
       city:city || base.city || '',
       district:district || base.district || '',
       publicInstructor:(addingDocumentIndex >= 0 ? base.publicInstructor === true : publicInstructor),
-      photo:currentPhotoData || base.photo || ''
+      photo:currentPhotoData || base.photo || '',
+      webPortrait:currentWebPortraitData || base.webPortrait || ''
     });
     delete record._firebaseKey;
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:base._firebaseKey});
@@ -1501,6 +1557,7 @@ function addDiploma(){
       joinDate:formattedJoinDate, examDate:oldDocs[0].examDate,
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
+      webPortrait:currentWebPortraitData,
       instructorName:instructorName || old.instructorName || '',
       country:country,
       city:city,
@@ -1530,7 +1587,7 @@ function addDiploma(){
     }
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
-      documents:[newDoc], photo:currentPhotoData, instructorName:instructorName,
+      documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
       country:country, city:city, district:district, publicInstructor:publicInstructor, status:'aktif'
     };
     diplomaData.push(record);
