@@ -57,7 +57,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
 .photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
-.photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.photo-frame-large img{width:100%;height:100%;object-fit:cover;background:#fff;}
 .photo-frame-large::after{content:'🔍';position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;}
 .qr-box{text-align:center;margin:10px 0;}
 .qr-box canvas{border:1px solid #ddd;border-radius:6px;padding:4px;background:#fff;}
@@ -538,23 +538,37 @@ function showTab(name){
 function previewPhoto(event){
   var file = event.target.files[0];
   if(!file) return;
+  if(file.type && file.type.indexOf('image/') !== 0){
+    alert('Lütfen JPG, PNG veya WebP formatında bir fotoğraf seçin.');
+    event.target.value = '';
+    return;
+  }
   var reader = new FileReader();
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      var size = 300;
+      // Web profilleri için standart: 800x800 kare, merkezden kırpma.
+      // Böylece farklı telefon/kamera oranları aynı kart formatında görünür.
+      var size = 800;
       var canvas = document.createElement('canvas');
-      canvas.width = size; canvas.height = size;
+      canvas.width = size;
+      canvas.height = size;
       var ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, size, size);
-      var scale = Math.min(size/img.width, size/img.height);
-      var w = img.width*scale, h = img.height*scale;
-      var x = (size-w)/2, y = (size-h)/2;
-      ctx.drawImage(img, x, y, w, h);
-      currentPhotoData = canvas.toDataURL('image/jpeg', 0.8);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      var sourceSize = Math.min(img.naturalWidth || img.width, img.naturalHeight || img.height);
+      var sx = ((img.naturalWidth || img.width) - sourceSize) / 2;
+      var sy = ((img.naturalHeight || img.height) - sourceSize) / 2;
+
+      ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
+      currentPhotoData = canvas.toDataURL('image/jpeg', 0.86);
       document.getElementById('photoPreviewImg').src = currentPhotoData;
       document.getElementById('photoPreviewBox').classList.remove('hidden');
+    };
+    img.onerror = function(){
+      alert('Fotoğraf okunamadı. Lütfen başka bir fotoğraf seçin.');
+      event.target.value = '';
     };
     img.src = e.target.result;
   };
