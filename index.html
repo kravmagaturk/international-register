@@ -188,6 +188,20 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <input type="text" id="instructorName" placeholder="Yetkili eğitmen adı soyadı">
           </div>
           <div class="form-group">
+            <label>Şehir:</label>
+            <input type="text" id="city" placeholder="Örn. İstanbul">
+          </div>
+          <div class="form-group">
+            <label>İlçe:</label>
+            <input type="text" id="district" placeholder="Örn. Kadıköy">
+          </div>
+          <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
+            <label style="display:flex;align-items:center;gap:9px;margin:0;cursor:pointer;">
+              <input type="checkbox" id="publicInstructor" style="width:auto;">
+              <span>Aktif antrenör olarak web sitesinde göster</span>
+            </label>
+          </div>
+          <div class="form-group">
             <label id="txt-lblMainLevel">Ana Seviye:</label>
             <select id="mainLevel" onchange="updateSubLevels()">
               <option value="" id="opt-selectPlaceholder1">Seçiniz</option>
@@ -1282,6 +1296,9 @@ function clearAddForm(){
   document.getElementById('examDate').value='';
   document.getElementById('examLocation').value='';
   document.getElementById('instructorName').value='';
+  document.getElementById('city').value='';
+  document.getElementById('district').value='';
+  document.getElementById('publicInstructor').checked=false;
   document.getElementById('mainLevel').value='';
   document.getElementById('subLevel').value='';
   document.getElementById('sub-level-group').classList.add('hidden');
@@ -1310,6 +1327,9 @@ function editDiploma(index){
   document.getElementById('studentName').value = d.studentName;
   document.getElementById('examLocation').value = d.examLocation;
   document.getElementById('instructorName').value = d.instructorName || '';
+  document.getElementById('city').value = d.city || '';
+  document.getElementById('district').value = d.district || '';
+  document.getElementById('publicInstructor').checked = d.publicInstructor === true;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
   var levelParts = d.level.split(' Level ');
@@ -1324,12 +1344,37 @@ function editDiploma(index){
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
+function syncPublicInstructor(record){
+  if(!record || !record.registerNo) return Promise.resolve();
+  var isInstructor = recordDocuments(record).some(function(x){
+    return String(x.level||'').indexOf('Instructor') === 0;
+  });
+  var shouldPublish = record.publicInstructor === true && record.status !== 'pasif' && isInstructor;
+  var path = '/publicInstructors/' + encodeURIComponent(record.registerNo) + '.json';
+  if(!shouldPublish){
+    return adminFetch(path,{method:'DELETE'}).catch(function(){});
+  }
+  var publicRecord = {
+    name:record.studentName || '',
+    photo:record.photo || '',
+    joinDate:record.joinDate || '',
+    city:record.city || '',
+    district:record.district || '',
+    role:'Krav Maga Eğitmeni',
+    status:'aktif'
+  };
+  return adminFetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)});
+}
+
 function addDiploma(){
   var studentName = document.getElementById('studentName').value.trim();
   var joinDateRaw = document.getElementById('joinDate').value;
   var examDate = document.getElementById('examDate').value;
   var examLocation = document.getElementById('examLocation').value.trim();
   var instructorName = document.getElementById('instructorName').value.trim();
+  var city = document.getElementById('city').value.trim();
+  var district = document.getElementById('district').value.trim();
+  var publicInstructor = document.getElementById('publicInstructor').checked;
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
@@ -1368,6 +1413,9 @@ function addDiploma(){
       examLocation:docs[0].examLocation,
       joinDate:formattedJoinDate || base.joinDate || '',
       instructorName:instructorName || base.instructorName || '',
+      city:city || base.city || '',
+      district:district || base.district || '',
+      publicInstructor:publicInstructor,
       photo:currentPhotoData || base.photo || ''
     });
     delete record._firebaseKey;
@@ -1390,6 +1438,9 @@ function addDiploma(){
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
       instructorName:instructorName || old.instructorName || '',
+      city:city,
+      district:district,
+      publicInstructor:publicInstructor,
       status:old.status || 'aktif'
     };
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
@@ -1414,7 +1465,8 @@ function addDiploma(){
     }
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
-      documents:[newDoc], photo:currentPhotoData, instructorName:instructorName, status:'aktif'
+      documents:[newDoc], photo:currentPhotoData, instructorName:instructorName,
+      city:city, district:district, publicInstructor:publicInstructor, status:'aktif'
     };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1422,6 +1474,8 @@ function addDiploma(){
 
   adminFetch('/diplomaData/' + registerNo + '.json', {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
+  }).then(function(){
+    return syncPublicInstructor(record);
   }).then(function(){
     filterDiplomas();
     hideAddForm();
@@ -1439,7 +1493,7 @@ function addDiploma(){
 function toggleStatus(index){
   var d = diplomaData[index];
   d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
-  adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
+  adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ return syncPublicInstructor(d); }).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
 function filterDiplomas(){
   var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
@@ -1514,6 +1568,8 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>'+t('lblExamDate')+'</strong> '+d.examDate+'</p>' +
           '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
+          ((d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.district,d.city].filter(Boolean).join(' / ')+'</p>' : '') +
+          '<p><strong>Web Antrenör Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
@@ -1539,7 +1595,7 @@ function toggleDetails(i){
 function deleteDiploma(i){
   var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
-    adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
+    adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return adminFetch('/publicInstructors/' + encodeURIComponent(d.registerNo) + '.json',{method:'DELETE'}); }).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
 var securityLogsVisible = false;
