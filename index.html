@@ -1197,6 +1197,14 @@ async function loadAllDiplomas() {
                     }
                 });
             }
+            // Aktif Instructor / Representative kayıtlarını web diziniyle otomatik eşitle.
+            // Böylece eski kayıtlar da yönetici paneli açıldığında publicInstructors'a taşınır;
+            // pasif kayıtlar ise dizinden kaldırılır.
+            await Promise.all(diplomaData.map(function(record){
+                return syncPublicInstructor(record).catch(function(err){
+                    console.warn('Web profili eşitlenemedi:', record && record.registerNo, err);
+                });
+            }));
             filterDiplomas();
         } catch (error) {
             console.error('Kayıtlar yüklenemedi:', error);
@@ -1383,7 +1391,7 @@ function syncPublicInstructor(record){
     return String(x.level||'').indexOf('Representative') === 0;
   });
   var isPublicProfessional = isInstructor || isRepresentative;
-  var shouldPublish = record.publicInstructor === true && record.status !== 'pasif' && isPublicProfessional;
+  var shouldPublish = record.status !== 'pasif' && isPublicProfessional;
   var path = '/publicInstructors/' + encodeURIComponent(record.registerNo) + '.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
