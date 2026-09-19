@@ -639,9 +639,35 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
     (d.joinDate ? '<div class="result-item"><span class="result-label">'+t('lblJoinDate')+'</span><span>'+d.joinDate+'</span></div>' : '') +
     '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    docsHtml+ '</div>';
+    docsHtml+
+    '<div style="text-align:center;margin-top:18px;"><button type="button" class="btn btn-danger" onclick="requestRecordDeletion()">🗑️ Kaydımı Sil</button></div>' +
+    '<div id="deleteRequestMessage" style="margin-top:10px;"></div></div>';
   generateQR('searchQR', buildQrUrl(d.registerNo));
 }
+function requestRecordDeletion(){
+  var d=lastSearchedRecord;
+  if(!d || !d.registerNo) return;
+  var box=document.getElementById('deleteRequestMessage');
+  if(!confirm('Kaydınızın silinmesi için yöneticiye talep gönderilsin mi? Kayıt yönetici onayı olmadan silinmez.')) return;
+  var request={
+    registerNo:d.registerNo,
+    studentName:d.studentName||'',
+    requestedAt:new Date().toISOString(),
+    status:'pending'
+  };
+  fetch(FIREBASE_URL+'/deletionRequests/'+encodeURIComponent(d.registerNo)+'.json',{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(request)
+  }).then(function(res){
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(box) box.innerHTML='<div class="message success">✅ Silme talebiniz yöneticiye gönderildi. Kayıt yönetici onayı olmadan silinmez.</div>';
+  }).catch(function(err){
+    console.error('Silme talebi gönderilemedi:',err);
+    if(box) box.innerHTML='<div class="message error">⚠️ Silme talebi gönderilemedi. Lütfen daha sonra tekrar deneyin.</div>';
+  });
+}
+
 function searchDiploma(){
   var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   var resultDiv = document.getElementById('searchResult');
