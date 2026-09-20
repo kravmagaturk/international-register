@@ -5,7 +5,7 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 const ADMIN_EMAIL = "bulicet@gmail.com";
-const AI_MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
+const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 
 function corsHeaders(origin) {
   return {
@@ -158,62 +158,54 @@ export default {
       }
 
       const prompt = [
-        "Create a square illustrated portrait from the supplied reference photo.",
-        "Preserve the same person's recognizable facial identity, age, hair, beard and facial proportions.",
+        "Use input image 0 as the identity reference.",
+        "Create a square illustrated portrait of exactly the same person.",
+        "Preserve recognizable facial identity, age, hair, beard, skin tone and facial proportions.",
         "Professional Krav Maga instructor portrait, chest-up composition, black training clothing, confident neutral defensive stance.",
-        "Premium graphic-novel illustration, realistic anatomy, dramatic black and deep red textured background, crisp studio lighting.",
-        "No text, no letters, no logos, no watermark."
+        "Premium realistic graphic-novel illustration, dramatic black and deep red textured background, crisp studio lighting.",
+        "Do not add text, letters, logos, badges or watermarks."
       ].join(" ");
 
-      const negativePrompt = [
-        "different person",
-        "changed identity",
-        "distorted face",
-        "deformed anatomy",
-        "extra fingers",
-        "extra hands",
-        "duplicate limbs",
-        "text",
-        "letters",
-        "logo",
-        "watermark",
-        "badge",
-        "blurry",
-        "low quality"
-      ].join(", ");
+      const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
+      const form = new FormData();
+      form.append("input_image_0", inputBlob, "reference." + match[1].toLowerCase());
+      form.append("prompt", prompt);
+      form.append("width", "768");
+      form.append("height", "768");
+      form.append("guidance", "4");
 
-      // Use Cloudflare's dedicated img2img model. Its runtime is designed
-      // specifically to consume a reference image instead of relying on
-      // SDXL base's text-to-image execution path.
+      const formResponse = new Response(form);
+      const formStream = formResponse.body;
+      const formContentType = formResponse.headers.get("content-type");
+
       const result = await env.AI.run(AI_MODEL, {
-        prompt,
-        negative_prompt: negativePrompt,
-        image: Array.from(imageBytes),
-        width: 768,
-        height: 768,
-        num_steps: 20,
-        strength: 0.42,
-        guidance: 7.5
+        multipart: {
+          body: formStream,
+          contentType: formContentType
+        }
       });
 
       let outputBytes;
       let contentType = "image/png";
 
-      if (result instanceof Response) {
-        contentType = result.headers.get("Content-Type") || contentType;
-        outputBytes = new Uint8Array(await result.arrayBuffer());
+      if (result && typeof result === "object" && typeof result.image === "string") {
+        outputBytes = base64ToBytes(result.image);
+      } else if (result instanceof Response) {
+        const ct = result.headers.get("Content-Type") || "";
+        if (ct.includes("application/json")) {
+          const data = await result.json();
+          if (!data || !data.image) throw new Error("Workers AI returned no image.");
+          outputBytes = base64ToBytes(data.image);
+        } else {
+          contentType = ct || contentType;
+          outputBytes = new Uint8Array(await result.arrayBuffer());
+        }
       } else if (result instanceof ReadableStream) {
-        outputBytes = new Uint8Array(
-          await new Response(result).arrayBuffer()
-        );
+        outputBytes = new Uint8Array(await new Response(result).arrayBuffer());
       } else if (result instanceof ArrayBuffer) {
         outputBytes = new Uint8Array(result);
       } else if (ArrayBuffer.isView(result)) {
-        outputBytes = new Uint8Array(
-          result.buffer,
-          result.byteOffset,
-          result.byteLength
-        );
+        outputBytes = new Uint8Array(result.buffer, result.byteOffset, result.byteLength);
       } else {
         throw new Error("Workers AI returned an unsupported image response.");
       }
