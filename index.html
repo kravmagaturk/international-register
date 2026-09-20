@@ -1731,6 +1731,7 @@ function addDiploma(){
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
+  // Web profil çizimi kayıt için zorunlu değildir. AI servisi geçici olarak çalışmasa da sicil kaydı yapılabilmelidir.
 
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
   var formattedExamDate = formatDateForDisplay(examDate);
@@ -1795,7 +1796,7 @@ function addDiploma(){
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
       webPortrait:currentWebPortraitData,
-      instructorName:instructorName || old.instructorName || '',
+      instructorName:instructorName,
       country:country,
       city:city,
       district:district,
@@ -1842,7 +1843,12 @@ function addDiploma(){
     var needsPortrait=publicRoles.length && currentPhotoData && !currentWebPortraitData;
     if(needsPortrait && confirm('Bu kayıt '+publicRoles.join(', ')+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
       var savedIndex=diplomaData.findIndex(function(x){ return x.registerNo===registerNo; });
-      if(savedIndex>=0){ editingIndex=savedIndex; }
+      if(savedIndex>=0){
+        editingIndex=savedIndex;
+        // Form alanlarını kaydedilmiş üyeden yeniden yükle; yetkili eğitmen adı öğrenci adına karışmasın.
+        document.getElementById('studentName').value=diplomaData[savedIndex].studentName||'';
+        document.getElementById('instructorName').value=diplomaData[savedIndex].instructorName||'';
+      }
       generateWebPortraitAI();
     } else {
       hideAddForm();
