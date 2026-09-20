@@ -217,10 +217,15 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <input type="text" id="district" placeholder="Örn. Kadıköy / Köln">
           </div>
           <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
-            <label style="display:flex;align-items:center;gap:9px;margin:0;cursor:pointer;">
-              <input type="checkbox" id="publicInstructor" style="width:auto;">
-              <span>Web sitesinde aktif eğitmen / temsilci olarak göster</span>
-            </label>
+            <label for="publicRole">Web sitesi / bilgi arama ekranında göster:</label>
+            <select id="publicRole">
+              <option value="">Gösterme</option>
+              <option value="Instructor">Instructor</option>
+              <option value="Asistan">Asistan</option>
+              <option value="Representative">Temsilci</option>
+              <option value="Expert">Expert</option>
+            </select>
+            <small style="display:block;margin-top:7px;color:#666;">Bir rol seçildiğinde kayıt bilgi arama arşivinde yayınlanır. Sicil fotoğrafı varsa web profil çizimi oluşturma onayı kayıt sırasında istenir.</small>
           </div>
           <div class="form-group">
             <label id="txt-lblMainLevel">Ana Seviye:</label>
@@ -1531,7 +1536,7 @@ function addDocumentToRecord(index){
   updateLocationOptions();
   document.getElementById('city').value = d.city || '';
   document.getElementById('district').value = d.district || '';
-  document.getElementById('publicInstructor').checked = d.publicInstructor === true;
+  document.getElementById('publicRole').value = d.publicRole || (d.publicInstructor === true ? inferPublicRole(d) : '');
   if(d.photo){
     currentPhotoData = d.photo;
     document.getElementById('photoPreviewImg').src = d.photo;
@@ -1566,7 +1571,7 @@ function clearAddForm(){
   document.getElementById('instructorName').value='';
   document.getElementById('city').value='';
   document.getElementById('district').value='';
-  document.getElementById('publicInstructor').checked=false;
+  document.getElementById('publicRole').value='';
   document.getElementById('mainLevel').value='';
   document.getElementById('subLevel').value='';
   document.getElementById('sub-level-group').classList.add('hidden');
@@ -1599,7 +1604,7 @@ function editDiploma(index){
   updateLocationOptions();
   document.getElementById('city').value = d.city || '';
   document.getElementById('district').value = d.district || '';
-  document.getElementById('publicInstructor').checked = d.publicInstructor === true;
+  document.getElementById('publicRole').value = d.publicRole || (d.publicInstructor === true ? inferPublicRole(d) : '');
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
   var levelParts = d.level.split(' Level ');
@@ -1619,25 +1624,25 @@ function editDiploma(index){
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
+function inferPublicRole(record){
+  var docs=recordDocuments(record);
+  var order=['Instructor','Asistan','Representative','Expert'];
+  for(var i=0;i<order.length;i++){
+    var role=order[i];
+    if(docs.some(function(x){ return String(x.level||'').indexOf(role)===0; })) return role;
+  }
+  return '';
+}
 function syncPublicInstructor(record){
   if(!record || !record.registerNo) return Promise.resolve();
-  var docs = recordDocuments(record);
-  var isInstructor = docs.some(function(x){
-    return String(x.level||'').indexOf('Instructor') === 0;
-  });
-  var isRepresentative = docs.some(function(x){
-    return String(x.level||'').indexOf('Representative') === 0;
-  });
-  var isPublicProfessional = isInstructor || isRepresentative;
-  var shouldPublish = !isInactiveStatus(record.status) && isPublicProfessional;
-  var path = '/publicInstructors/' + encodeURIComponent(record.registerNo) + '.json';
+  var role=record.publicRole || (record.publicInstructor === true ? inferPublicRole(record) : '');
+  var allowed=['Instructor','Asistan','Representative','Expert'];
+  var shouldPublish=allowed.indexOf(role)>=0;
+  var path='/publicInstructors/'+encodeURIComponent(record.registerNo)+'.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
   }
-  var role = isInstructor && isRepresentative
-    ? 'Krav Maga Eğitmeni • Temsilci'
-    : (isRepresentative ? 'Krav Maga Temsilcisi' : 'Krav Maga Eğitmeni');
-  var publicRecord = {
+  var publicRecord={
     name:record.studentName || '',
     photo:record.webPortrait || '',
     webPortrait:record.webPortrait || '',
@@ -1646,13 +1651,15 @@ function syncPublicInstructor(record){
     city:record.city || '',
     district:record.district || '',
     role:role,
-    representative:isRepresentative,
-    instructor:isInstructor,
-    status:'faal'
+    level:publicLevelText(record),
+    instructor:role==='Instructor',
+    assistant:role==='Asistan',
+    representative:role==='Representative',
+    expert:role==='Expert',
+    status:isInactiveStatus(record.status)?'faal_olmayan':'faal'
   };
   return adminFetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)});
 }
-
 function addDiploma(){
   var studentName = document.getElementById('studentName').value.trim();
   var joinDateRaw = document.getElementById('joinDate').value;
@@ -1662,7 +1669,8 @@ function addDiploma(){
   var country = document.getElementById('country').value;
   var city = document.getElementById('city').value.trim();
   var district = document.getElementById('district').value.trim();
-  var publicInstructor = document.getElementById('publicInstructor').checked;
+  var publicRole = document.getElementById('publicRole').value;
+  var publicInstructor = !!publicRole;
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
@@ -1705,6 +1713,7 @@ function addDiploma(){
       city:city || base.city || '',
       district:district || base.district || '',
       publicInstructor:(addingDocumentIndex >= 0 ? base.publicInstructor === true : publicInstructor),
+      publicRole:(addingDocumentIndex >= 0 ? (base.publicRole || inferPublicRole(base)) : publicRole),
       photo:currentPhotoData || base.photo || '',
       webPortrait:currentWebPortraitData || base.webPortrait || ''
     });
@@ -1733,6 +1742,7 @@ function addDiploma(){
       city:city,
       district:district,
       publicInstructor:publicInstructor,
+      publicRole:publicRole,
       status:old.status || 'faal'
     };
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
@@ -1758,7 +1768,7 @@ function addDiploma(){
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
-      country:country, city:city, district:district, publicInstructor:publicInstructor, status:'faal'
+      country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, status:'faal'
     };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1770,6 +1780,13 @@ function addDiploma(){
     return syncPublicInstructor(record);
   }).then(function(){
     filterDiplomas();
+    if(publicRole && currentPhotoData && !currentWebPortraitData){
+      setTimeout(function(){
+        if(confirm('Bu kayıt '+publicRole+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
+          generateWebPortraitAI();
+        }
+      },100);
+    }
     hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
