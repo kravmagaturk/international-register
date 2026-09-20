@@ -177,7 +177,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:default;"><img id="webPortraitPreviewImg"></div>
               <div style="font-size:12px;color:#777;margin:6px 0;">Sadece halka açık Eğitmen / Temsilci sayfasında kullanılır.</div>
+              <button type="button" class="btn" id="btn-generate-web-portrait" onclick="generateWebPortraitAI()">🎨 Çizimi Onayla ve Oluştur</button>
               <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
+              <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin-top:7px;"></div>
             </div>
           </div>
           <div class="form-group">
@@ -545,6 +547,102 @@ function showTab(name){
   if(activeContent) activeContent.classList.add('active');
 }
 var currentWebPortraitData = '';
+var PORTRAIT_AI_URL = 'https://kravmaga-portrait.bulicet.workers.dev/';
+
+function blobToSquareJpegDataUrl(blob){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    var objectUrl=URL.createObjectURL(blob);
+    img.onload=function(){
+      try{
+        var size=800, canvas=document.createElement('canvas');
+        canvas.width=size; canvas.height=size;
+        var ctx=canvas.getContext('2d');
+        ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+        var iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+        var sourceSize=Math.min(iw,ih);
+        var sx=(iw-sourceSize)/2, sy=(ih-sourceSize)/2;
+        ctx.drawImage(img,sx,sy,sourceSize,sourceSize,0,0,size,size);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL('image/jpeg',0.86));
+      }catch(e){ URL.revokeObjectURL(objectUrl); reject(e); }
+    };
+    img.onerror=function(){ URL.revokeObjectURL(objectUrl); reject(new Error('AI görseli okunamadı.')); };
+    img.src=objectUrl;
+  });
+}
+
+function persistGeneratedWebPortrait(){
+  var idx = editingIndex >= 0 ? editingIndex : (addingDocumentIndex >= 0 ? addingDocumentIndex : -1);
+  if(idx < 0 || !diplomaData[idx] || !diplomaData[idx].registerNo){
+    return Promise.resolve(false);
+  }
+  var old=diplomaData[idx];
+  var record=Object.assign({},old,{webPortrait:currentWebPortraitData});
+  delete record._firebaseKey;
+  return adminFetch('/diplomaData/'+encodeURIComponent(record.registerNo)+'.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)
+  }).then(function(){
+    diplomaData[idx]=Object.assign({},record,{_firebaseKey:old._firebaseKey});
+    return syncPublicInstructor(record);
+  }).then(function(){ return true; });
+}
+
+function generateWebPortraitAI(){
+  var btn=document.getElementById('btn-generate-web-portrait');
+  var status=document.getElementById('webPortraitAiStatus');
+  if(!currentAdminUser){
+    alert('Önce yönetici olarak giriş yapın.');
+    return;
+  }
+  if(!currentPhotoData){
+    alert('Önce gerçek sicil fotoğrafını yükleyin.');
+    return;
+  }
+  if(!confirm('Bu fotoğraftan halka açık web profil çizimi oluşturulsun mu?')){
+    return;
+  }
+  btn.disabled=true;
+  btn.textContent='⏳ Çizim oluşturuluyor...';
+  if(status){ status.style.color='#777'; status.textContent='Cloudflare AI çalışıyor. Lütfen bekleyin...'; }
+
+  currentAdminUser.getIdToken(true).then(function(token){
+    return fetch(PORTRAIT_AI_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({image:currentPhotoData})
+    });
+  }).then(async function(res){
+    if(!res.ok){
+      var message='AI HTTP '+res.status;
+      try{
+        var data=await res.json();
+        if(data && data.error) message=data.error+(data.detail?' — '+data.detail:'');
+      }catch(e){}
+      throw new Error(message);
+    }
+    return res.blob();
+  }).then(blobToSquareJpegDataUrl).then(function(dataUrl){
+    currentWebPortraitData=dataUrl;
+    document.getElementById('webPortraitPreviewImg').src=currentWebPortraitData;
+    document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
+    return persistGeneratedWebPortrait();
+  }).then(function(saved){
+    if(status){
+      status.style.color='#2e7d32';
+      status.textContent=saved
+        ? '✅ Çizim oluşturuldu, Firebase’e kaydedildi ve web dizini senkronlandı.'
+        : '✅ Çizim hazır. Yeni sicili Kaydet dediğinizde Firebase’e ve web dizinine aktarılacak.';
+    }
+  }).catch(function(err){
+    console.error('Web portrait AI error:',err);
+    if(status){ status.style.color='#c62828'; status.textContent='❌ '+(err.message||String(err)); }
+    alert('Çizim oluşturulamadı:\n'+(err.message||String(err)));
+  }).finally(function(){
+    btn.disabled=false;
+    btn.textContent='🎨 Çizimi Onayla ve Oluştur';
+  });
+}
 
 function previewWebPortrait(event){
   var file = event.target.files[0];
