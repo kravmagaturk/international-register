@@ -123,7 +123,16 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
         <input type="text" id="searchRegister" placeholder="Register No">
       </div>
       <button class="btn" id="search-btn" onclick="searchDiploma()">Sorgula</button>
-      <div id="searchResult"></div>
+      <div id="publicArchiveFilters" style="margin:18px 0;padding:14px;border:1px solid #ddd;border-radius:8px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+            <select id="archiveRole"><option value="">Tüm Roller</option><option value="Instructor">Instructor</option><option value="Asistan">Asistan</option><option value="Representative">Temsilci</option><option value="Expert">Expert</option></select>
+            <select id="archiveStatus"><option value="">Faal / Faal Olmayan</option><option value="faal">Faal</option><option value="faal_olmayan">Faal Olmayan</option></select>
+            <input id="archiveName" type="text" placeholder="Ad Soyad veya sicil no">
+            <button type="button" class="btn" onclick="searchPublicArchive()">Arşivde Ara</button>
+          </div>
+          <div id="publicArchiveResult" style="margin-top:14px;"></div>
+        </div>
+        <div id="searchResult"></div>
     </div>
 
     <div id="admin-content" class="tab-content">
@@ -927,6 +936,44 @@ function normalizePublicRecord(raw, registerNo){
   return normalized;
 }
 
+function searchPublicArchive(){
+  var role=document.getElementById('archiveRole').value;
+  var status=document.getElementById('archiveStatus').value;
+  var q=document.getElementById('archiveName').value.trim().toLocaleLowerCase('tr-TR');
+  var out=document.getElementById('publicArchiveResult');
+  out.innerHTML='<div class="spinner"></div>';
+  fetch(FIREBASE_URL+'/publicInstructors.json').then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(data){
+    var rows=[];
+    Object.keys(data||{}).forEach(function(reg){
+      var x=data[reg]||{};
+      var roles=Array.isArray(x.roles)?x.roles:(x.role?[x.role]:[]);
+      var st=isInactiveStatus(x.status)?'faal_olmayan':'faal';
+      var hay=(String(x.name||'')+' '+reg).toLocaleLowerCase('tr-TR');
+      if(role && roles.indexOf(role)<0) return;
+      if(status && st!==status) return;
+      if(q && hay.indexOf(q)<0) return;
+      rows.push({reg:reg,x:x,st:st,roles:roles});
+    });
+    if(!rows.length){ out.innerHTML='<div class="message error">Arama kriterlerine uygun kayıt bulunamadı.</div>'; return; }
+    out.innerHTML=rows.map(function(row){
+      var x=row.x;
+      var photo=x.webPortrait||x.photo||'';
+      var photoHtml=photo?'<div class="photo-frame-large"><img src="'+photo+'" alt="'+(x.name||'')+'"></div>':'';
+      var location=[x.country,x.city,x.district].filter(Boolean).join(' / ')||'-';
+      var duration=calculateTrainingDuration(x.joinDate);
+      return '<div class="result-card">'+photoHtml+
+        '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+(x.name||'-')+'</span></div>'+
+        '<div class="result-item"><span class="result-label">Sicil No</span><span>'+row.reg+'</span></div>'+
+        '<div class="result-item"><span class="result-label">Kategori</span><span>'+(row.roles.join(' • ')||x.role||'-')+'</span></div>'+
+        '<div class="result-item"><span class="result-label">Seviye</span><span>'+(x.level||'-')+'</span></div>'+
+        '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
+        '<div class="result-item"><span class="result-label">Durum</span><span>'+(row.st==='faal'?'Faal':'Faal Olmayan')+'</span></div>'+
+        (x.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+x.joinDate+'</span></div>':'')+
+        (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
+        '</div>';
+    }).join('');
+  }).catch(function(){ out.innerHTML='<div class="message error">Arşiv bağlantı hatası.</div>'; });
+}
 function searchDiploma(){
   var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   var resultDiv = document.getElementById('searchResult');
@@ -1795,14 +1842,14 @@ function addDiploma(){
     return syncPublicInstructor(record);
   }).then(function(){
     filterDiplomas();
-    if(publicRoles.length && currentPhotoData && !currentWebPortraitData){
-      setTimeout(function(){
-        if(confirm('Bu kayıt '+publicRoles.join(', ')+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
-          generateWebPortraitAI();
-        }
-      },100);
+    var needsPortrait=publicRoles.length && currentPhotoData && !currentWebPortraitData;
+    if(needsPortrait && confirm('Bu kayıt '+publicRoles.join(', ')+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
+      var savedIndex=diplomaData.findIndex(function(x){ return x.registerNo===registerNo; });
+      if(savedIndex>=0){ editingIndex=savedIndex; }
+      generateWebPortraitAI();
+    } else {
+      hideAddForm();
     }
-    hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
   }).catch(function(){
