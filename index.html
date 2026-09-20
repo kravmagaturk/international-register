@@ -174,12 +174,12 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
             <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
+            <div style="font-size:12px;color:#777;margin:6px 0;">Sadece halka açık Eğitmen / Temsilci sayfasında kullanılır. Gerçek sicil fotoğrafı web profilinde yayınlanmaz.</div>
+            <button type="button" class="btn" id="btn-generate-web-portrait" onclick="generateWebPortraitAI()">🎨 Gerçek Fotoğraftan AI Çizimi Oluştur</button>
+            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;"></div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:default;"><img id="webPortraitPreviewImg"></div>
-              <div style="font-size:12px;color:#777;margin:6px 0;">Sadece halka açık Eğitmen / Temsilci sayfasında kullanılır.</div>
-              <button type="button" class="btn" id="btn-generate-web-portrait" onclick="generateWebPortraitAI()">🎨 Çizimi Onayla ve Oluştur</button>
               <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
-              <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin-top:7px;"></div>
             </div>
           </div>
           <div class="form-group">
