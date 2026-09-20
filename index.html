@@ -123,16 +123,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
         <input type="text" id="searchRegister" placeholder="Register No">
       </div>
       <button class="btn" id="search-btn" onclick="searchDiploma()">Sorgula</button>
-      <div id="publicArchiveFilters" style="margin:18px 0;padding:14px;border:1px solid #ddd;border-radius:8px;">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-            <select id="archiveRole"><option value="">Tüm Roller</option><option value="Instructor">Instructor</option><option value="Asistan">Asistan</option><option value="Representative">Temsilci</option><option value="Expert">Expert</option></select>
-            <select id="archiveStatus"><option value="">Faal / Faal Olmayan</option><option value="faal">Faal</option><option value="faal_olmayan">Faal Olmayan</option></select>
-            <input id="archiveName" type="text" placeholder="Ad Soyad veya sicil no">
-            <button type="button" class="btn" onclick="searchPublicArchive()">Arşivde Ara</button>
-          </div>
-          <div id="publicArchiveResult" style="margin-top:14px;"></div>
-        </div>
-        <div id="searchResult"></div>
+      <div id="searchResult"></div>
     </div>
 
     <div id="admin-content" class="tab-content">
