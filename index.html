@@ -217,14 +217,13 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
             <input type="text" id="district" placeholder="Örn. Kadıköy / Köln">
           </div>
           <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
-            <label for="publicRole">Web sitesi / bilgi arama ekranında göster:</label>
-            <select id="publicRole">
-              <option value="">Gösterme</option>
-              <option value="Instructor">Instructor</option>
-              <option value="Asistan">Asistan</option>
-              <option value="Representative">Temsilci</option>
-              <option value="Expert">Expert</option>
-            </select>
+            <label>Web sitesi / bilgi arama ekranında göster (birden fazla seçilebilir):</label>
+            <div id="publicRoles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;">
+              <label><input type="checkbox" value="Instructor" style="width:auto;"> Instructor</label>
+              <label><input type="checkbox" value="Asistan" style="width:auto;"> Asistan</label>
+              <label><input type="checkbox" value="Representative" style="width:auto;"> Temsilci</label>
+              <label><input type="checkbox" value="Expert" style="width:auto;"> Expert</label>
+            </div>
             <small style="display:block;margin-top:7px;color:#666;">Bir rol seçildiğinde kayıt bilgi arama arşivinde yayınlanır. Sicil fotoğrafı varsa web profil çizimi oluşturma onayı kayıt sırasında istenir.</small>
           </div>
           <div class="form-group">
@@ -1536,7 +1535,7 @@ function addDocumentToRecord(index){
   updateLocationOptions();
   document.getElementById('city').value = d.city || '';
   document.getElementById('district').value = d.district || '';
-  document.getElementById('publicRole').value = d.publicRole || (d.publicInstructor === true ? inferPublicRole(d) : '');
+  setPublicRoles(d.publicRoles || (d.publicRole ? [d.publicRole] : (d.publicInstructor === true ? [inferPublicRole(d)] : [])));
   if(d.photo){
     currentPhotoData = d.photo;
     document.getElementById('photoPreviewImg').src = d.photo;
@@ -1571,7 +1570,7 @@ function clearAddForm(){
   document.getElementById('instructorName').value='';
   document.getElementById('city').value='';
   document.getElementById('district').value='';
-  document.getElementById('publicRole').value='';
+  setPublicRoles([]);
   document.getElementById('mainLevel').value='';
   document.getElementById('subLevel').value='';
   document.getElementById('sub-level-group').classList.add('hidden');
@@ -1604,7 +1603,7 @@ function editDiploma(index){
   updateLocationOptions();
   document.getElementById('city').value = d.city || '';
   document.getElementById('district').value = d.district || '';
-  document.getElementById('publicRole').value = d.publicRole || (d.publicInstructor === true ? inferPublicRole(d) : '');
+  setPublicRoles(d.publicRoles || (d.publicRole ? [d.publicRole] : (d.publicInstructor === true ? [inferPublicRole(d)] : [])));
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
   var levelParts = d.level.split(' Level ');
@@ -1624,6 +1623,13 @@ function editDiploma(index){
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
+function getPublicRoles(){
+  return Array.from(document.querySelectorAll('#publicRoles input[type="checkbox"]:checked')).map(function(x){ return x.value; });
+}
+function setPublicRoles(roles){
+  roles=Array.isArray(roles)?roles.filter(Boolean):[];
+  document.querySelectorAll('#publicRoles input[type="checkbox"]').forEach(function(x){ x.checked=roles.indexOf(x.value)>=0; });
+}
 function inferPublicRole(record){
   var docs=recordDocuments(record);
   var order=['Instructor','Asistan','Representative','Expert'];
@@ -1635,9 +1641,14 @@ function inferPublicRole(record){
 }
 function syncPublicInstructor(record){
   if(!record || !record.registerNo) return Promise.resolve();
-  var role=record.publicRole || (record.publicInstructor === true ? inferPublicRole(record) : '');
   var allowed=['Instructor','Asistan','Representative','Expert'];
-  var shouldPublish=allowed.indexOf(role)>=0;
+  var roles=Array.isArray(record.publicRoles) ? record.publicRoles.filter(function(r){ return allowed.indexOf(r)>=0; }) : [];
+  if(!roles.length && record.publicRole && allowed.indexOf(record.publicRole)>=0) roles=[record.publicRole];
+  if(!roles.length && record.publicInstructor === true){
+    var legacyRole=inferPublicRole(record); if(legacyRole) roles=[legacyRole];
+  }
+  var role=roles[0] || '';
+  var shouldPublish=roles.length>0;
   var path='/publicInstructors/'+encodeURIComponent(record.registerNo)+'.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
@@ -1650,12 +1661,13 @@ function syncPublicInstructor(record){
     country:record.country || '',
     city:record.city || '',
     district:record.district || '',
-    role:role,
+    role:roles.join(' • '),
+    roles:roles,
     level:publicLevelText(record),
-    instructor:role==='Instructor',
-    assistant:role==='Asistan',
-    representative:role==='Representative',
-    expert:role==='Expert',
+    instructor:roles.indexOf('Instructor')>=0,
+    assistant:roles.indexOf('Asistan')>=0,
+    representative:roles.indexOf('Representative')>=0,
+    expert:roles.indexOf('Expert')>=0,
     status:isInactiveStatus(record.status)?'faal_olmayan':'faal'
   };
   return adminFetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)});
@@ -1669,8 +1681,9 @@ function addDiploma(){
   var country = document.getElementById('country').value;
   var city = document.getElementById('city').value.trim();
   var district = document.getElementById('district').value.trim();
-  var publicRole = document.getElementById('publicRole').value;
-  var publicInstructor = !!publicRole;
+  var publicRoles = getPublicRoles();
+  var publicRole = publicRoles[0] || '';
+  var publicInstructor = publicRoles.length > 0;
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
@@ -1714,6 +1727,7 @@ function addDiploma(){
       district:district || base.district || '',
       publicInstructor:(addingDocumentIndex >= 0 ? base.publicInstructor === true : publicInstructor),
       publicRole:(addingDocumentIndex >= 0 ? (base.publicRole || inferPublicRole(base)) : publicRole),
+      publicRoles:(addingDocumentIndex >= 0 ? (base.publicRoles || (base.publicRole ? [base.publicRole] : [])) : publicRoles),
       photo:currentPhotoData || base.photo || '',
       webPortrait:currentWebPortraitData || base.webPortrait || ''
     });
@@ -1743,6 +1757,7 @@ function addDiploma(){
       district:district,
       publicInstructor:publicInstructor,
       publicRole:publicRole,
+      publicRoles:publicRoles,
       status:old.status || 'faal'
     };
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
@@ -1768,7 +1783,7 @@ function addDiploma(){
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
-      country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, status:'faal'
+      country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal'
     };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1780,9 +1795,9 @@ function addDiploma(){
     return syncPublicInstructor(record);
   }).then(function(){
     filterDiplomas();
-    if(publicRole && currentPhotoData && !currentWebPortraitData){
+    if(publicRoles.length && currentPhotoData && !currentWebPortraitData){
       setTimeout(function(){
-        if(confirm('Bu kayıt '+publicRole+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
+        if(confirm('Bu kayıt '+publicRoles.join(', ')+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
           generateWebPortraitAI();
         }
       },100);
