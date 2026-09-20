@@ -617,6 +617,7 @@ function generateWebPortraitAI(){
       body:JSON.stringify({image:currentPhotoData})
     });
   }).then(async function(res){
+    var contentType=(res.headers.get('content-type')||'').toLowerCase();
     if(!res.ok){
       var message='AI HTTP '+res.status;
       try{
@@ -625,8 +626,13 @@ function generateWebPortraitAI(){
       }catch(e){}
       throw new Error(message);
     }
-    return res.blob();
-  }).then(blobToSquareJpegDataUrl).then(function(dataUrl){
+    if(contentType.indexOf('application/json')>=0){
+      var data=await res.json();
+      if(!data || !data.ok || !data.webPortrait) throw new Error((data&&data.error)||'AI çizimi alınamadı.');
+      return data.webPortrait;
+    }
+    return res.blob().then(blobToSquareJpegDataUrl);
+  }).then(function(dataUrl){
     currentWebPortraitData=dataUrl;
     document.getElementById('webPortraitPreviewImg').src=currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
