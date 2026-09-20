@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "diplomaData": {
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      "$registerNo": {
+        ".read": true
+      }
+    },
+    "publicInstructors": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
+    },
+    "securityLogs": {
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      ".write": true
+    }
+  }
+}
