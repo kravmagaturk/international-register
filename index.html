@@ -161,7 +161,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <h3 id="form-title">Yeni Kayıt Ekle</h3>
           <div class="form-group">
             <label id="txt-lblStudentName">Adı Soyadı:</label>
-            <input type="text" id="studentName" placeholder="Öğrenci adı soyadı">
+            <input type="text" id="studentName" name="kmt_student_name" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Öğrenci adı soyadı">
           </div>
           <div class="form-group">
             <label id="txt-lblPhoto">Öğrenci Fotoğrafı:</label>
@@ -196,7 +196,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           </div>
           <div class="form-group">
             <label>Yetkili Eğitmen:</label>
-            <input type="text" id="instructorName" placeholder="Yetkili eğitmen adı soyadı">
+            <input type="text" id="instructorName" name="kmt_authorized_instructor" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Yetkili eğitmen adı soyadı">
           </div>
           <div class="form-group">
             <label>Ülke:</label>
@@ -209,7 +209,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           </div>
           <div class="form-group">
             <label>Şehir / Bölge:</label>
-            <input type="text" id="city" list="cityOptions" placeholder="Örn. İstanbul / Berlin">
+            <input type="text" id="city" name="kmt_city" list="cityOptions" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Örn. İstanbul / Berlin">
             <datalist id="cityOptions"></datalist>
           </div>
           <div class="form-group">
