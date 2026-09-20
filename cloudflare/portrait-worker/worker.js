@@ -5,7 +5,7 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 const ADMIN_EMAIL = "bulicet@gmail.com";
-const AI_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
+const AI_MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
 
 function corsHeaders(origin) {
   return {
@@ -182,9 +182,9 @@ export default {
         "low quality"
       ].join(", ");
 
-      // Cloudflare's SDXL img2img schema accepts the source image as an
-      // array of unsigned 8-bit integer values. Supplying image[] avoids
-      // the missing input tensor error observed with image_b64.
+      // Use Cloudflare's dedicated img2img model. Its runtime is designed
+      // specifically to consume a reference image instead of relying on
+      // SDXL base's text-to-image execution path.
       const result = await env.AI.run(AI_MODEL, {
         prompt,
         negative_prompt: negativePrompt,
@@ -192,7 +192,7 @@ export default {
         width: 768,
         height: 768,
         num_steps: 20,
-        strength: 0.48,
+        strength: 0.42,
         guidance: 7.5
       });
 
