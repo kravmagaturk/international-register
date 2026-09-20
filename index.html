@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Krav Maga International Registration</title>
+<title>Krav Maga Türk International Kayıt Sorgulama</title>
 <!-- v57: genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -107,17 +107,17 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
   <div class="header">
     <div class="lang-toggle"><button class="lang-btn" id="langToggleBtn" onclick="toggleUILang()">EN</button></div>
     <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Logo">
-    <h1>KRAV MAGA</h1>
-    <p id="txt-subtitle">Kayıtlı Öğrenci Sorgulama Sistemi</p>
+    <h1>KRAV MAGA TÜRK INTERNATIONAL</h1>
+    <p id="txt-subtitle">Kayıt Sorgulama</p>
   </div>
   <div class="tabs">
-    <button class="tab active" id="tab-query-btn" onclick="showTab('query')">Öğrenci Sorgula</button>
+    <button class="tab active" id="tab-query-btn" onclick="showTab('query')">Kayıt Sorgula</button>
     <button class="tab" id="tab-admin-btn" onclick="showTab('admin')">Yönetici Paneli</button>
   </div>
   <div class="content">
     <div id="query-content" class="tab-content active">
-      <h2 id="txt-queryHeading">Kayıtlı Öğrenci Sorgulama</h2>
-      <p id="txt-queryDesc">Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.</p>
+      <h2 id="txt-queryHeading">Krav Maga Türk International Kayıt Sorgulama</h2>
+      <p id="txt-queryDesc">Bu panel bilgi amaçlıdır. Sicil numarası ile kayıt durumu ve temel eğitim bilgileri sorgulanabilir.</p>
       <div class="form-group">
         <label id="txt-lblRegisterNo">Register Numarası:</label>
         <input type="text" id="searchRegister" placeholder="Register No">
@@ -230,9 +230,9 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Kids">Kids</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
-              <option value="Expert">Expert</option>
-              <option value="Asistan">Assistant</option>
-              <option value="Instructor">Instructor</option>
+              <option value="Expert">Expert ve Seviyesi</option>
+              <option value="Asistan">Asistanlar (Genel / Kids)</option>
+              <option value="Instructor">Antrenörler (Genel / Kids)</option>
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
               <option value="Güvenlik">Security</option>
@@ -349,7 +349,7 @@ var UI_I18N = {
     errEnterReg:'⚠️ Lütfen register numarası girin!', errNotFound:'❌ Kayıt bulunamadı!', errConn:'⚠️ Bağlantı hatası, lütfen tekrar deneyin.',
     foundTitle:'✅ Kayıt Bulundu', qrLabel:'Sorgulama Linki QR Kodu',
     lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:', lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
-    statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
+    statusActive:'🟢 Faal Öğrenci', statusInactive:'🔴 Faal Olmayan Öğrenci',
     btnPdfTr:'📄 Diploma (TR)', btnPdfEn:'📄 Diploma (EN)',
     btnCertTr:'🏆 Teşekkür Belgesi (TR)', btnCertEn:'🏆 Certificate (EN)',
     adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:', placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
@@ -373,7 +373,7 @@ var UI_I18N = {
     registeredStudentsHeading:'Kayıtlı Öğrenciler', placeholderAdminSearch:'🔍 İsim veya Register No ile ara...', allLevels:'Tüm Seviyeler',
     resultsFound:'{n} sonuç bulundu (Toplam {total} kayıttan)', noRecordsYet:'Henüz kayıt yok.', noMatchFound:'🔍 Aramanızla eşleşen kayıt bulunamadı.',
     noPhotoLabel:'Fotoğraf Yok', btnEdit:'✏️ Düzenle', btnDelete:'🗑️ Sil', confirmDelete:'"{name}" ({reg}) kaydını silmek istiyor musunuz?',
-    msgDeleteError:'⚠️ Silinemedi.', statsLine:'📊 Toplam Kayıtlı Öğrenci: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Aktif: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Pasif: {passive}',
+    msgDeleteError:'⚠️ Silinemedi.', statsLine:'📊 Toplam Kayıtlı Öğrenci: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Faal: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Faal Olmayan: {passive}',
     firstSetupAlert:'🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: {pass}\n\nLütfen bu şifreyi güvenli bir yere not edin.',
     lockoutMsg:'🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen {mins}:{secs} dakika sonra tekrar deneyin.',
     legalFooter:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875'
@@ -473,7 +473,7 @@ function applyStaticLanguage(){
 }
 
 var PDF_I18N = {
-  tr:{diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:', level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif', footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.', rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875', noPhoto:'FOTOGRAF YOK', locale:'tr-TR'},
+  tr:{diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:', level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Faal', inactive:'Faal Olmayan', footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.', rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875', noPhoto:'FOTOGRAF YOK', locale:'tr-TR'},
   en:{diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT', fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:', level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive', footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.', rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875', noPhoto:'NO PHOTO', locale:'en-US'}
 };
 var ID_I18N = {
@@ -811,34 +811,54 @@ function infoRow(doc, label, value, y, valueColor){
   doc.text(safeValue, 90, y);
 }
 
-function renderSearchResult(d){
-  var resultDiv = document.getElementById('searchResult');
-  var photoHtml = d.photo ?
-    '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
-    '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
-  var statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
-  var docs = recordDocuments(d);
-  var docsHtml = '';
-  if(docs.length){
-    docsHtml = '<div style="text-align:center;margin:14px 0 6px;"><select class="pdf-output-select" style="min-width:280px;max-width:100%;" onchange="handlePublicAllDocumentsMenu(this)">' +
-      '<option value="">📄 Diplomalar / Belgeler</option>';
-    docs.forEach(function(x,di){
-      var label = documentMenuLabel(x);
-      docsHtml += '<option value="'+di+'|'+documentDefaultAction(x)+'">'+label+'</option>';
-    });
-    docsHtml += '</select></div>';
+function calculateTrainingDuration(joinDate){
+  if(!joinDate) return '';
+  var p=String(joinDate).split('.');
+  var startDate;
+  if(p.length===3) startDate=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
+  else startDate=new Date(joinDate);
+  if(isNaN(startDate.getTime())) return '';
+  var now=new Date();
+  var years=now.getFullYear()-startDate.getFullYear();
+  var months=now.getMonth()-startDate.getMonth();
+  var days=now.getDate()-startDate.getDate();
+  if(days<0){
+    months--;
+    var prevMonth=new Date(now.getFullYear(),now.getMonth(),0);
+    days+=prevMonth.getDate();
   }
-
-  resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
-    '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
-    '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
-    '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
-    (d.joinDate ? '<div class="result-item"><span class="result-label">'+t('lblJoinDate')+'</span><span>'+d.joinDate+'</span></div>' : '') +
-    '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
-    docsHtml+
-    '<div style="text-align:center;margin-top:18px;"><button type="button" class="btn btn-danger" onclick="requestRecordDeletion()">🗑️ Kaydımı Sil</button></div>' +
-    '<div id="deleteRequestMessage" style="margin-top:10px;"></div></div>';
-  generateQR('searchQR', buildQrUrl(d.registerNo));
+  if(months<0){ years--; months+=12; }
+  return years+' Yıl '+months+' Ay '+days+' Gün';
+}
+function isInactiveStatus(status){
+  var s=String(status||'').toLocaleLowerCase('tr-TR');
+  return s==='pasif' || s==='faal olmayan' || s==='faal_olmayan';
+}
+function publicLevelText(d){
+  var docs=recordDocuments(d);
+  var allowed=docs.filter(function(x){
+    var l=String(x.level||'').toLocaleLowerCase('tr-TR');
+    return l.indexOf('instructor')===0 || l.indexOf('asistan')===0 || l.indexOf('expert')===0;
+  }).map(function(x){ return documentLabel(x); });
+  return allowed.length ? allowed.join(' • ') : (d.level||'-');
+}
+function renderSearchResult(d){
+  var resultDiv=document.getElementById('searchResult');
+  var statusText=isInactiveStatus(d.status)?'Faal Olmayan':'Faal';
+  var statusBadge=isInactiveStatus(d.status)
+    ? '<span class="badge-passive">Faal Olmayan</span>'
+    : '<span class="badge-active">Faal</span>';
+  var location=[d.country,d.city,d.district].filter(Boolean).join(' / ') || '-';
+  var duration=calculateTrainingDuration(d.joinDate);
+  resultDiv.innerHTML='<div class="result-card"><h3>Kayıt Bilgisi</h3>'+
+    '<div style="text-align:center;margin-bottom:14px;">'+statusBadge+'</div>'+
+    '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+d.studentName+'</span></div>'+
+    '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
+    '<div class="result-item"><span class="result-label">Seviyesi</span><span>'+publicLevelText(d)+'</span></div>'+
+    (d.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+d.joinDate+'</span></div>':'')+
+    (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
+    '<div class="result-item"><span class="result-label">Durum</span><span>'+statusText+'</span></div>'+
+    '</div>';
 }
 function requestRecordDeletion(){
   var d=lastSearchedRecord;
@@ -882,7 +902,7 @@ function normalizePublicRecord(raw, registerNo){
   normalized.studentName = d.studentName || d.name || d.fullName || d.adSoyad || d.adiSoyadi || '';
   normalized.photo = d.photo || d.studentPhoto || d.photoData || d.image || '';
   normalized.joinDate = d.joinDate || d.academyJoinDate || d.registerDate || '';
-  normalized.status = d.status || 'aktif';
+  normalized.status = d.status || 'faal';
 
   if(!Array.isArray(normalized.documents) || !normalized.documents.length){
     var level = d.level || d.mainLevel || d.seviye || '';
@@ -1409,7 +1429,7 @@ async function loadAllDiplomas() {
                     }
                 });
             }
-            // Aktif Instructor / Representative kayıtlarını web diziniyle otomatik eşitle.
+            // Faal Instructor / Representative kayıtlarını web diziniyle otomatik eşitle.
             // Böylece eski kayıtlar da yönetici paneli açıldığında publicInstructors'a taşınır;
             // pasif kayıtlar ise dizinden kaldırılır.
             await Promise.all(diplomaData.map(function(record){
@@ -1609,7 +1629,7 @@ function syncPublicInstructor(record){
     return String(x.level||'').indexOf('Representative') === 0;
   });
   var isPublicProfessional = isInstructor || isRepresentative;
-  var shouldPublish = record.status !== 'pasif' && isPublicProfessional;
+  var shouldPublish = !isInactiveStatus(record.status) && isPublicProfessional;
   var path = '/publicInstructors/' + encodeURIComponent(record.registerNo) + '.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
@@ -1628,7 +1648,7 @@ function syncPublicInstructor(record){
     role:role,
     representative:isRepresentative,
     instructor:isInstructor,
-    status:'aktif'
+    status:'faal'
   };
   return adminFetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)});
 }
@@ -1713,7 +1733,7 @@ function addDiploma(){
       city:city,
       district:district,
       publicInstructor:publicInstructor,
-      status:old.status || 'aktif'
+      status:old.status || 'faal'
     };
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
     msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1738,7 +1758,7 @@ function addDiploma(){
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
-      country:country, city:city, district:district, publicInstructor:publicInstructor, status:'aktif'
+      country:country, city:city, district:district, publicInstructor:publicInstructor, status:'faal'
     };
     diplomaData.push(record);
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -1764,7 +1784,7 @@ function addDiploma(){
 }
 function toggleStatus(index){
   var d = diplomaData[index];
-  d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
+  d.status = isInactiveStatus(d.status) ? 'faal' : 'faal_olmayan';
   adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ return syncPublicInstructor(d); }).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
 function filterDiplomas(){
@@ -1783,7 +1803,7 @@ function filterDiplomas(){
 function renderStats(){
   var statsBox = document.getElementById('stats-display');
   var total = diplomaData.length;
-  var activeCount = diplomaData.filter(function(d){ return d.status !== 'pasif'; }).length;
+  var activeCount = diplomaData.filter(function(d){ return !isInactiveStatus(d.status); }).length;
   var passiveCount = total - activeCount;
   if(total > 0){
     statsBox.classList.remove('hidden');
@@ -1804,8 +1824,8 @@ function renderDiplomaList(filtered, isFiltering){
   filtered.forEach(function(item){
     var d = item.d, i = item.i;
     var isOpen = !!expandedRows[i];
-    var statusDot = d.status === 'pasif' ? '🔴' : '🟢';
-    var statusBadge = d.status === 'pasif' ?
+    var statusDot = isInactiveStatus(d.status) ? '🔴' : '🟢';
+    var statusBadge = isInactiveStatus(d.status) ?
       '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusInactive')+'</span>' :
       '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusActive')+'</span>';
     var photoHtml = d.photo ?
