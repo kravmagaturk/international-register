@@ -864,6 +864,45 @@ function requestRecordDeletion(){
   });
 }
 
+function normalizePublicRecord(raw, registerNo){
+  if(!raw || typeof raw !== 'object') return null;
+  var d = raw;
+
+  // Eski Firebase yapısında sicil düğümünün altında ikinci bir kayıt nesnesi kalmışsa onu aç.
+  if(!d.studentName && !d.registerNo){
+    var vals = Object.keys(d).map(function(k){ return d[k]; }).filter(function(v){ return v && typeof v === 'object'; });
+    var exact = vals.find(function(v){ return String(v.registerNo||'').toUpperCase() === registerNo; });
+    if(exact) d = exact;
+    else if(vals.length === 1) d = vals[0];
+  }
+
+  // Eski alan adlarıyla oluşturulmuş kayıtları da okuyabil.
+  var normalized = Object.assign({}, d);
+  normalized.registerNo = d.registerNo || d.register || d.registrationNo || d.sicilNo || registerNo;
+  normalized.studentName = d.studentName || d.name || d.fullName || d.adSoyad || d.adiSoyadi || '';
+  normalized.photo = d.photo || d.studentPhoto || d.photoData || d.image || '';
+  normalized.joinDate = d.joinDate || d.academyJoinDate || d.registerDate || '';
+  normalized.status = d.status || 'aktif';
+
+  if(!Array.isArray(normalized.documents) || !normalized.documents.length){
+    var level = d.level || d.mainLevel || d.seviye || '';
+    var sub = d.subLevel || d.altSeviye || '';
+    var levelText = [level, sub].filter(Boolean).join(' ').trim();
+    if(levelText){
+      normalized.documents = [{
+        level: levelText,
+        examDate: d.examDate || d.sinavTarihi || '',
+        examLocation: d.examLocation || d.sinavYeri || '',
+        type: (typeof docTypeForLevel === 'function' ? docTypeForLevel(levelText) : '')
+      }];
+    } else {
+      normalized.documents = [];
+    }
+  }
+  if(!normalized.level && normalized.documents[0]) normalized.level = normalized.documents[0].level || '';
+  return normalized;
+}
+
 function searchDiploma(){
   var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   var resultDiv = document.getElementById('searchResult');
@@ -871,11 +910,24 @@ function searchDiploma(){
   if(!registerNo){ resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>'; return; }
   btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
-  fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json').then(function(res){ return res.json(); }).then(function(d){
-    if(d){ lastSearchedRecord = d; renderSearchResult(d); }
-    else { lastSearchedRecord = null; resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>'; }
-  }).catch(function(){ resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>'; })
-  .finally(function(){ btn.disabled = false; btn.textContent = t('btnSearch'); });
+  fetch(FIREBASE_URL + '/diplomaData/' + encodeURIComponent(registerNo) + '.json')
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
+    .then(function(raw){
+      var d = normalizePublicRecord(raw, registerNo);
+      if(d && d.studentName){
+        lastSearchedRecord = d;
+        renderSearchResult(d);
+      } else {
+        lastSearchedRecord = null;
+        resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>';
+      }
+    })
+    .catch(function(err){
+      console.error('Sorgulama hatası:',err);
+      lastSearchedRecord = null;
+      resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
+    })
+    .finally(function(){ btn.disabled = false; btn.textContent = t('btnSearch'); });
 }
 
 
