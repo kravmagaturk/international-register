@@ -45,33 +45,6 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-async function verifyFirebaseAdmin(idToken, env) {
-  if (!env.FIREBASE_API_KEY) throw new Error("FIREBASE_API_KEY secret is missing.");
-
-  const response = await fetch(
-    "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" +
-      encodeURIComponent(env.FIREBASE_API_KEY),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken })
-    }
-  );
-
-  if (!response.ok) return false;
-
-  const data = await response.json();
-  const email =
-    data &&
-    Array.isArray(data.users) &&
-    data.users[0] &&
-    data.users[0].email
-      ? String(data.users[0].email).toLowerCase()
-      : "";
-
-  return email === ADMIN_EMAIL;
-}
-
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -92,7 +65,7 @@ export default {
           ok: true,
           service: "Krav Maga Turk Portrait AI",
           status: "ready",
-          authentication: "Firebase Admin",
+          authentication: "Allowed origins",
           model: AI_MODEL
         },
         200,
@@ -109,20 +82,6 @@ export default {
     }
 
     try {
-      const authorization = request.headers.get("Authorization") || "";
-      const idToken = authorization.startsWith("Bearer ")
-        ? authorization.slice(7).trim()
-        : "";
-
-      if (!idToken) {
-        return json({ ok: false, error: "Login required." }, 401, origin);
-      }
-
-      const isAdmin = await verifyFirebaseAdmin(idToken, env);
-      if (!isAdmin) {
-        return json({ ok: false, error: "Unauthorized." }, 403, origin);
-      }
-
       let body;
       try {
         body = await request.json();
