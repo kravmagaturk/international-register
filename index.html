@@ -592,7 +592,7 @@ function blobToSquareJpegDataUrl(blob){
     var objectUrl=URL.createObjectURL(blob);
     img.onload=function(){
       try{
-        var size=800, canvas=document.createElement('canvas');
+        var size=448, canvas=document.createElement('canvas');
         canvas.width=size; canvas.height=size;
         var ctx=canvas.getContext('2d');
         ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
@@ -717,7 +717,7 @@ function previewWebPortrait(event){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      var size = 800;
+      var size = 448;
       var canvas = document.createElement('canvas');
       canvas.width = size; canvas.height = size;
       var ctx = canvas.getContext('2d');
@@ -756,7 +756,7 @@ function previewPhoto(event){
     img.onload = function(){
       // Web profilleri için standart: 800x800 kare, merkezden kırpma.
       // Böylece farklı telefon/kamera oranları aynı kart formatında görünür.
-      var size = 800;
+      var size = 448;
       var canvas = document.createElement('canvas');
       canvas.width = size;
       canvas.height = size;
