@@ -100,6 +100,39 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .log-badge-failed{background:#ffebee;color:#c62828;}
 .log-actions{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 @media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}.lang-toggle{position:static;margin-top:10px;text-align:center;}}
+/* v58: 1948 / KRAV MAGA TÜRK koyu görsel kimlik — işlevsel kod değişmedi */
+body{background:#050505;color:#e9e9e9;min-height:100vh;position:relative;}
+body:before{content:"1948";position:fixed;right:-2vw;top:42%;transform:translateY(-50%);font-size:clamp(150px,30vw,430px);line-height:.8;font-weight:900;letter-spacing:-.08em;color:rgba(255,255,255,.022);pointer-events:none;z-index:0;}
+body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:clamp(18px,4vw,52px);font-weight:900;letter-spacing:.16em;color:rgba(255,255,255,.025);pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:900px;margin:28px auto;background:#0d0d0f;border:1px solid #28282c;border-radius:0;box-shadow:0 24px 70px rgba(0,0,0,.48);}
+.header{background:radial-gradient(circle at 82% 45%,#2a1013 0,#0d0d0f 42%,#050505 78%);color:#fff;padding:34px 25px 30px;border-bottom:4px solid #e50922;}
+.header img.logo{width:86px;height:86px;border:2px solid #e50922;box-shadow:0 8px 24px rgba(0,0,0,.45);}
+.header h1{font-size:clamp(24px,4vw,34px);font-weight:900;letter-spacing:.03em;}
+.header p{color:#aaa;letter-spacing:.12em;text-transform:uppercase;font-size:12px;font-weight:800;}
+.lang-btn{background:#151517;border:1px solid #3a3a3f;color:#fff;border-radius:3px;}
+.tabs{background:#101012;border-bottom:1px solid #29292d;}
+.tab{color:#8f8f94;font-weight:800;letter-spacing:.02em;}
+.tab.active{background:#151517;color:#fff;border-bottom:3px solid #e50922;}
+.content{background:#0d0d0f;padding:32px;}
+.tab-content h2,.tab-content h3,.tab-content h4{color:#fff!important;}
+#query-content>h2{font-size:clamp(25px,4vw,36px);line-height:1.1;margin-bottom:10px;}
+#query-content>p{color:#999;margin-bottom:24px;}
+.form-group label{color:#c8c8c8;}
+.form-group input,.form-group select,.search-filter-bar input,.search-filter-bar select,.pdf-output-select{background:#09090a;color:#fff;border:1px solid #38383d;border-radius:4px;outline:none;}
+.form-group input:focus,.form-group select:focus,.search-filter-bar input:focus,.search-filter-bar select:focus{border-color:#e50922;box-shadow:0 0 0 1px #e50922;}
+.btn{background:#e50922;border-radius:3px;font-weight:800;}
+.btn:hover{background:#bd101c;}
+.btn-secondary{background:#4b4b50}.btn-pdf{background:#246c36}.btn-pdf-en{background:#245c91}.btn-id{background:#6a1b9a}.btn-cert{background:#9b7410}.btn-edit{background:#245c91}.btn-danger{background:#b91f2d}
+.result-card{background:#151517;border:1px solid #303034;border-left:4px solid #e50922;border-radius:0;color:#eee;}
+.result-card h3{color:#e50922;}.result-item{border-bottom:1px solid #29292d}.result-label{color:#999;}
+.message,.lockout-message,.legal-warning,.stats-bar{border-radius:3px;}
+.diploma-row{background:#151517;border-color:#303034;border-radius:3px 3px 0 0;}.diploma-row.closed{border-radius:3px}.row-name{color:#fff}.row-register,.expand-btn{color:#e50922}.diploma-details{background:#101012;border-color:#29292d;border-radius:0 0 3px 3px}.diploma-details .info-block p{color:#bbb}.photo-frame,.photo-frame-large{background:#09090a;border:1px solid #333;border-radius:4px}.legal-footer{background:#080809;color:#777;border-top:1px solid #252529}.log-list{background:#101012;border-color:#29292d}.log-item{border-bottom-color:#29292d}.security-notice{color:#777}
+#login-form>div:first-child>div{background:#e50922!important;border-radius:4px!important;}
+#login-form>div:first-child h2{color:#fff!important;}
+#add-form .form-group[style*="background:#f7f7f7"],#add-form .form-group[style*="background:#fff7f7"]{background:#151517!important;border-color:#333!important;color:#ddd!important;}
+#publicRoles label{color:#ddd;}
+@media(max-width:600px){body:before{right:-18vw;opacity:.8}.container{margin:0;min-height:100vh;border-left:0;border-right:0}.header{padding:28px 16px 24px}.content{padding:22px 16px}.tabs{flex-direction:row}.tab{padding:13px 7px;font-size:14px}.lang-toggle{position:absolute;top:12px;right:12px;margin:0}.row-name{max-width:110px}}
+
 </style>
 </head>
 <body>
