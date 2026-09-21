@@ -680,7 +680,7 @@ function generateWebPortraitAI(){
   }).catch(function(err){
     console.error('Web portrait AI error:',err);
     var msg=(err && err.message) ? err.message : String(err);
-    var quota=/quota|kota|limit|429|workers ai.*limit|daily.*limit/i.test(msg);
+    var quota=/quota|kota|limit|429|workers ai.*limit|daily.*limit|failed to fetch|networkerror|load failed|fetch/i.test(msg);
     if(quota && currentPhotoData){
       // AI kotası dolduğunda yönetici işlemini durdurma:
       // sicil fotoğrafının yerel 800x800 sürümünü web portresi olarak kullan.
@@ -691,10 +691,10 @@ function generateWebPortraitAI(){
         if(status){
           status.style.color='#b26a00';
           status.textContent=saved
-            ? '⚠️ AI kotası dolu. Gerçek fotoğraf web portresi olarak kaydedildi; işlem devam ediyor.'
-            : '⚠️ AI kotası dolu. Gerçek fotoğraf geçici web portresi olarak hazır; Kaydet ile sicile aktarılacak.';
+            ? '⚠️ AI servisine ulaşılamadı veya kota dolu. Gerçek fotoğraf web portresi olarak kaydedildi.'
+            : '⚠️ AI servisine ulaşılamadı veya kota dolu. Gerçek fotoğraf web portresi olarak hazır; Kaydet ile sicile aktarılacak.';
         }
-        alert('AI çizim kotası dolu. İşlem durdurulmadı; yüklediğiniz gerçek fotoğraf web portresi olarak kullanıldı.');
+        alert('AI servisine şu anda ulaşılamadı. İşlem durdurulmadı; yüklediğiniz gerçek fotoğraf web portresi olarak kullanıldı.');
       });
     }
     if(status){ status.style.color='#c62828'; status.textContent='❌ '+msg; }
