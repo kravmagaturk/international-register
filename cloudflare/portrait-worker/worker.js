@@ -4,12 +4,22 @@ const ALLOWED_ORIGINS = new Set([
   "https://kravmagaturk.github.io"
 ]);
 
+function isAllowedOrigin(origin) {
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const u = new URL(origin);
+    return u.protocol === "https:" && u.hostname === "kravmagaturk.github.io";
+  } catch {
+    return false;
+  }
+}
+
 const ADMIN_EMAIL = "bulicet@gmail.com";
 const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 
 function corsHeaders(origin) {
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://kravmagaturk.github.io",
+    "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? origin : "https://kravmagaturk.github.io",
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
@@ -50,7 +60,7 @@ export default {
     const origin = request.headers.get("Origin") || "";
 
     if (request.method === "OPTIONS") {
-      if (!ALLOWED_ORIGINS.has(origin)) {
+      if (!isAllowedOrigin(origin)) {
         return new Response(null, { status: 403 });
       }
       return new Response(null, {
@@ -77,7 +87,7 @@ export default {
       return json({ ok: false, error: "Method not allowed." }, 405, origin);
     }
 
-    if (!ALLOWED_ORIGINS.has(origin)) {
+    if (!isAllowedOrigin(origin)) {
       return json({ ok: false, error: "Origin not allowed." }, 403, origin);
     }
 
