@@ -15,7 +15,7 @@ function isAllowedOrigin(origin) {
 }
 
 const ADMIN_EMAIL = "bulicet@gmail.com";
-const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
+const AI_MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
 
 function corsHeaders(origin) {
   return {
@@ -127,12 +127,9 @@ export default {
       }
 
       const prompt = [
-        "Create a square illustrated portrait based on input image 0.",
-        "Keep the subject visually consistent with the reference: face shape, hairstyle, glasses when present, skin tone and overall appearance.",
-        "Keep the same general presentation and do not add facial hair that is absent in the reference.",
-        "Chest-up portrait in plain black martial arts training clothing, relaxed neutral pose.",
-        "Realistic graphic-novel illustration, subtle black and deep red textured background, clean studio lighting.",
-        "No text, letters, logos, badges or watermarks."
+        "graphic novel portrait, same person as the reference photo, preserve face, hairstyle and glasses,",
+        "chest-up portrait, plain black martial arts training shirt, neutral relaxed pose,",
+        "subtle black and deep red background, clean studio lighting, no text, no logo, no watermark"
       ].join(" ");
 
       const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
@@ -147,58 +144,16 @@ export default {
       const formStream = formResponse.body;
       const formContentType = formResponse.headers.get("content-type");
 
-      const result = await env.AI.run(AI_MODEL, {
-        multipart: {
-          body: formStream,
-          contentType: formContentType
-        }
+      const result = await env.AI.run("@cf/runwayml/stable-diffusion-v1-5-img2img", {
+        prompt,
+        negative_prompt: "different person, beard, moustache, facial hair, text, logo, watermark, distorted face",
+        image_b64: base64,
+        width: 512,
+        height: 512,
+        num_steps: 8,
+        strength: 0.35,
+        guidance: 6.5
       });
-
-      let outputBytes;
-      let contentType = "image/png";
-
-      if (result && typeof result === "object" && typeof result.image === "string") {
-        outputBytes = base64ToBytes(result.image);
-      } else if (result instanceof Response) {
-        const ct = result.headers.get("Content-Type") || "";
-        if (ct.includes("application/json")) {
-          const data = await result.json();
-          if (!data || !data.image) throw new Error("Workers AI returned no image.");
-          outputBytes = base64ToBytes(data.image);
-        } else {
-          contentType = ct || contentType;
-          outputBytes = new Uint8Array(await result.arrayBuffer());
-        }
-      } else if (result instanceof ReadableStream) {
-        outputBytes = new Uint8Array(await new Response(result).arrayBuffer());
-      } else if (result instanceof ArrayBuffer) {
-        outputBytes = new Uint8Array(result);
-      } else if (ArrayBuffer.isView(result)) {
-        outputBytes = new Uint8Array(result.buffer, result.byteOffset, result.byteLength);
-      } else {
-        throw new Error("Workers AI returned an unsupported image response.");
-      }
-
-      if (!outputBytes || !outputBytes.length) {
-        throw new Error("Workers AI returned an empty image.");
-      }
-
-      const webPortrait =
-        "data:" + contentType.split(";")[0] + ";base64," + bytesToBase64(outputBytes);
-
-      return json({ ok: true, webPortrait }, 200, origin);
-    } catch (error) {
-      return json(
-        {
-          ok: false,
-          error:
-            error && error.message
-              ? error.message
-              : "Çizim oluşturulamadı."
-        },
-        500,
-        origin
-      );
     }
   }
 };
