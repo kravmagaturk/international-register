@@ -127,16 +127,12 @@ export default {
       }
 
       const prompt = [
-        "IMAGE-TO-IMAGE IDENTITY PRESERVATION TASK.",
-        "Input image 0 is the mandatory identity reference. Draw the SAME PERSON shown in input image 0; do not invent or substitute another person.",
-        "Preserve the person's apparent gender presentation exactly as shown in the reference photo. Never change a woman into a man or a man into a woman.",
-        "Preserve recognizable facial identity, apparent age, hairstyle, hair length and color, glasses, facial proportions, skin tone and distinctive facial features.",
-        "If the reference has glasses, keep the same glasses. If the reference has no beard or moustache, do not add facial hair.",
-        "Do not change ethnicity or masculinize/feminize facial structure.",
-        "Keep head orientation and framing close to the reference. Chest-up portrait, black Krav Maga training clothing, natural neutral confident pose.",
-        "Premium realistic graphic-novel illustration, dramatic black and deep red textured background, crisp studio lighting.",
-        "Identity fidelity is more important than artistic stylization.",
-        "Do not add text, letters, logos, badges or watermarks."
+        "Create a square illustrated portrait based on input image 0.",
+        "Keep the subject visually consistent with the reference: face shape, hairstyle, glasses when present, skin tone and overall appearance.",
+        "Keep the same general presentation and do not add facial hair that is absent in the reference.",
+        "Chest-up portrait in plain black martial arts training clothing, relaxed neutral pose.",
+        "Realistic graphic-novel illustration, subtle black and deep red textured background, clean studio lighting.",
+        "No text, letters, logos, badges or watermarks."
       ].join(" ");
 
       const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
