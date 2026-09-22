@@ -208,7 +208,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
             <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Manuel ve kontrollü yöntem: Öğrenci fotoğrafını kaydet → çizimi ChatGPT ile birlikte hazırlayalım → onaylanan JPG/PNG/WebP çizimini buradan yükle. Yalnızca onaylanan çizim Firebase ve halka açık web profiline aktarılır.</div>
-            <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="showPortraitWorkflow()">🎨 Çizimi ChatGPT ile Hazırla</button>
+            <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="showPortraitWorkflow()" style="transition:background .2s,border-color .2s,color .2s;">🎨 Çizimi ChatGPT ile Hazırla</button>
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
@@ -594,6 +594,26 @@ function openMasterSupport(){
   var msg='Krav Maga Türk Master destek bağlantısı.\\n\\nChatGPT açılacak. Bu düğme yönetici panelinden ChatGPT’ye hızlı geçiş sağlar; panele veya Firebase verilerine ChatGPT için otomatik erişim vermez.\\n\\nAcil geri dönüş gerekiyorsa açılan proje sohbetinde “geriye dön” yazın. Önce kontrol ve onay aşaması uygulanacaktır.';
   if(confirm(msg+'\\n\\nChatGPT’yi yeni sekmede açmak istiyor musunuz?')){
     window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
+  }
+}
+
+function showPortraitWorkflow(){
+  var btn=document.getElementById('btn-portrait-help');
+  var status=document.getElementById('webPortraitAiStatus');
+  var input=document.getElementById('webPortrait');
+  if(btn){
+    btn.style.background='#1677ff';
+    btn.style.borderColor='#1677ff';
+    btn.style.color='#fff';
+    btn.textContent='✓ Çizim Yüklemeye Hazır';
+  }
+  if(status){
+    status.textContent='Aktif: ChatGPT ile hazırladığınız onaylı çizimi şimdi seçin. Seçildiğinde mevcut sicile otomatik bağlanacaktır.';
+    status.style.color='#1677ff';
+    status.style.fontWeight='700';
+  }
+  if(input){
+    try{ input.click(); }catch(e){}
   }
 }
 
