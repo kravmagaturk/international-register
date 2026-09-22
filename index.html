@@ -803,7 +803,12 @@ function renderSearchResult(d){
     : '<span class="badge-active">Faal</span>';
   var location=[d.country,d.city,d.district].filter(Boolean).join(' / ') || '-';
   var duration=calculateTrainingDuration(d.joinDate);
+  var portrait=d.webPortrait || d.photo || '';
+  var portraitHtml=portrait
+    ? '<div style="text-align:center;margin:0 auto 14px;"><div class="photo-frame-large" style="margin:0 auto 8px;"><img src="'+portrait+'" alt="'+d.studentName+'"></div><strong>'+d.studentName+'</strong></div>'
+    : '';
   resultDiv.innerHTML='<div class="result-card"><h3>Kayıt Bilgisi</h3>'+
+    portraitHtml+
     '<div style="text-align:center;margin-bottom:14px;">'+statusBadge+'</div>'+
     '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+d.studentName+'</span></div>'+
     '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
@@ -854,6 +859,7 @@ function normalizePublicRecord(raw, registerNo){
   normalized.registerNo = d.registerNo || d.register || d.registrationNo || d.sicilNo || registerNo;
   normalized.studentName = d.studentName || d.name || d.fullName || d.adSoyad || d.adiSoyadi || '';
   normalized.photo = d.photo || d.studentPhoto || d.photoData || d.image || '';
+  normalized.webPortrait = d.webPortrait || d.webProfilePortrait || d.portrait || '';
   normalized.joinDate = d.joinDate || d.academyJoinDate || d.registerDate || '';
   normalized.status = d.status || 'faal';
 
@@ -1066,7 +1072,7 @@ function prepareRegistryPortrait(photoData){
 function downloadRegistryInfoPDF(record){
   if(!record) return;
   var d=record, jsPDF=window.jspdf.jsPDF;
-  Promise.all([loadTemplate('registryInfo'),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareRegistryPortrait(d.photo)]).then(function(parts){
+  Promise.all([loadTemplate('registryInfo'),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareRegistryPortrait(d.webPortrait || d.photo)]).then(function(parts){
     var template=parts[0],qr=parts[1],portrait=parts[2],W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('sicil-pdf.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
