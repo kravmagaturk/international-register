@@ -622,6 +622,29 @@ function previewWebPortrait(event){
       currentWebPortraitData = canvas.toDataURL('image/jpeg',0.86);
       document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
       document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
+
+      // Düzenlenen mevcut sicilde onaylı çizimi seçer seçmez otomatik bağla.
+      // Yeni kayıtta sicil no henüz oluşmadığı için normal Kaydet akışı kullanılır.
+      if(editingIndex >= 0 && diplomaData[editingIndex] && diplomaData[editingIndex].registerNo){
+        var target = diplomaData[editingIndex];
+        var updated = Object.assign({}, target, {webPortrait:currentWebPortraitData});
+        delete updated._firebaseKey;
+        var statusEl=document.getElementById('webPortraitAiStatus');
+        if(statusEl) statusEl.textContent='Çizim sicile otomatik bağlanıyor...';
+        adminFetch('/diplomaData/' + encodeURIComponent(target.registerNo) + '.json',{
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(updated)
+        }).then(function(){
+          diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
+          return syncPublicInstructor(updated);
+        }).then(function(){
+          if(statusEl) statusEl.textContent='✓ Onaylanan çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ekranı ve Sicil Bilgi PDF bu çizimi kullanır.';
+        }).catch(function(err){
+          console.error('Web çizimi otomatik bağlanamadı:',err);
+          if(statusEl) statusEl.textContent='⚠️ Otomatik bağlama başarısız. Kaydı Güncelle düğmesiyle tekrar deneyin.';
+        });
+      }
     };
     img.src=e.target.result;
   };
