@@ -178,6 +178,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
         <div style="margin-bottom:20px;">
           <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
+          <button class="btn btn-secondary" id="btn-master-support" onclick="openMasterSupport()">🛟 Master / ChatGPT</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
 
@@ -585,6 +586,17 @@ function showTab(name){
   if(activeContent) activeContent.classList.add('active');
 }
 var currentWebPortraitData = '';
+function openMasterSupport(){
+  if(!currentAdminUser){
+    alert('Bu bağlantı yalnızca yönetici girişi sonrasında kullanılabilir.');
+    return;
+  }
+  var msg='Krav Maga Türk Master destek bağlantısı.\\n\\nChatGPT açılacak. Bu düğme yönetici panelinden ChatGPT’ye hızlı geçiş sağlar; panele veya Firebase verilerine ChatGPT için otomatik erişim vermez.\\n\\nAcil geri dönüş gerekiyorsa açılan proje sohbetinde “geriye dön” yazın. Önce kontrol ve onay aşaması uygulanacaktır.';
+  if(confirm(msg+'\\n\\nChatGPT’yi yeni sekmede açmak istiyor musunuz?')){
+    window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
+  }
+}
+
 function previewWebPortrait(event){
   var file = event.target.files[0];
   if(!file) return;
