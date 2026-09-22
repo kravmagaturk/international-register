@@ -612,8 +612,18 @@ function generateWebPortraitAI(){
     body:JSON.stringify({image:currentPhotoData})
   }).then(function(res){return res.json().then(function(x){if(!res.ok||!x.ok) throw new Error(x.error||('HTTP '+res.status));return x;});})
   .then(function(x){
-    currentWebPortraitData=x.image;
-    document.getElementById('webPortraitPreviewImg').src=currentWebPortraitData;
+    var portraitData = x.image || x.webPortrait || x.data || '';
+    if(typeof portraitData !== 'string' || portraitData.indexOf('data:image/') !== 0){
+      throw new Error('AI çizim verisi geçersiz veya boş döndü.');
+    }
+    currentWebPortraitData=portraitData;
+    var previewImg=document.getElementById('webPortraitPreviewImg');
+    previewImg.onerror=function(){
+      console.error('AI çizim önizlemesi yüklenemedi.');
+      if(status){status.textContent='⚠️ Çizim üretildi ancak görsel açılamadı. Yeniden deneyin.';status.style.color='#d32f2f';}
+    };
+    previewImg.onload=function(){ previewImg.onerror=null; };
+    previewImg.src=currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
     if(editingIndex>=0 && diplomaData[editingIndex] && diplomaData[editingIndex].registerNo){
       var target=diplomaData[editingIndex];
