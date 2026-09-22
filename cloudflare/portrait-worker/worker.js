@@ -58,102 +58,40 @@ function bytesToBase64(bytes) {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-
     if (request.method === "OPTIONS") {
-      if (!isAllowedOrigin(origin)) {
-        return new Response(null, { status: 403 });
-      }
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders(origin)
-      });
+      if (!isAllowedOrigin(origin)) return new Response(null,{status:403});
+      return new Response(null,{status:204,headers:corsHeaders(origin)});
     }
-
-    if (request.method === "GET") {
-      return json(
-        {
-          ok: true,
-          service: "Krav Maga Turk Portrait AI",
-          status: "ready",
-          authentication: "Allowed origins",
-          model: AI_MODEL
-        },
-        200,
-        origin
-      );
-    }
-
-    if (request.method !== "POST") {
-      return json({ ok: false, error: "Method not allowed." }, 405, origin);
-    }
-
-    if (!isAllowedOrigin(origin)) {
-      return json({ ok: false, error: "Origin not allowed." }, 403, origin);
-    }
-
+    if (request.method === "GET") return json({ok:true,service:"Krav Maga Turk Portrait AI",status:"ready",model:AI_MODEL},200,origin);
+    if (request.method !== "POST") return json({ok:false,error:"Method not allowed."},405,origin);
+    if (!isAllowedOrigin(origin)) return json({ok:false,error:"Origin not allowed."},403,origin);
     try {
-      let body;
-      try {
-        body = await request.json();
-      } catch {
-        return json({ ok: false, error: "Invalid JSON." }, 400, origin);
-      }
-
-      const imageData = String((body && body.image) || "");
-      const match = imageData.match(
-        /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=\s]+)$/i
-      );
-
-      if (!match) {
-        return json(
-          { ok: false, error: "A valid PNG, JPEG or WebP photo is required." },
-          400,
-          origin
-        );
-      }
-
-      const imageBytes = base64ToBytes(match[2]);
-
-      if (!imageBytes.length) {
-        return json({ ok: false, error: "Photo is empty." }, 400, origin);
-      }
-
-      if (imageBytes.length > 8 * 1024 * 1024) {
-        return json(
-          { ok: false, error: "Photo is too large. Maximum size is 8 MB." },
-          413,
-          origin
-        );
-      }
-
-      const prompt = [
-        "graphic novel portrait, same person as the reference photo, preserve face, hairstyle and glasses,",
-        "chest-up portrait, plain black martial arts training shirt, neutral relaxed pose,",
-        "subtle black and deep red background, clean studio lighting, no text, no logo, no watermark"
-      ].join(" ");
-
-      const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
-      const form = new FormData();
-      form.append("input_image_0", inputBlob, "reference." + match[1].toLowerCase());
-      form.append("prompt", prompt);
-      form.append("width", "768");
-      form.append("height", "768");
-      form.append("guidance", "4");
-
-      const formResponse = new Response(form);
-      const formStream = formResponse.body;
-      const formContentType = formResponse.headers.get("content-type");
-
-      const result = await env.AI.run("@cf/runwayml/stable-diffusion-v1-5-img2img", {
+      const body=await request.json();
+      const imageData=String((body&&body.image)||"");
+      const match=imageData.match(/^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
+      if(!match) return json({ok:false,error:"A valid PNG, JPEG or WebP photo is required."},400,origin);
+      const base64=match[2].replace(/\s/g,"");
+      const bytes=base64ToBytes(base64);
+      if(!bytes.length || bytes.length>8*1024*1024) return json({ok:false,error:"Photo size is invalid."},413,origin);
+      const prompt=[
+        "oil painted graphic portrait of the same person in the reference image",
+        "preserve facial identity, age, hairstyle, glasses and expression",
+        "chest-up martial arts portrait, black t-shirt with KRAV MAGA TURK written side by side",
+        "dramatic black and deep red brush-stroke background",
+        "professional Krav Maga academy poster style, realistic oil paint texture",
+        "no extra people, no watermark, no random text"
+      ].join(", ");
+      const result=await env.AI.run(AI_MODEL,{
         prompt,
-        negative_prompt: "different person, beard, moustache, facial hair, text, logo, watermark, distorted face",
-        image_b64: base64,
-        width: 512,
-        height: 512,
-        num_steps: 8,
-        strength: 0.35,
-        guidance: 6.5
+        negative_prompt:"different person, changed face, extra people, deformed hands, unreadable text, watermark",
+        image_b64:base64,
+        width:512,height:512,num_steps:12,strength:0.42,guidance:7
       });
+      const out=await new Response(result).arrayBuffer();
+      const out64=bytesToBase64(new Uint8Array(out));
+      return json({ok:true,image:"data:image/png;base64,"+out64},200,origin);
+    } catch(err) {
+      return json({ok:false,error:(err&&err.message)||String(err)},500,origin);
     }
   }
 };
