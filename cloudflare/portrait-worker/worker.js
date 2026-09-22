@@ -15,7 +15,7 @@ function isAllowedOrigin(origin) {
 }
 
 const ADMIN_EMAIL = "bulicet@gmail.com";
-const AI_MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
+const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 
 function corsHeaders(origin) {
   return {
