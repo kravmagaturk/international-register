@@ -208,7 +208,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
             <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Manuel ve kontrollü yöntem: Öğrenci fotoğrafını kaydet → çizimi ChatGPT ile birlikte hazırlayalım → onaylanan JPG/PNG/WebP çizimini buradan yükle. Yalnızca onaylanan çizim Firebase ve halka açık web profiline aktarılır.</div>
-            <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="showPortraitWorkflow()" style="transition:background .2s,border-color .2s,color .2s;">🎨 Çizimi ChatGPT ile Hazırla</button>
+            <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="generateWebPortraitAI()" style="transition:background .2s,border-color .2s,color .2s;">🎨 Çizimi ChatGPT ile Hazırla</button>
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
@@ -597,24 +597,44 @@ function openMasterSupport(){
   }
 }
 
-function showPortraitWorkflow(){
+function generateWebPortraitAI(){
   var btn=document.getElementById('btn-portrait-help');
   var status=document.getElementById('webPortraitAiStatus');
-  var input=document.getElementById('webPortrait');
-  if(btn){
-    btn.style.background='#1677ff';
-    btn.style.borderColor='#1677ff';
-    btn.style.color='#fff';
-    btn.textContent='✓ Çizim Yüklemeye Hazır';
+  if(!currentPhotoData){
+    alert('Önce öğrenci fotoğrafını seçin.');
+    return;
   }
-  if(status){
-    status.textContent='Aktif: ChatGPT ile hazırladığınız onaylı çizimi şimdi seçin. Seçildiğinde mevcut sicile otomatik bağlanacaktır.';
-    status.style.color='#1677ff';
-    status.style.fontWeight='700';
-  }
-  if(input){
-    try{ input.click(); }catch(e){}
-  }
+  if(btn){btn.disabled=true;btn.style.background='#1677ff';btn.style.borderColor='#1677ff';btn.style.color='#fff';btn.textContent='🎨 Çizim Hazırlanıyor...';}
+  if(status){status.textContent='Fotoğraf yağlı boya Krav Maga Türk profil çizimine dönüştürülüyor...';status.style.color='#1677ff';status.style.fontWeight='700';}
+  fetch('https://kravmaga-portrait.bulicet.workers.dev/',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({image:currentPhotoData})
+  }).then(function(res){return res.json().then(function(x){if(!res.ok||!x.ok) throw new Error(x.error||('HTTP '+res.status));return x;});})
+  .then(function(x){
+    currentWebPortraitData=x.image;
+    document.getElementById('webPortraitPreviewImg').src=currentWebPortraitData;
+    document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
+    if(editingIndex>=0 && diplomaData[editingIndex] && diplomaData[editingIndex].registerNo){
+      var target=diplomaData[editingIndex];
+      var updated=Object.assign({},target,{webPortrait:currentWebPortraitData});
+      delete updated._firebaseKey;
+      return adminFetch('/diplomaData/'+encodeURIComponent(target.registerNo)+'.json',{
+        method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)
+      }).then(function(){
+        diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
+        return syncPublicInstructor(updated);
+      }).then(function(){
+        if(status) status.textContent='✓ Yağlı boya çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ve Sicil PDF hazır.';
+      });
+    }
+    if(status) status.textContent='✓ Çizim hazır. Yeni kaydı Kaydet ile tamamlayın.';
+  }).catch(function(err){
+    console.error('AI çizim hatası:',err);
+    if(status){status.textContent='⚠️ Çizim üretilemedi: '+err.message;status.style.color='#d32f2f';}
+  }).finally(function(){
+    if(btn){btn.disabled=false;btn.textContent='🎨 Çizimi Yeniden Hazırla';}
+  });
 }
 
 function previewWebPortrait(event){
