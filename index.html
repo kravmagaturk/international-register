@@ -604,8 +604,8 @@ function openMasterSupport(){
   }
 }
 
-const PORTRAIT_ASSET_BASE='https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/';
-const SOURCE_PHOTO_ASSET_BASE='https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/source/';
+const PORTRAIT_ASSET_BASE='portrait-assets/approved/';
+const SOURCE_PHOTO_ASSET_BASE='portrait-assets/source/';
 function approvedPortraitAssetUrl(reg){return PORTRAIT_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
 function sourcePhotoAssetUrl(reg){return SOURCE_PHOTO_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
 function watchApprovedPortraitAsset(reg){
@@ -656,7 +656,8 @@ function approveChatGPTPortrait(){
   if(editingIndex<0||!diplomaData[editingIndex])return;
   var d=diplomaData[editingIndex],reg=d.registerNo;
   if(!currentWebPortraitData){alert('Önce onaylanacak çizim hazır olmalı.');return;}
-  var stableUrl=(String(currentWebPortraitData).indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0)?String(currentWebPortraitData).split('?')[0]:'';
+  var psrc=String(currentWebPortraitData||'').split('?')[0];
+  var stableUrl=(psrc.indexOf('portrait-assets/approved/')===0 || psrc.indexOf('/portrait-assets/approved/')>=0 || psrc.indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0)?psrc:'';
   if(!stableUrl){
     setPortraitState('waiting','ChatGPT çizimi henüz GitHub deposuna gelmedi — '+reg);
     var s0=document.getElementById('webPortraitAiStatus');
@@ -1788,6 +1789,22 @@ function editDiploma(index){
     document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
   } else { clearWebPortraitPreview(); }
+  // GitHub'daki onay adayı çizimi kaydı açarken de kontrol et.
+  (function(){
+    var asset=approvedPortraitAssetUrl(d.registerNo);
+    var test=new Image();
+    test.onload=function(){
+      currentWebPortraitData=asset;
+      var img=document.getElementById('webPortraitPreviewImg');
+      if(img) img.src=asset+'?v='+Date.now();
+      var box=document.getElementById('webPortraitPreviewBox');
+      if(box) box.classList.remove('hidden');
+      setPortraitState('approval','Çizim hazır — onayınızı bekliyor — '+d.registerNo);
+      var s=document.getElementById('webPortraitAiStatus');
+      if(s){s.textContent='✓ ChatGPT çizimi GitHub deposunda hazır. Kontrol edip “Çizimi Onayla” düğmesine basın.';s.style.color='#2e7d32';}
+    };
+    test.src=asset+'?v='+Date.now();
+  })();
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
