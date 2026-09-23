@@ -14,7 +14,7 @@ function isAllowedOrigin(origin) {
   }
 }
 
-const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
+const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 
 function corsHeaders(origin) {
   return {
@@ -103,8 +103,8 @@ export default {
       const form = new FormData();
       form.append("prompt", prompt);
       form.append("input_image_0", new Blob([bytes], { type: mime }), "reference." + (mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg"));
-      form.append("width", "512");
-      form.append("height", "512");
+      form.append("width", "448");
+      form.append("height", "448");
       form.append("guidance", "4");
 
       const serialized = new Response(form);
