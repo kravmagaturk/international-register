@@ -207,8 +207,13 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Manuel ve kontrollü yöntem: Öğrenci fotoğrafını kaydet → çizimi ChatGPT ile birlikte hazırlayalım → onaylanan JPG/PNG/WebP çizimini buradan yükle. Yalnızca onaylanan çizim Firebase ve halka açık web profiline aktarılır.</div>
-            <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="generateWebPortraitAI()" style="transition:background .2s,border-color .2s,color .2s;">🎨 Çizimi ChatGPT ile Hazırla</button>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">İki aşamalı güvenli sistem: Cloudflare kotası varsa otomatik çizim üretir. Kota doluysa aşağıdaki ChatGPT iş emrini kopyala; bu sohbet üzerinden çizimi hazırlayıp onaylanan görseli tekrar buraya yükleriz.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="generateWebPortraitAI()" style="transition:background .2s,border-color .2s,color .2s;">⚡ Otomatik Çizim</button>
+              <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="prepareChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT İş Emri</button>
+            </div>
+            <textarea id="chatgptPortraitRequest" readonly class="hidden" style="width:100%;min-height:120px;margin-top:10px;padding:10px;border:1px solid #bbb;border-radius:7px;font-size:12px;line-height:1.45;"></textarea>
+            <button type="button" id="btn-copy-chatgpt-request" class="btn btn-secondary hidden" onclick="copyChatGPTPortraitRequest()" style="margin-top:7px;">📋 İş Emrini Kopyala</button>
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
@@ -595,6 +600,25 @@ function openMasterSupport(){
   if(confirm(msg+'\\n\\nChatGPT’yi yeni sekmede açmak istiyor musunuz?')){
     window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
   }
+}
+
+function prepareChatGPTPortraitRequest(){
+  var reg=document.getElementById('registerNo')?document.getElementById('registerNo').value.trim():'';
+  var name=document.getElementById('studentName')?document.getElementById('studentName').value.trim():'';
+  if(!reg && editingIndex>=0 && diplomaData[editingIndex]) reg=diplomaData[editingIndex].registerNo||'';
+  if(!name && editingIndex>=0 && diplomaData[editingIndex]) name=diplomaData[editingIndex].studentName||diplomaData[editingIndex].name||'';
+  if(!currentPhotoData){alert('Önce öğrenci fotoğrafını seçin veya mevcut kaydı Düzenle ile açın.');return;}
+  var text='Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Mevcut öğrenci fotoğrafını kimlik referansı olarak kullan. Yüz kimliğini, yaşı, saçını, varsa gözlüğünü ve ayırt edici yüz özelliklerini koru. Göğüsten yukarı profesyonel Krav Maga akademi portresi; siyah dövüş sanatları tişörtü; siyah ve koyu kırmızı fırça darbeli arka plan; gerçekçi yağlı boya dokusu; güçlü stüdyo ışığı. Orijinal arka planı kopyalama. Ek kişi, filigran veya rastgele yazı ekleme. Çizim onaylandıktan sonra webPortrait olarak sicile bağlanacak.';
+  var ta=document.getElementById('chatgptPortraitRequest'), btn=document.getElementById('btn-copy-chatgpt-request');
+  ta.value=text;ta.classList.remove('hidden');btn.classList.remove('hidden');
+  var s=document.getElementById('webPortraitAiStatus');
+  if(s){s.textContent='🤖 ChatGPT iş emri hazır. Kopyalayıp bu sohbete gönder; öğrenci fotoğrafını da ekle.';s.style.color='#111';}
+}
+function copyChatGPTPortraitRequest(){
+  var ta=document.getElementById('chatgptPortraitRequest'); if(!ta||!ta.value)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(function(){var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ İş emri kopyalandı. ChatGPT sohbetine yapıştırıp öğrenci fotoğrafını ekle.';s.style.color='#2e7d32';}});
+  }else{ta.classList.remove('hidden');ta.select();document.execCommand('copy');}
 }
 
 function generateWebPortraitAI(){
