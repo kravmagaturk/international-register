@@ -16,6 +16,10 @@
     "securityLogs": {
       ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
       ".write": true
+    },
+    "portraitRequests": {
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     }
   }
 }
