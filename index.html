@@ -238,7 +238,8 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group">
             <label>Yetkili Eğitmen:</label>
-            <input type="text" id="instructorName" name="kmt_authorized_instructor" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Yetkili eğitmen adı soyadı">
+            <input type="text" id="instructorName" list="instructorOptions" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Yetkili eğitmen adı soyadı">
+            <datalist id="instructorOptions"><option value="Bülent Çetin"></option></datalist>
           </div>
           <div class="form-group">
             <label>Ülke:</label>
@@ -251,12 +252,12 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group">
             <label>Şehir / Bölge:</label>
-            <input type="text" id="city" name="kmt_city" list="cityOptions" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Örn. İstanbul / Berlin">
+            <input type="text" id="city" list="cityOptions" autocomplete="address-level2" autocorrect="off" spellcheck="false" placeholder="Örn. İstanbul / Berlin">
             <datalist id="cityOptions"></datalist>
           </div>
           <div class="form-group">
             <label>İlçe / Şehir:</label>
-            <input type="text" id="district" placeholder="Örn. Kadıköy / Köln">
+            <input type="text" id="district" autocomplete="address-level3" autocorrect="off" spellcheck="false" placeholder="Örn. Kadıköy / Köln">
           </div>
           <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
             <label>Web sitesi / bilgi arama ekranında göster (birden fazla seçilebilir):</label>
@@ -1721,6 +1722,11 @@ function showAddForm(){
   document.getElementById('studentName').readOnly = false;
   document.getElementById('form-title').textContent = t('formTitleNew');
   document.getElementById('save-btn').textContent = t('btnSave');
+  document.getElementById('instructorName').value = 'Bülent Çetin';
+  document.getElementById('country').value = 'Türkiye';
+  updateLocationOptions();
+  document.getElementById('city').value = 'İstanbul';
+  document.getElementById('district').value = 'Kadıköy';
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
@@ -2021,6 +2027,9 @@ function filterDiplomas(){
     });
   }
   if(levelFilter){ filtered = filtered.filter(function(item){ return recordDocuments(item.d).some(function(x){ return (x.level||'').indexOf(levelFilter) === 0; }); }); }
+  filtered.sort(function(a,b){
+    return String(a.d.studentName||'').localeCompare(String(b.d.studentName||''),'tr',{sensitivity:'base'});
+  });
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
 }
