@@ -58,7 +58,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
 .photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
 .photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#09090a;}
-.photo-frame-large::after{content:'🔍';position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.photo-frame-large::after{content:'🔍';position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.62);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #webPortraitPreviewBox .photo-frame-large{width:220px;height:293px;aspect-ratio:3/4;}
 #webPortraitPreviewBox .photo-frame-large img{width:100%;height:100%;object-fit:cover;background:#09090a;display:block;}
 .qr-box{text-align:center;margin:10px 0;}
@@ -203,7 +203,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <label id="txt-lblPhoto">Öğrenci Fotoğrafı:</label>
             <input type="file" id="studentPhoto" accept="image/*" onchange="previewPhoto(event)">
             <div id="photoPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
-              <div class="photo-frame-large" style="cursor:default;"><img id="photoPreviewImg"></div>
+              <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('photoPreviewImg').src)"><img id="photoPreviewImg" alt="Öğrenci fotoğrafı"></div>
               <button type="button" class="btn btn-danger" id="btn-remove-photo" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
             </div>
           </div>
@@ -220,7 +220,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
-              <div class="photo-frame-large" style="cursor:default;"><img id="webPortraitPreviewImg"></div>
+              <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Onaylanan web çizimi hazır.</div>
               <button type="button" class="btn btn-secondary" onclick="approveChatGPTPortrait()" style="background:#178a3b;border-color:#178a3b;color:#fff;margin-right:7px;">✓ Çizimi Onayla</button>
               <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
