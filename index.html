@@ -210,15 +210,17 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">İki aşamalı güvenli sistem: Cloudflare kotası varsa otomatik çizim üretir. Kota doluysa aşağıdaki ChatGPT iş emrini kopyala; bu sohbet üzerinden çizimi hazırlayıp onaylanan görseli tekrar buraya yükleriz.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="generateWebPortraitAI()" style="transition:background .2s,border-color .2s,color .2s;">⚡ Otomatik Çizim</button>
-              <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="prepareChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT İş Emri</button>
+              <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="sendChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT’ye Gönder</button>
             </div>
             <textarea id="chatgptPortraitRequest" readonly class="hidden" style="width:100%;min-height:120px;margin-top:10px;padding:10px;border:1px solid #bbb;border-radius:7px;font-size:12px;line-height:1.45;"></textarea>
-            <button type="button" id="btn-copy-chatgpt-request" class="btn btn-secondary hidden" onclick="copyChatGPTPortraitRequest()" style="margin-top:7px;">📋 İş Emrini Kopyala</button>
+            <button type="button" id="btn-copy-chatgpt-request" class="btn btn-secondary hidden" onclick="copyChatGPTPortraitRequest()" style="margin-top:7px;">📋 Sohbete Kopyala</button>
+            <div id="chatgptPortraitState" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:7px;font-size:13px;font-weight:800;"></div>
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:default;"><img id="webPortraitPreviewImg"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Onaylanan web çizimi hazır.</div>
+              <button type="button" class="btn btn-secondary" onclick="approveChatGPTPortrait()" style="background:#178a3b;border-color:#178a3b;color:#fff;margin-right:7px;">✓ Çizimi Onayla</button>
               <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
             </div>
           </div>
@@ -602,6 +604,37 @@ function openMasterSupport(){
   }
 }
 
+function portraitRequestKey(reg){return String(reg||'').replace(/[.#$\[\]\/]/g,'_');}
+function setPortraitState(state,msg){
+  var box=document.getElementById('chatgptPortraitState'); if(!box)return;
+  var map={waiting:['#fff8e1','#8a5a00','🟡'],working:['#e3f2fd','#0d47a1','🔵'],approval:['#e8f5e9','#1b5e20','🟢'],approved:['#e8f5e9','#1b5e20','✓'],error:['#ffebee','#b71c1c','⚠️']};
+  var x=map[state]||map.waiting; box.classList.remove('hidden');box.style.background=x[0];box.style.color=x[1];box.textContent=x[2]+' '+msg;
+}
+function sendChatGPTPortraitRequest(){
+  var reg=document.getElementById('registerNo')?document.getElementById('registerNo').value.trim():'';
+  var name=document.getElementById('studentName')?document.getElementById('studentName').value.trim():'';
+  if(!reg&&editingIndex>=0&&diplomaData[editingIndex])reg=diplomaData[editingIndex].registerNo||'';
+  if(!name&&editingIndex>=0&&diplomaData[editingIndex])name=diplomaData[editingIndex].studentName||diplomaData[editingIndex].name||'';
+  if(!reg){alert('Önce sicil numarası olan bir kaydı açın.');return;}
+  if(!currentPhotoData){alert('Önce öğrenci fotoğrafını seçin veya mevcut kaydı Düzenle ile açın.');return;}
+  prepareChatGPTPortraitRequest();
+  var ta=document.getElementById('chatgptPortraitRequest');
+  var req={registerNo:reg,studentName:name||'',status:'waiting',statusLabel:'ChatGPT için hazır',prompt:ta?ta.value:'',photo:currentPhotoData,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  setPortraitState('waiting','İstek kaydediliyor…');
+  adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)})
+   .then(function(){setPortraitState('waiting','ChatGPT için hazır — '+reg);var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ Çizim isteği kuyruğa alındı. Sohbette “çizim isteklerini kontrol et” demen yeterli.';s.style.color='#2e7d32';}})
+   .catch(function(e){setPortraitState('error','İstek kaydedilemedi: '+(e.message||e));});
+}
+function approveChatGPTPortrait(){
+  if(editingIndex<0||!diplomaData[editingIndex])return;
+  var d=diplomaData[editingIndex],reg=d.registerNo;
+  if(!currentWebPortraitData){alert('Önce onaylanacak çizim yüklenmeli.');return;}
+  var updated=Object.assign({},d,{webPortrait:currentWebPortraitData});delete updated._firebaseKey;
+  adminFetch('/diplomaData/'+encodeURIComponent(reg)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)})
+   .then(function(){return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',statusLabel:'Onaylandı',updatedAt:new Date().toISOString()})});})
+   .then(function(){diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});return syncPublicInstructor(updated);})
+   .then(function(){setPortraitState('approved','Onaylandı ve web profiline bağlandı — '+reg);});
+}
 function prepareChatGPTPortraitRequest(){
   var reg=document.getElementById('registerNo')?document.getElementById('registerNo').value.trim():'';
   var name=document.getElementById('studentName')?document.getElementById('studentName').value.trim():'';
