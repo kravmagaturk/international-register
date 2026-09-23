@@ -606,14 +606,41 @@ function generateWebPortraitAI(){
   }
   if(btn){btn.disabled=true;btn.style.background='#1677ff';btn.style.borderColor='#1677ff';btn.style.color='#fff';btn.textContent='🎨 Çizim Hazırlanıyor...';}
   if(status){status.textContent='Fotoğraf yağlı boya Krav Maga Türk profil çizimine dönüştürülüyor...';status.style.color='#1677ff';status.style.fontWeight='700';}
-  fetch('https://kravmaga-portrait.bulicet.workers.dev/',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({image:currentPhotoData})
-  }).then(function(res){return res.json().then(function(x){if(!res.ok||!x.ok) throw new Error(x.error||('HTTP '+res.status));return x;});})
-  .then(function(x){
-    var portraitData = x.image || x.webPortrait || x.data || '';
-    if(typeof portraitData !== 'string' || portraitData.indexOf('data:image/') !== 0){
+
+  function dataUrlToBlob(dataUrl){
+    var parts=dataUrl.split(',');
+    var mime=(parts[0].match(/data:([^;]+)/)||[])[1]||'image/jpeg';
+    var bin=atob(parts[1]||'');
+    var bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    return new Blob([bytes],{type:mime});
+  }
+  function readResponse(res){
+    return res.text().then(function(raw){
+      var x={};
+      try{x=raw?JSON.parse(raw):{};}catch(e){throw new Error('AI servisi geçersiz yanıt verdi (HTTP '+res.status+').');}
+      if(!res.ok||x.ok===false) throw new Error(x.error||x.message||('HTTP '+res.status));
+      return x;
+    });
+  }
+  function requestPortrait(){
+    // Worker'ın güncel referans-görsel akışı multipart/form-data kullanır.
+    // Bu, bazı kayıtlarda büyük base64 JSON gövdesinin reddedilmesini önler.
+    try{
+      var fd=new FormData();
+      fd.append('image',dataUrlToBlob(currentPhotoData),'student-reference.jpg');
+      return fetch('https://kravmaga-portrait.bulicet.workers.dev/',{method:'POST',body:fd}).then(readResponse);
+    }catch(e){
+      // Eski Worker sürümüyle geriye uyumluluk.
+      return fetch('https://kravmaga-portrait.bulicet.workers.dev/',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:currentPhotoData})
+      }).then(readResponse);
+    }
+  }
+
+  requestPortrait().then(function(x){
+    var portraitData=x.image||x.webPortrait||x.data||'';
+    if(typeof portraitData!=='string'||portraitData.indexOf('data:image/')!==0){
       throw new Error('AI çizim verisi geçersiz veya boş döndü.');
     }
     currentWebPortraitData=portraitData;
@@ -622,10 +649,11 @@ function generateWebPortraitAI(){
       console.error('AI çizim önizlemesi yüklenemedi.');
       if(status){status.textContent='⚠️ Çizim üretildi ancak görsel açılamadı. Yeniden deneyin.';status.style.color='#d32f2f';}
     };
-    previewImg.onload=function(){ previewImg.onerror=null; };
+    previewImg.onload=function(){previewImg.onerror=null;};
     previewImg.src=currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
-    if(editingIndex>=0 && diplomaData[editingIndex] && diplomaData[editingIndex].registerNo){
+
+    if(editingIndex>=0&&diplomaData[editingIndex]&&diplomaData[editingIndex].registerNo){
       var target=diplomaData[editingIndex];
       var updated=Object.assign({},target,{webPortrait:currentWebPortraitData});
       delete updated._firebaseKey;
@@ -635,10 +663,10 @@ function generateWebPortraitAI(){
         diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
         return syncPublicInstructor(updated);
       }).then(function(){
-        if(status) status.textContent='✓ Yağlı boya çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ve Sicil PDF hazır.';
+        if(status){status.textContent='✓ Yağlı boya çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ve Sicil PDF hazır.';status.style.color='#2e7d32';}
       });
     }
-    if(status) status.textContent='✓ Çizim hazır. Yeni kaydı Kaydet ile tamamlayın.';
+    if(status){status.textContent='✓ Çizim hazır. Yeni kaydı Kaydet ile tamamlayın.';status.style.color='#2e7d32';}
   }).catch(function(err){
     console.error('AI çizim hatası:',err);
     if(status){status.textContent='⚠️ Çizim üretilemedi: '+err.message;status.style.color='#d32f2f';}
