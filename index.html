@@ -656,17 +656,23 @@ function approveChatGPTPortrait(){
   if(editingIndex<0||!diplomaData[editingIndex])return;
   var d=diplomaData[editingIndex],reg=d.registerNo;
   if(!currentWebPortraitData){alert('Önce onaylanacak çizim hazır olmalı.');return;}
-  var stableUrl=(String(currentWebPortraitData).indexOf('https://raw.githubusercontent.com/')===0)?String(currentWebPortraitData).split('?')[0]:'';
+  var stableUrl=(String(currentWebPortraitData).indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0)?String(currentWebPortraitData).split('?')[0]:'';
+  if(!stableUrl){
+    setPortraitState('waiting','ChatGPT çizimi henüz GitHub deposuna gelmedi — '+reg);
+    var s0=document.getElementById('webPortraitAiStatus');
+    if(s0){s0.textContent='⚠️ Bu görüntü GitHub onaylı çizim dosyası değil. ChatGPT çizimi depoya eklenmeden onay verilemez.';s0.style.color='#d32f2f';}
+    return;
+  }
   var updated=Object.assign({},d,{
-    webPortrait:stableUrl?'':currentWebPortraitData,
-    webPortraitUrl:stableUrl||d.webPortraitUrl||'',
+    webPortrait:'',
+    webPortraitUrl:stableUrl,
     portraitStatus:'approved',
     portraitUpdatedAt:new Date().toISOString(),
     portraitVersion:Date.now()
   });
   delete updated._firebaseKey;
   adminFetch('/diplomaData/'+encodeURIComponent(reg)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)})
-   .then(function(){return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',statusLabel:'Onaylandı',approvedUrl:updated.webPortraitUrl||'',updatedAt:new Date().toISOString()})});})
+   .then(function(){return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',statusLabel:'Onaylandı',approvedUrl:stableUrl,updatedAt:new Date().toISOString()})});})
    .then(function(){diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});return syncPublicInstructor(updated);})
    .then(function(){setPortraitState('approved','Onaylandı ve web profiline bağlandı — '+reg);var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ Onaylandı. GitHub çizimi artık sicil ve web profilinde aktif.';s.style.color='#2e7d32';}});
 }
