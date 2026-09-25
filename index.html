@@ -221,16 +221,15 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">İki aşamalı güvenli sistem: Cloudflare kotası varsa otomatik çizim üretir. Kota doluysa aşağıdaki ChatGPT iş emrini kopyala; bu sohbet üzerinden çizimi hazırlayıp onaylanan görseli tekrar buraya yükleriz.</div>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Onaylı web profil çizimini yükleyin veya ChatGPT iş emrini hazırlayın. Otomatik Cloudflare çizim üretimi devre dışıdır.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="btn btn-secondary" id="btn-portrait-help" onclick="generateWebPortraitAI()" style="transition:background .2s,border-color .2s,color .2s;">⚡ Otomatik Çizim</button>
               <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="sendChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT’ye Gönder</button>
             </div>
             <textarea id="chatgptPortraitRequest" readonly class="hidden" style="width:100%;min-height:120px;margin-top:10px;padding:10px;border:1px solid #bbb;border-radius:7px;font-size:12px;line-height:1.45;"></textarea>
             <button type="button" id="btn-copy-chatgpt-request" class="btn btn-secondary hidden" onclick="copyChatGPTPortraitRequest()" style="margin-top:7px;">📋 Sohbete Kopyala</button>
             <div id="chatgptPortraitState" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:7px;font-size:13px;font-weight:800;"></div>
             <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
-            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">AI otomatik üretimi kapalı. Onaylanan çizimi seçip kaydı Kaydet/Güncelle ile tamamlayın.</div>
+            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">Otomatik çizim üretimi kapalı. Onaylanan çizimi seçip Kaydet/Güncelle ile tamamlayın.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Onaylanan web çizimi hazır.</div>
@@ -709,60 +708,6 @@ function copyChatGPTPortraitRequest(){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(ta.value).then(function(){var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ İş emri kopyalandı. ChatGPT sohbetine yapıştırıp öğrenci fotoğrafını ekle.';s.style.color='#2e7d32';}});
   }else{ta.classList.remove('hidden');ta.select();document.execCommand('copy');}
-}
-
-function generateWebPortraitAI(){
-  var btn=document.getElementById('btn-portrait-help');
-  var status=document.getElementById('webPortraitAiStatus');
-  if(!currentPhotoData){ alert('Önce öğrenci fotoğrafını seçin.'); return; }
-  if(btn){btn.disabled=true;btn.style.background='#1677ff';btn.style.borderColor='#1677ff';btn.style.color='#fff';btn.textContent='🎨 Çizim Hazırlanıyor...';}
-  if(status){status.textContent='Fotoğraf Krav Maga Türk profil çizimine dönüştürülüyor...';status.style.color='#1677ff';status.style.fontWeight='700';}
-
-  var controller=new AbortController();
-  var timer=setTimeout(function(){controller.abort();},90000);
-
-  fetch('https://kravmaga-portrait.bulicet.workers.dev/',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({image:currentPhotoData}),
-    signal:controller.signal
-  }).then(function(res){
-    return res.text().then(function(raw){
-      var x={};
-      try{x=raw?JSON.parse(raw):{};}catch(e){throw new Error('AI servisi geçersiz yanıt verdi (HTTP '+res.status+').');}
-      if(!res.ok||x.ok===false) throw new Error(x.error||x.message||('HTTP '+res.status));
-      return x;
-    });
-  }).then(function(x){
-    var portraitData=x.image||x.webPortrait||x.data||'';
-    if(typeof portraitData!=='string'||portraitData.indexOf('data:image/')!==0) throw new Error('AI çizim verisi boş döndü.');
-    currentWebPortraitData=portraitData;
-    var previewImg=document.getElementById('webPortraitPreviewImg');
-    previewImg.src=currentWebPortraitData;
-    document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
-
-    if(editingIndex>=0&&diplomaData[editingIndex]&&diplomaData[editingIndex].registerNo){
-      var target=diplomaData[editingIndex];
-      var updated=Object.assign({},target,{webPortrait:currentWebPortraitData});
-      delete updated._firebaseKey;
-      return adminFetch('/diplomaData/'+encodeURIComponent(target.registerNo)+'.json',{
-        method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)
-      }).then(function(){
-        diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
-        return syncPublicInstructor(updated);
-      }).then(function(){
-        if(status){status.textContent='✓ Çizim '+target.registerNo+' siciline bağlandı. Sorgu ve Sicil PDF hazır.';status.style.color='#2e7d32';}
-      });
-    }
-    if(status){status.textContent='✓ Çizim hazır. Kaydı Kaydet ile tamamlayın.';status.style.color='#2e7d32';}
-  }).catch(function(err){
-    var message=err&&err.name==='AbortError'?'AI servisi 90 saniye içinde yanıt vermedi. Tekrar deneyin.':(err.message||String(err));
-    console.error('AI çizim hatası:',err);
-    if(status){status.textContent='⚠️ Çizim üretilemedi: '+message;status.style.color='#d32f2f';}
-  }).finally(function(){
-    clearTimeout(timer);
-    if(btn){btn.disabled=false;btn.textContent='🎨 Çizimi Yeniden Hazırla';}
-  });
 }
 
 function previewWebPortrait(event){
@@ -2011,7 +1956,6 @@ function addDiploma(){
         document.getElementById('studentName').value=diplomaData[savedIndex].studentName||'';
         document.getElementById('instructorName').value=diplomaData[savedIndex].instructorName||'';
       }
-      generateWebPortraitAI();
     } else {
       hideAddForm();
     }
