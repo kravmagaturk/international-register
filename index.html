@@ -220,16 +220,13 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             </div>
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
-            <label>Web Profil Çizimi:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Onaylı web profil çizimini yükleyin veya ChatGPT iş emrini hazırlayın. Otomatik Cloudflare çizim üretimi devre dışıdır.</div>
+            <label>ChatGPT Web Profil Çizimi:</label>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Öğrenci fotoğrafından standart Krav Maga Türk portresi otomatik oluşturulur. Sohbete metin kopyalama veya ayrıca dosya yükleme gerekmez.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="sendChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT’ye Gönder</button>
+              <button type="button" class="btn btn-secondary" id="btn-chatgpt-portrait" onclick="sendChatGPTPortraitRequest()" style="background:#111;border-color:#111;color:#fff;">🤖 ChatGPT Çizim Oluştur</button>
             </div>
-            <textarea id="chatgptPortraitRequest" readonly class="hidden" style="width:100%;min-height:120px;margin-top:10px;padding:10px;border:1px solid #bbb;border-radius:7px;font-size:12px;line-height:1.45;"></textarea>
-            <button type="button" id="btn-copy-chatgpt-request" class="btn btn-secondary hidden" onclick="copyChatGPTPortraitRequest()" style="margin-top:7px;">📋 Sohbete Kopyala</button>
             <div id="chatgptPortraitState" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:7px;font-size:13px;font-weight:800;"></div>
-            <input type="file" id="webPortrait" accept="image/jpeg,image/png,image/webp" onchange="previewWebPortrait(event)" style="margin-top:10px;">
-            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">Otomatik çizim üretimi kapalı. Onaylanan çizimi seçip Kaydet/Güncelle ile tamamlayın.</div>
+            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">Hazır olduğunda oluşturulan çizim bu alanda görünecek.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Onaylanan web çizimi hazır.</div>
@@ -370,6 +367,7 @@ var auth = firebase.auth();
 var googleProvider = new firebase.auth.GoogleAuthProvider();
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmaga.com.tr/register';
+var PORTRAIT_API_URL = 'https://kravmaga-portrait.bulicet.workers.dev';
 
 var diplomaData = [];
 var currentPhotoData = '';
@@ -377,6 +375,8 @@ var editingIndex = -1;
 var addingDocumentIndex = -1;
 var expandedRows = {};
 var lastSearchedRecord = null;
+var lastUnlockedRecord = null;
+var publicPinAttempts = {};
 var cachedLogoBase64 = null;
 var uiLang = localStorage.getItem('uiLang') || 'tr';
 
@@ -658,28 +658,47 @@ function sendChatGPTPortraitRequest(){
   if(!name&&editingIndex>=0&&diplomaData[editingIndex])name=diplomaData[editingIndex].studentName||diplomaData[editingIndex].name||'';
   if(!reg){alert('Önce sicil numarası olan bir kaydı açın.');return;}
   if(!currentPhotoData){alert('Önce öğrenci fotoğrafını seçin veya mevcut kaydı Düzenle ile açın.');return;}
-  prepareChatGPTPortraitRequest();
-  var ta=document.getElementById('chatgptPortraitRequest');
-  var req={registerNo:reg,studentName:name||'',status:'waiting',statusLabel:'ChatGPT için hazır',prompt:ta?ta.value:'',photo:currentPhotoData,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-  setPortraitState('waiting','İstek kaydediliyor…');
-  adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)})
-   .then(function(){setPortraitState('waiting','ChatGPT için hazır — '+reg);var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ Çizim isteği kuyruğa alındı. ChatGPT çizimi depoya eklediğinde panel otomatik yenilenecek.';s.style.color='#2e7d32';}watchApprovedPortraitAsset(reg);})
-   .catch(function(e){setPortraitState('error','İstek kaydedilemedi: '+(e.message||e));});
+  var prompt=prepareChatGPTPortraitRequest(reg,name);
+  var btn=document.getElementById('btn-chatgpt-portrait');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Çizim oluşturuluyor...';}
+  setPortraitState('working','OpenAI portresi oluşturuluyor — '+reg);
+  var s=document.getElementById('webPortraitAiStatus');
+  if(s){s.textContent='Fotoğraf güvenli üretim servisine gönderildi. Sonuç bekleniyor...';s.style.color='#777';}
+  fetch(PORTRAIT_API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({image:currentPhotoData,prompt:prompt,registerNo:reg,studentName:name||''})
+  }).then(function(res){
+    return res.json().then(function(data){if(!res.ok||!data||data.ok!==true)throw new Error((data&&data.error)||('HTTP '+res.status));return data;});
+  }).then(function(data){
+    currentWebPortraitData=data.image||'';
+    if(!currentWebPortraitData)throw new Error('Çizim verisi alınamadı.');
+    var img=document.getElementById('webPortraitPreviewImg');
+    if(img)img.src=currentWebPortraitData;
+    var box=document.getElementById('webPortraitPreviewBox');
+    if(box)box.classList.remove('hidden');
+    setPortraitState('approval','Çizim hazır — onayınızı bekliyor.');
+    if(s){s.textContent='✓ Çizim hazır. Kontrol edip Çizimi Onayla düğmesine basın.';s.style.color='#2e7d32';}
+  }).catch(function(e){
+    setPortraitState('error','Çizim oluşturulamadı: '+(e.message||e));
+    if(s){s.textContent='⚠️ '+(e.message||e);s.style.color='#d32f2f';}
+  }).finally(function(){
+    if(btn){btn.disabled=false;btn.textContent='🤖 ChatGPT Çizim Oluştur';}
+  });
 }
 function approveChatGPTPortrait(){
   if(editingIndex<0||!diplomaData[editingIndex])return;
   var d=diplomaData[editingIndex],reg=d.registerNo;
   if(!currentWebPortraitData){alert('Önce onaylanacak çizim hazır olmalı.');return;}
-  var psrc=String(currentWebPortraitData||'').split('?')[0];
-  var stableUrl=(psrc.indexOf('portrait-assets/approved/')===0 || psrc.indexOf('/portrait-assets/approved/')>=0 || psrc.indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0)?psrc:'';
-  if(!stableUrl){
-    setPortraitState('waiting','ChatGPT çizimi henüz GitHub deposuna gelmedi — '+reg);
-    var s0=document.getElementById('webPortraitAiStatus');
-    if(s0){s0.textContent='⚠️ Bu görüntü GitHub onaylı çizim dosyası değil. ChatGPT çizimi depoya eklenmeden onay verilemez.';s0.style.color='#d32f2f';}
+  var raw=String(currentWebPortraitData||'');
+  var isData=/^data:image\/(png|jpe?g|webp);base64,/i.test(raw);
+  var stableUrl=(!isData && (raw.indexOf('portrait-assets/approved/')===0 || raw.indexOf('/portrait-assets/approved/')>=0 || raw.indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0))?raw.split('?')[0]:'';
+  if(!isData && !stableUrl){
+    setPortraitState('error','Çizim biçimi geçersiz — '+reg);
     return;
   }
   var updated=Object.assign({},d,{
-    webPortrait:'',
+    webPortrait:isData?raw:'',
     webPortraitUrl:stableUrl,
     portraitStatus:'approved',
     portraitUpdatedAt:new Date().toISOString(),
@@ -687,27 +706,21 @@ function approveChatGPTPortrait(){
   });
   delete updated._firebaseKey;
   adminFetch('/diplomaData/'+encodeURIComponent(reg)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)})
-   .then(function(){return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',statusLabel:'Onaylandı',approvedUrl:stableUrl,updatedAt:new Date().toISOString()})});})
-   .then(function(){diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});return syncPublicInstructor(updated);})
-   .then(function(){setPortraitState('approved','Onaylandı ve web profiline bağlandı — '+reg);var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ Onaylandı. GitHub çizimi artık sicil ve web profilinde aktif.';s.style.color='#2e7d32';}});
+   .then(function(){
+     diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});
+     return Promise.all([syncPublicInstructor(updated),syncStudentAccess(updated)]);
+   })
+   .then(function(){
+     setPortraitState('approved','Onaylandı ve web profiline bağlandı — '+reg);
+     var s=document.getElementById('webPortraitAiStatus');
+     if(s){s.textContent='✓ Onaylandı. Çizim sicil ve sorgu ekranında aktif.';s.style.color='#2e7d32';}
+   })
+   .catch(function(e){
+     setPortraitState('error','Onay kaydedilemedi: '+(e.message||e));
+   });
 }
-function prepareChatGPTPortraitRequest(){
-  var reg=document.getElementById('registerNo')?document.getElementById('registerNo').value.trim():'';
-  var name=document.getElementById('studentName')?document.getElementById('studentName').value.trim():'';
-  if(!reg && editingIndex>=0 && diplomaData[editingIndex]) reg=diplomaData[editingIndex].registerNo||'';
-  if(!name && editingIndex>=0 && diplomaData[editingIndex]) name=diplomaData[editingIndex].studentName||diplomaData[editingIndex].name||'';
-  if(!currentPhotoData){alert('Önce öğrenci fotoğrafını seçin veya mevcut kaydı Düzenle ile açın.');return;}
-  var text='Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Mevcut öğrenci fotoğrafını kimlik referansı olarak kullan. Yüz kimliğini, yaşı, saçını, varsa gözlüğünü ve ayırt edici yüz özelliklerini koru. Göğüsten yukarı profesyonel Krav Maga akademi portresi; siyah dövüş sanatları tişörtü; siyah ve koyu kırmızı fırça darbeli arka plan; gerçekçi yağlı boya dokusu; güçlü stüdyo ışığı. Orijinal arka planı kopyalama. Ek kişi, filigran veya rastgele yazı ekleme. Çizim onaylandıktan sonra webPortrait olarak sicile bağlanacak.';
-  var ta=document.getElementById('chatgptPortraitRequest'), btn=document.getElementById('btn-copy-chatgpt-request');
-  ta.value=text;ta.classList.remove('hidden');btn.classList.remove('hidden');
-  var s=document.getElementById('webPortraitAiStatus');
-  if(s){s.textContent='🤖 ChatGPT iş emri hazır. Kopyalayıp bu sohbete gönder; öğrenci fotoğrafını da ekle.';s.style.color='#111';}
-}
-function copyChatGPTPortraitRequest(){
-  var ta=document.getElementById('chatgptPortraitRequest'); if(!ta||!ta.value)return;
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(ta.value).then(function(){var s=document.getElementById('webPortraitAiStatus');if(s){s.textContent='✓ İş emri kopyalandı. ChatGPT sohbetine yapıştırıp öğrenci fotoğrafını ekle.';s.style.color='#2e7d32';}});
-  }else{ta.classList.remove('hidden');ta.select();document.execCommand('copy');}
+function prepareChatGPTPortraitRequest(reg,name){
+  return 'Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Mevcut öğrenci fotoğrafını kimlik referansı olarak kullan. Yüz kimliğini, yaşı, saçını, varsa gözlüğünü ve ayırt edici yüz özelliklerini koru. Göğüsten yukarı profesyonel Krav Maga akademi portresi; siyah dövüş sanatları tişörtü; sol göğüste küçük 1948 Krav Maga Türk logosu; siyah ve koyu kırmızı fırça darbeli arka plan; gerçekçi yağlı boya dokusu; güçlü stüdyo ışığı. Orijinal arka planı kopyalama. Ek kişi, filigran veya rastgele yazı ekleme.';
 }
 
 function previewWebPortrait(event){
@@ -931,6 +944,60 @@ function publicLevelText(d){
   }).map(function(x){ return documentLabel(x); });
   return allowed.length ? allowed.join(' • ') : (d.level||'-');
 }
+function generateAccessPin(){
+  var n;
+  if(window.crypto && window.crypto.getRandomValues){
+    var a=new Uint32Array(1); window.crypto.getRandomValues(a); n=a[0];
+  }else{
+    n=Math.floor(Math.random()*0xFFFFFFFF);
+  }
+  return String(10000+(n%90000));
+}
+function ensureAccessPin(record){
+  var pin=String((record&&record.accessPin)||'');
+  if(/^\d{5}$/.test(pin)) return pin;
+  do{ pin=generateAccessPin(); }
+  while(diplomaData.some(function(x){ return x!==record && String(x.accessPin||'')===pin; }));
+  record.accessPin=pin;
+  return pin;
+}
+function buildPublicDiplomaRecord(record){
+  return {
+    registerNo:record.registerNo||'',
+    studentName:record.studentName||'',
+    joinDate:record.joinDate||'',
+    status:record.status||'faal',
+    country:record.country||'',
+    city:record.city||'',
+    district:record.district||'',
+    level:recordDocuments(record).map(function(x){return documentLabel(x);}).join(' • ') || publicLevelText(record),
+    webPortrait:record.webPortraitUrl||record.webPortrait||'',
+    photo:''
+  };
+}
+function buildDownloadPackage(record){
+  var pkg=Object.assign({},record);
+  delete pkg.accessPin;
+  delete pkg._firebaseKey;
+  pkg.downloadPermissions=getDownloadPermissions(record);
+  return pkg;
+}
+function getDownloadPermissions(record){
+  var p=(record&&record.downloadPermissions)||{};
+  return {
+    registryInfo:p.registryInfo===true,
+    documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
+  };
+}
+function syncStudentAccess(record){
+  if(!record || !record.registerNo) return Promise.resolve();
+  var pin=ensureAccessPin(record);
+  var reg=encodeURIComponent(record.registerNo);
+  return Promise.all([
+    adminFetch('/publicDiplomaData/'+reg+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildPublicDiplomaRecord(record))}),
+    adminFetch('/downloadPackages/'+reg+'/'+pin+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildDownloadPackage(record))})
+  ]);
+}
 function renderSearchResult(d){
   var resultDiv=document.getElementById('searchResult');
   var statusText=isInactiveStatus(d.status)?'Faal Olmayan':'Faal';
@@ -952,6 +1019,15 @@ function renderSearchResult(d){
     (d.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+d.joinDate+'</span></div>':'')+
     (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
     '<div class="result-item"><span class="result-label">Durum</span><span>'+statusText+'</span></div>'+
+    '<div style="margin-top:18px;padding-top:16px;border-top:1px solid #303034;">'+
+      '<div style="font-weight:800;margin-bottom:8px;">Belge / Diploma İndirme</div>'+
+      '<div style="font-size:12px;color:#999;margin-bottom:10px;">İndirme seçeneklerini açmak için size verilen 5 haneli öğrenci şifresini girin.</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+        '<input id="publicAccessPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 haneli şifre" style="flex:1;min-width:160px;padding:10px;background:#09090a;color:#fff;border:1px solid #38383d;border-radius:4px;">'+
+        '<button class="btn" type="button" onclick="unlockStudentDownloads()">Kilidi Aç</button>'+
+      '</div>'+
+      '<div id="publicDownloadAccess" style="margin-top:10px;"></div>'+
+    '</div>'+
     '</div>';
 }
 function requestRecordDeletion(){
@@ -1060,10 +1136,11 @@ function searchDiploma(){
   var registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   var resultDiv = document.getElementById('searchResult');
   var btn = document.getElementById('search-btn');
+  lastUnlockedRecord = null;
   if(!registerNo){ resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>'; return; }
   btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
-  fetch(FIREBASE_URL + '/diplomaData/' + encodeURIComponent(registerNo) + '.json')
+  fetch(FIREBASE_URL + '/publicDiplomaData/' + encodeURIComponent(registerNo) + '.json')
     .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
     .then(function(raw){
       var d = normalizePublicRecord(raw, registerNo);
@@ -1084,6 +1161,74 @@ function searchDiploma(){
 }
 
 
+function renderAuthorizedDownloads(record){
+  var box=document.getElementById('publicDownloadAccess');
+  if(!box || !record) return;
+  var perms=getDownloadPermissions(record);
+  var docs=recordDocuments(record);
+  var html='<div class="message success">✅ Şifre doğrulandı.</div>';
+  var options=[];
+  perms.documents.forEach(function(di){
+    if(!docs[di]) return;
+    options.push('<option value="'+di+'|'+documentDefaultAction(docs[di])+'">'+documentMenuLabel(docs[di])+'</option>');
+  });
+  if(options.length){
+    html+='<select class="pdf-output-select" onchange="handleUnlockedDocumentMenu(this)"><option value="">📄 Yetkili Diploma / Belgeler</option>'+options.join('')+'</select>';
+  }
+  if(perms.registryInfo){
+    html+=' <button class="btn btn-secondary btn-small" type="button" onclick="runPdfAction(\'registry-info\',lastUnlockedRecord)">📋 Sicil Bilgi PDF</button>';
+  }
+  if(!options.length && !perms.registryInfo){
+    html+='<div class="message error" style="margin-top:10px;">Bu kayıt için indirilebilir belge yetkisi tanımlanmamış.</div>';
+  }
+  box.innerHTML=html;
+}
+function handleUnlockedDocumentMenu(sel){
+  var raw=sel.value; sel.selectedIndex=0;
+  if(!raw || !lastUnlockedRecord) return;
+  var parts=raw.split('|');
+  var docIndex=parseInt(parts[0],10);
+  var action=parts[1]||'';
+  if(isNaN(docIndex)||!action) return;
+  runPdfAction(action,recordForDocument(lastUnlockedRecord,docIndex));
+}
+function unlockStudentDownloads(){
+  var reg=lastSearchedRecord&&lastSearchedRecord.registerNo;
+  var input=document.getElementById('publicAccessPin');
+  var box=document.getElementById('publicDownloadAccess');
+  var pin=input?String(input.value||'').trim():'';
+  if(!reg || !/^\d{5}$/.test(pin)){
+    if(box) box.innerHTML='<div class="message error">5 haneli öğrenci şifresini girin.</div>';
+    return;
+  }
+  var state=publicPinAttempts[reg]||{count:0,lockedUntil:0};
+  if(state.lockedUntil>Date.now()){
+    var mins=Math.ceil((state.lockedUntil-Date.now())/60000);
+    if(box) box.innerHTML='<div class="message error">Çok fazla hatalı deneme. '+mins+' dakika sonra tekrar deneyin.</div>';
+    return;
+  }
+  fetch(FIREBASE_URL+'/downloadPackages/'+encodeURIComponent(reg)+'/'+encodeURIComponent(pin)+'.json')
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
+    .then(function(pkg){
+      if(!pkg || !pkg.registerNo){
+        state.count++;
+        if(state.count>=5){ state.count=0; state.lockedUntil=Date.now()+15*60*1000; }
+        publicPinAttempts[reg]=state;
+        throw new Error('BAD_PIN');
+      }
+      publicPinAttempts[reg]={count:0,lockedUntil:0};
+      lastUnlockedRecord=normalizePublicRecord(pkg,reg);
+      lastUnlockedRecord.downloadPermissions=pkg.downloadPermissions||{};
+      renderAuthorizedDownloads(lastUnlockedRecord);
+      logSecurityEvent('download_unlock',{studentName:pkg.studentName||'',registerNo:reg});
+    })
+    .catch(function(err){
+      if(box){
+        if(err&&err.message==='BAD_PIN') box.innerHTML='<div class="message error">Şifre hatalı.</div>';
+        else box.innerHTML='<div class="message error">Şifre doğrulanamadı. Lütfen tekrar deneyin.</div>';
+      }
+    });
+}
 function runPdfAction(value, record){
   if(!value || !record) return;
   if(value === 'diploma-tr') downloadPDF(record,'tr');
@@ -1096,11 +1241,12 @@ function runPdfAction(value, record){
 }
 function handlePublicPdfMenu(sel){
   var value = sel.value; sel.selectedIndex = 0;
-  runPdfAction(value, lastSearchedRecord);
+  runPdfAction(value, lastUnlockedRecord);
 }
 function handlePublicDocumentPdfMenu(sel, docIndex){
   var value = sel.value; sel.selectedIndex = 0;
-  runPdfAction(value, recordForDocument(lastSearchedRecord, docIndex));
+  if(!lastUnlockedRecord) return;
+  runPdfAction(value, recordForDocument(lastUnlockedRecord, docIndex));
 }
 function handlePublicAllDocumentsMenu(sel){
   var raw = sel.value;
@@ -1110,7 +1256,8 @@ function handlePublicAllDocumentsMenu(sel){
   var docIndex = parseInt(parts[0],10);
   var action = parts[1] || '';
   if(isNaN(docIndex) || !action) return;
-  runPdfAction(action, recordForDocument(lastSearchedRecord, docIndex));
+  if(!lastUnlockedRecord) return;
+  runPdfAction(action, recordForDocument(lastUnlockedRecord, docIndex));
 }
 
 function handleAdminPdfMenu(sel, index){
@@ -1562,13 +1709,26 @@ async function loadAllDiplomas() {
                     }
                 });
             }
-            // Faal Instructor / Representative kayıtlarını web diziniyle otomatik eşitle.
-            // Böylece eski kayıtlar da yönetici paneli açıldığında publicInstructors'a taşınır;
-            // pasif kayıtlar ise dizinden kaldırılır.
-            await Promise.all(diplomaData.map(function(record){
-                return syncPublicInstructor(record).catch(function(err){
-                    console.warn('Web profili eşitlenemedi:', record && record.registerNo, err);
-                });
+            // Eski kayıtları yeni güvenli öğrenci erişim modeline geçir:
+            // 5 haneli PIN üret, özel kayda yaz, public özet + PIN korumalı indirme paketini eşitle.
+            await Promise.all(diplomaData.map(async function(record){
+                try{
+                    var hadPin=/^\d{5}$/.test(String(record.accessPin||''));
+                    ensureAccessPin(record);
+                    if(!record.downloadPermissions || typeof record.downloadPermissions!=='object'){
+                        record.downloadPermissions={registryInfo:false,documents:[]};
+                    }
+                    if(!hadPin){
+                        await adminFetch('/diplomaData/'+encodeURIComponent(record.registerNo)+'.json',{
+                            method:'PATCH',
+                            headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify({accessPin:record.accessPin,downloadPermissions:record.downloadPermissions})
+                        });
+                    }
+                    await Promise.all([syncPublicInstructor(record),syncStudentAccess(record)]);
+                }catch(err){
+                    console.warn('Öğrenci erişimi eşitlenemedi:', record && record.registerNo, err);
+                }
             }));
             filterDiplomas();
         } catch (error) {
@@ -1910,10 +2070,14 @@ function addDiploma(){
       publicInstructor:publicInstructor,
       publicRole:publicRole,
       publicRoles:publicRoles,
-      status:old.status || 'faal'
+      status:old.status || 'faal',
+      accessPin:old.accessPin || '',
+      downloadPermissions:old.downloadPermissions || {registryInfo:false,documents:[]},
+      webPortraitUrl:old.webPortraitUrl || ''
     };
+    ensureAccessPin(record);
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
-    msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
+    msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName+'<br>Öğrenci şifresi: <strong>'+record.accessPin+'</strong>';
 
   } else {
     // Yeni kişi = yeni sicil. Aynı isim varsa yanlışlıkla ikinci sicil açmayı engelle.
@@ -1935,16 +2099,18 @@ function addDiploma(){
     record = {
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
-      country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal'
+      country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal',
+      accessPin:'', downloadPermissions:{registryInfo:false,documents:[]}
     };
+    ensureAccessPin(record);
     diplomaData.push(record);
-    msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
+    msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName+'<br>Öğrenci şifresi: <strong>'+record.accessPin+'</strong>';
   }
 
   adminFetch('/diplomaData/' + registerNo + '.json', {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
   }).then(function(){
-    return syncPublicInstructor(record);
+    return Promise.all([syncPublicInstructor(record),syncStudentAccess(record)]);
   }).then(function(){
     filterDiplomas();
     var needsPortrait=publicRoles.length && currentPhotoData && !currentWebPortraitData;
@@ -1973,7 +2139,46 @@ function addDiploma(){
 function toggleStatus(index){
   var d = diplomaData[index];
   d.status = isInactiveStatus(d.status) ? 'faal' : 'faal_olmayan';
-  adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)}).then(function(){ return syncPublicInstructor(d); }).then(function(){ filterDiplomas(); }).catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
+  adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)})
+    .then(function(){ return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]); })
+    .then(function(){ filterDiplomas(); })
+    .catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
+}
+function setDownloadPermission(index,kind,docIndex,enabled){
+  var d=diplomaData[index]; if(!d) return;
+  var perms=getDownloadPermissions(d);
+  if(kind==='registry'){
+    perms.registryInfo=enabled===true;
+  }else if(kind==='document'){
+    docIndex=Number(docIndex);
+    var arr=perms.documents.filter(function(x){return x!==docIndex;});
+    if(enabled===true) arr.push(docIndex);
+    arr.sort(function(a,b){return a-b;});
+    perms.documents=arr;
+  }
+  d.downloadPermissions=perms;
+  adminFetch('/diplomaData/'+encodeURIComponent(d.registerNo)+'/downloadPermissions.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(perms)
+  }).then(function(){return syncStudentAccess(d);})
+    .then(function(){filterDiplomas();})
+    .catch(function(){alert(t('msgSaveError'));});
+}
+function regenerateAccessPin(index){
+  var d=diplomaData[index]; if(!d) return;
+  var oldPin=String(d.accessPin||'');
+  var next;
+  do{ next=generateAccessPin(); }while(diplomaData.some(function(x,j){return j!==index&&String(x.accessPin||'')===next;}));
+  d.accessPin=next;
+  var reg=encodeURIComponent(d.registerNo);
+  adminFetch('/diplomaData/'+reg+'/accessPin.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
+  }).then(function(){
+    if(/^\d{5}$/.test(oldPin)){
+      return adminFetch('/downloadPackages/'+reg+'/'+oldPin+'.json',{method:'DELETE'});
+    }
+  }).then(function(){return syncStudentAccess(d);})
+    .then(function(){filterDiplomas();alert('Yeni öğrenci şifresi: '+next);})
+    .catch(function(){alert(t('msgSaveError'));});
 }
 function filterDiplomas(){
   var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
@@ -2035,6 +2240,14 @@ function renderDiplomaList(filtered, isFiltering){
     }
     var registryMenu = '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')">' +
       '<option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — Tüm Seviyeler</option></select>';
+    var perms=getDownloadPermissions(d);
+    var permissionHtml='<div style="margin-top:10px;padding:10px;border:1px solid #303034;background:#0b0b0c;">'+
+      '<div style="font-weight:800;color:#fff;margin-bottom:6px;">Öğrenci İndirme Yetkileri</div>'+
+      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF</label>';
+    docs.forEach(function(x,di){
+      permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(di)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+di+',this.checked)"> '+documentMenuLabel(x)+'</label>';
+    });
+    permissionHtml+='</div>';
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -2052,7 +2265,9 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
+          '<p><strong>Öğrenci Şifresi:</strong> <span style="font-family:monospace;font-size:17px;color:#fff;">'+ensureAccessPin(d)+'</span> <button type="button" class="btn btn-secondary btn-small" onclick="regenerateAccessPin('+i+')">Yeni Şifre</button></p>' +
           '<p><strong>Web Eğitmen / Temsilci Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
+          permissionHtml +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
@@ -2078,7 +2293,13 @@ function toggleDetails(i){
 function deleteDiploma(i){
   var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
-    adminFetch('/diplomaData/' + d.registerNo + '.json', {method:'DELETE'}).then(function(){ return adminFetch('/publicInstructors/' + encodeURIComponent(d.registerNo) + '.json',{method:'DELETE'}); }).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
+    var reg=encodeURIComponent(d.registerNo);
+    Promise.all([
+      adminFetch('/diplomaData/'+reg+'.json',{method:'DELETE'}),
+      adminFetch('/publicDiplomaData/'+reg+'.json',{method:'DELETE'}),
+      adminFetch('/downloadPackages/'+reg+'.json',{method:'DELETE'}),
+      adminFetch('/publicInstructors/'+reg+'.json',{method:'DELETE'})
+    ]).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
 var securityLogsVisible = false;
