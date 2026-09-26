@@ -4,9 +4,20 @@
     ".write": false,
     "diplomaData": {
       ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
+    },
+    "publicDiplomaData": {
       ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",
       "$registerNo": {
         ".read": true
+      }
+    },
+    "downloadPackages": {
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      "$registerNo": {
+        "$pin": {
+          ".read": true
+        }
       }
     },
     "publicInstructors": {
