@@ -1567,11 +1567,11 @@ function downloadPDF(record, lang){
     // Sadece öğrenciye ait değişken alanlar PDF üzerine yazılır.
     addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,95.6,{fontSize:26,bold:true,family:'Arial'});
     addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,124.0,{fontSize:19,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.registerNo||''),38.5,145.2,{fontSize:15,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.joinDate||''),38.5,159.3,{fontSize:14,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.examDate||''),38.5,177.6,{fontSize:14,bold:true,family:'Arial'});
-    if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),148.5,166.6,{fontSize:14,bold:true,family:'Arial'});
-    if(qr) doc.addImage(qr,'PNG',234.0,116.5,42.0,42.0);
+    addPdfUnicodeText(doc,String(d.registerNo||''),38.5,132.0,{fontSize:13.5,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.joinDate||''),38.5,153.2,{fontSize:13,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.examDate||''),38.5,174.2,{fontSize:13,bold:true,family:'Arial'});
+    if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),148.5,164.2,{fontSize:13,bold:true,family:'Arial'});
+    if(qr) doc.addImage(qr,'PNG',230.5,112.0,39.0,39.0);
     doc.save('diploma-'+d.registerNo+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'general_template'});
   }).catch(function(err){ alert('PDF oluşturulamadı: '+err.message); });
