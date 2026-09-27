@@ -1713,9 +1713,11 @@ async function loadAllDiplomas() {
                     }
                 });
             }
-            // Eski kayıtları yeni güvenli öğrenci erişim modeline geçir:
-            // 5 haneli PIN üret, özel kayda yaz, public özet + PIN korumalı indirme paketini eşitle.
-            await Promise.all(diplomaData.map(async function(record){
+            // Listeyi önce hemen göster; arka plan eşitlemesi listeyi bekletmesin.
+            filterDiplomas();
+
+            // Eski kayıtları yeni güvenli öğrenci erişim modeline arka planda eşitle.
+            Promise.all(diplomaData.map(async function(record){
                 try{
                     var hadPin=/^\d{5}$/.test(String(record.accessPin||''));
                     ensureAccessPin(record);
@@ -1733,8 +1735,9 @@ async function loadAllDiplomas() {
                 }catch(err){
                     console.warn('Öğrenci erişimi eşitlenemedi:', record && record.registerNo, err);
                 }
-            }));
-            filterDiplomas();
+            })).catch(function(err){
+                console.warn('Arka plan öğrenci erişim eşitlemesi tamamlanamadı:', err);
+            });
         } catch (error) {
             console.error('Kayıtlar yüklenemedi:', error);
             diplomaData = [];
