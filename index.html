@@ -1558,22 +1558,19 @@ function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
-  var logoPromise=prepareLogoBase64().catch(function(){return false;});
-  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise,logoPromise]).then(function(parts){
-    var qr=parts[0],template=parts[1],logo=parts[2],jsPDF=window.jspdf.jsPDF;
+  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
+    var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
-    // diploma-genel.png: 1536x1024 şablona göre kalibre edilmiş A4 koordinatları.
-    // Logo oranı korunarak sol üst amblemin üzerine yerleşir.
-    if(logo){ try{ doc.addImage(logo,'PNG',15.5,10.5,45.0,45.0); }catch(e){} }
-    // Kutuların yatay/dikey merkezleri: isim ve seviye sayfa merkezinde; sol bilgi alanları kendi kutularında ortalı.
-    addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,94.8,{fontSize:26,bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,124.5,{fontSize:20,bold:true,family:'Arial'});
+    // diploma-genel.png boş ana şablondur; logo ve sabit metinler şablonun parçasıdır.
+    // Sadece öğrenciye ait değişken alanlar PDF üzerine yazılır.
+    addPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,95.6,{fontSize:26,bold:true,family:'Arial'});
+    addPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,124.0,{fontSize:19,bold:true,family:'Arial'});
     addPdfUnicodeText(doc,String(d.registerNo||''),38.5,145.2,{fontSize:15,bold:true,family:'Arial'});
     addPdfUnicodeText(doc,String(d.joinDate||''),38.5,159.3,{fontSize:14,bold:true,family:'Arial'});
     addPdfUnicodeText(doc,String(d.examDate||''),38.5,177.6,{fontSize:14,bold:true,family:'Arial'});
-    if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),141.0,166.0,{fontSize:14,bold:true,family:'Arial'});
+    if(d.instructorName) addPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),148.5,166.6,{fontSize:14,bold:true,family:'Arial'});
     if(qr) doc.addImage(qr,'PNG',234.0,116.5,42.0,42.0);
     doc.save('diploma-'+d.registerNo+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'general_template'});
