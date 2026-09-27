@@ -9,7 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;}
@@ -363,7 +362,6 @@ var ADMIN_EMAIL = 'bulicet@gmail.com';
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
-var db = firebase.database();
 var googleProvider = new firebase.auth.GoogleAuthProvider();
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmaga.com.tr/register';
@@ -1560,8 +1558,7 @@ function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
-  var qrPromise=makeQrDataUrl(buildQrUrl(d.registerNo)).catch(function(){return null;});
-  Promise.all([qrPromise,templatePromise]).then(function(parts){
+  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
     var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
@@ -1659,8 +1656,13 @@ async function loadAllDiplomas() {
                 renderDiplomaList();
                 return;
             }
-            const snapshot = await db.ref('diplomaData').once('value');
-            const data = snapshot.val();
+            const token = await currentAdminUser.getIdToken(true);
+            const response = await fetch(`${FIREBASE_URL}/diplomaData.json?auth=${encodeURIComponent(token)}`);
+            const raw = await response.text();
+            if (!response.ok) {
+                throw new Error(`Firebase HTTP ${response.status}: ${raw}`);
+            }
+            const data = raw ? JSON.parse(raw) : null;
 
             diplomaData = [];
             if (data && typeof data === 'object') {
