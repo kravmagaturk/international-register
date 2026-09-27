@@ -1559,7 +1559,8 @@ function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
-  Promise.all([makeQrDataUrl(buildQrUrl(d.registerNo)),templatePromise]).then(function(parts){
+  var qrPromise=makeQrDataUrl(buildQrUrl(d.registerNo)).catch(function(){return null;});
+  Promise.all([qrPromise,templatePromise]).then(function(parts){
     var qr=parts[0],template=parts[1],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
