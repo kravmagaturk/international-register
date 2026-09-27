@@ -362,6 +362,7 @@ var ADMIN_EMAIL = 'bulicet@gmail.com';
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
+var db = firebase.database();
 var googleProvider = new firebase.auth.GoogleAuthProvider();
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmaga.com.tr/register';
@@ -1656,13 +1657,8 @@ async function loadAllDiplomas() {
                 renderDiplomaList();
                 return;
             }
-            const token = await currentAdminUser.getIdToken(true);
-            const response = await fetch(`${FIREBASE_URL}/diplomaData.json?auth=${encodeURIComponent(token)}`);
-            const raw = await response.text();
-            if (!response.ok) {
-                throw new Error(`Firebase HTTP ${response.status}: ${raw}`);
-            }
-            const data = raw ? JSON.parse(raw) : null;
+            const snapshot = await db.ref('diplomaData').once('value');
+            const data = snapshot.val();
 
             diplomaData = [];
             if (data && typeof data === 'object') {
