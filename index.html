@@ -362,7 +362,6 @@ var ADMIN_EMAIL = 'bulicet@gmail.com';
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
-var googleProvider = new firebase.auth.GoogleAuthProvider();
 var currentAdminUser = null;
 var SITE_URL = 'https://kravmaga.com.tr/register';
 
@@ -1634,6 +1633,7 @@ function showLoginForm(message){
   if(message) document.getElementById('loginMessage').innerHTML='<div class="message error">'+message+'</div>';
 }
 function adminLogin(){
+  var googleProvider = new firebase.auth.GoogleAuthProvider();
   var btn=document.getElementById('login-btn');
   btn.disabled=true; btn.textContent='Google açılıyor...';
   auth.signInWithPopup(googleProvider).then(function(result){
