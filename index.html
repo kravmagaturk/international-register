@@ -221,11 +221,11 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Çizimi:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Onaylanan ücretsiz profil çizimini JPG, PNG veya WebP olarak seçin. Seçilen görsel sicile bağlanır; ücretli API kullanılmaz.</div>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Öğrenci fotoğrafından çizimi oluşturun veya onaylanan JPG, PNG ya da WebP dosyasını seçin. Hazır çizim onaydan sonra sicile bağlanır.</div>
             <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
             <div id="chatgptPortraitState" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:7px;font-size:13px;font-weight:800;"></div>
             <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">Onaylanan çizimi seçtiğinizde burada önizleme görünür.</div>
-            <button type="button" class="btn btn-secondary" onclick="requestChatGPTPortrait()" style="background:#8a5a00;border-color:#8a5a00;color:#fff;margin:0 7px 10px 0;">🎨 Çizim Talebi Oluştur</button>
+            <button type="button" class="btn btn-secondary" onclick="requestChatGPTPortrait()" style="background:#8a5a00;border-color:#8a5a00;color:#fff;margin:0 7px 10px 0;">🎨 Çizimi Oluştur</button>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Web çizimi hazır.</div>
@@ -618,6 +618,7 @@ function openMasterSupport(){
 
 const PORTRAIT_ASSET_BASE='portrait-assets/approved/';
 const SOURCE_PHOTO_ASSET_BASE='portrait-assets/source/';
+const PORTRAIT_API_URL='https://kravmaga-portrait.bulicet.workers.dev';
 function approvedPortraitAssetUrl(reg){return PORTRAIT_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
 function sourcePhotoAssetUrl(reg){return SOURCE_PHOTO_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
 function watchApprovedPortraitAsset(reg){
@@ -669,9 +670,9 @@ function requestChatGPTPortrait(){
     status:'waiting',
     requestedAt:new Date().toISOString()
   };
-  setPortraitState('working','Çizim talebi kaydediliyor — '+reg);
+  setPortraitState('working','Çizim oluşturuluyor — '+reg);
   var statusEl=document.getElementById('webPortraitAiStatus');
-  if(statusEl){statusEl.textContent='Çizim talebi güvenli yönetici kuyruğuna kaydediliyor...';statusEl.style.color='#0d47a1';}
+  if(statusEl){statusEl.textContent='Öğrenci fotoğrafı güvenli çizim servisine gönderiliyor...';statusEl.style.color='#0d47a1';}
   return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)
   }).then(function(){
@@ -681,14 +682,41 @@ function requestChatGPTPortrait(){
       method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)
     }).then(function(){
       diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});
-      setPortraitState('waiting','Çizim talebi oluşturuldu — '+reg);
-      if(statusEl){statusEl.textContent='✓ Talep oluşturuldu. Çizim hazır olduğunda bu ekran otomatik algılar ve onayınıza sunar.';statusEl.style.color='#8a5a00';}
-      watchApprovedPortraitAsset(reg);
-      return true;
+      if(!currentAdminUser) throw new Error('Yönetici oturumu bulunamadı.');
+      return currentAdminUser.getIdToken().then(function(token){
+        return fetch(PORTRAIT_API_URL,{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+          body:JSON.stringify({image:source,registerNo:reg,studentName:request.studentName,prompt:request.prompt})
+        });
+      }).then(function(res){
+        return res.json().catch(function(){return {};}).then(function(data){
+          if(!res.ok || !data || !(data.webPortrait || data.image)) throw new Error((data&&data.error)||('Çizim servisi HTTP '+res.status));
+          return data.webPortrait || data.image;
+        });
+      }).then(function(generatedPortrait){
+        currentWebPortraitData=generatedPortrait;
+        var preview=document.getElementById('webPortraitPreviewImg');
+        if(preview) preview.src=generatedPortrait;
+        var previewBox=document.getElementById('webPortraitPreviewBox');
+        if(previewBox) previewBox.classList.remove('hidden');
+        var readyAt=new Date().toISOString();
+        return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
+          method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approval',generatedAt:readyAt})
+        }).then(function(){
+          setPortraitState('approval','Çizim hazır — onayınızı bekliyor — '+reg);
+          if(statusEl){statusEl.textContent='✓ Çizim hazır. Kontrol edip “Çizimi Onayla” düğmesine basın.';statusEl.style.color='#2e7d32';}
+          return true;
+        });
+      });
     });
   }).catch(function(e){
-    setPortraitState('error','Çizim talebi kaydedilemedi: '+(e.message||e));
-    if(statusEl){statusEl.textContent='⚠️ Talep kaydedilemedi. Yönetici oturumunu kontrol edip yeniden deneyin.';statusEl.style.color='#b71c1c';}
+    var errorText=(e&&e.message)||String(e);
+    setPortraitState('error','Çizim oluşturulamadı: '+errorText);
+    if(statusEl){statusEl.textContent='⚠️ Çizim oluşturulamadı. Tekrar deneyin: '+errorText;statusEl.style.color='#b71c1c';}
+    adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'error',error:errorText,failedAt:new Date().toISOString()})
+    }).catch(function(){});
     return false;
   });
 }
