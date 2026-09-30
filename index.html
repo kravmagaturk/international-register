@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga Türk International Kayıt Sorgulama</title>
-<!-- v60: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
+<!-- v61: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -947,6 +947,7 @@ function buildDownloadPackage(record){
 function getDownloadPermissions(record){
   var p=(record&&record.downloadPermissions)||{};
   return {
+    onlineEducation:p.onlineEducation===true || (p.onlineEducation===undefined && record&&record.onlineEducationAccess===true),
     registryInfo:p.registryInfo===true,
     documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
   };
@@ -2038,7 +2039,7 @@ function addDiploma(){
       publicRoles:publicRoles,
       status:old.status || 'faal',
       accessPin:old.accessPin || '',
-      downloadPermissions:old.downloadPermissions || {registryInfo:false,documents:[]},
+      downloadPermissions:old.downloadPermissions || {onlineEducation:false,registryInfo:false,documents:[]},
       webPortraitUrl:old.webPortraitUrl || ''
     };
     ensureAccessPin(record);
@@ -2066,7 +2067,7 @@ function addDiploma(){
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
       country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal',
-      accessPin:'', downloadPermissions:{registryInfo:false,documents:[]}
+      accessPin:'', downloadPermissions:{onlineEducation:false,registryInfo:false,documents:[]}
     };
     ensureAccessPin(record);
     diplomaData.push(record);
@@ -2151,16 +2152,21 @@ function setOnlineEducationAccess(index,enabled,input){
     if(input) input.checked=!next;
     return;
   }
-  var previous=d.onlineEducationAccess===true;
+  var previousAccess=d.onlineEducationAccess===true;
+  var previousPermissions=Object.assign({},d.downloadPermissions||{});
+  var perms=getDownloadPermissions(d);
+  perms.onlineEducation=next;
   d.onlineEducationAccess=next;
+  d.downloadPermissions=perms;
   var reg=encodeURIComponent(d.registerNo);
-  adminFetch('/diplomaData/'+reg+'/onlineEducationAccess.json',{
-    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
+  adminFetch('/diplomaData/'+reg+'.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)
   }).then(function(){return syncStudentAccess(d);})
     .then(function(){filterDiplomas();})
     .catch(function(){
-      d.onlineEducationAccess=previous;
-      if(input) input.checked=previous;
+      d.onlineEducationAccess=previousAccess;
+      d.downloadPermissions=previousPermissions;
+      if(input) input.checked=previousPermissions.onlineEducation===true;
       alert(t('msgSaveError'));
       filterDiplomas();
     });
@@ -2282,7 +2288,7 @@ function renderDiplomaList(filtered, isFiltering){
     var permissionHtml='<div style="margin-top:10px;padding:12px;border:1px solid #303034;background:#0b0b0c;">'+
       '<div style="font-weight:800;color:#fff;margin-bottom:8px;">Yetkilendirme</div>'+
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'Açık':'Kapalı')+'</label>'+
-      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.onlineEducationAccess===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(d.onlineEducationAccess===true?'Açık':'Kapalı')+'</label>'+
+      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'Açık':'Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'Aktif':'Faal Değil')+'</label>'+
       '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>'+
       '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF</label>';
