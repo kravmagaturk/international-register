@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga Türk International Kayıt Sorgulama</title>
-<!-- v59: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
+<!-- v60: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1924,7 +1924,7 @@ function syncPublicInstructor(record){
     var legacyRole=inferPublicRole(record); if(legacyRole) roles=[legacyRole];
   }
   var role=roles[0] || '';
-  var shouldPublish=roles.length>0;
+  var shouldPublish=record.publicInstructor===true && roles.length>0;
   var path='/publicInstructors/'+encodeURIComponent(record.registerNo)+'.json';
   if(!shouldPublish){
     return adminFetch(path,{method:'DELETE'}).catch(function(){});
@@ -2110,6 +2110,39 @@ function toggleStatus(index){
     .then(function(){ filterDiplomas(); })
     .catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
+function setPublicInstructorAccess(index,enabled,input){
+  var d=diplomaData[index]; if(!d) return;
+  var previous=d.publicInstructor===true;
+  var next=enabled===true;
+  d.publicInstructor=next;
+  var reg=encodeURIComponent(d.registerNo);
+  adminFetch('/diplomaData/'+reg+'/publicInstructor.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
+  }).then(function(){return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]);})
+    .then(function(){filterDiplomas();})
+    .catch(function(){
+      d.publicInstructor=previous;
+      if(input) input.checked=previous;
+      alert(t('msgSaveError'));
+      filterDiplomas();
+    });
+}
+function setStudentActiveAccess(index,enabled,input){
+  var d=diplomaData[index]; if(!d) return;
+  var previous=d.status||'faal';
+  var next=enabled===true;
+  d.status=next?'faal':'faal_olmayan';
+  adminFetch('/diplomaData/'+encodeURIComponent(d.registerNo)+'.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)
+  }).then(function(){return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]);})
+    .then(function(){filterDiplomas();})
+    .catch(function(){
+      d.status=previous;
+      if(input) input.checked=!isInactiveStatus(previous);
+      alert(t('msgSaveError'));
+      filterDiplomas();
+    });
+}
 function setOnlineEducationAccess(index,enabled,input){
   var d=diplomaData[index]; if(!d) return;
   var next=enabled===true;
@@ -2229,11 +2262,32 @@ function renderDiplomaList(filtered, isFiltering){
     var registryMenu = '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')">' +
       '<option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — Tüm Seviyeler</option></select>';
     var perms=getDownloadPermissions(d);
-    var permissionHtml='<div style="margin-top:10px;padding:10px;border:1px solid #303034;background:#0b0b0c;">'+
-      '<div style="font-weight:800;color:#fff;margin-bottom:6px;">Öğrenci İndirme Yetkileri</div>'+
-      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF</label>';
+    var permissionDocs=[];
+    var permissionKeys={};
     docs.forEach(function(x,di){
-      permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(di)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+di+',this.checked)"> '+documentMenuLabel(x)+'</label>';
+      var label=documentMenuLabel(x);
+      var words=String(label||'').trim().replace(/\s+/g,' ').split(' ');
+      var normalizedWords=words.filter(function(word,wi){return wi===0 || word.toLocaleLowerCase('tr-TR')!==words[wi-1].toLocaleLowerCase('tr-TR');});
+      var key=normalizedWords.join(' ').toLocaleLowerCase('tr-TR');
+      var item={doc:x,index:di,label:label};
+      if(permissionKeys[key]===undefined){
+        permissionKeys[key]=permissionDocs.length;
+        permissionDocs.push(item);
+      }else{
+        var existingIndex=permissionKeys[key];
+        if(label.length<permissionDocs[existingIndex].label.length) permissionDocs[existingIndex]=item;
+      }
+    });
+    var isActive=!isInactiveStatus(d.status);
+    var permissionHtml='<div style="margin-top:10px;padding:12px;border:1px solid #303034;background:#0b0b0c;">'+
+      '<div style="font-weight:800;color:#fff;margin-bottom:8px;">Yetkilendirme</div>'+
+      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'Açık':'Kapalı')+'</label>'+
+      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.onlineEducationAccess===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(d.onlineEducationAccess===true?'Açık':'Kapalı')+'</label>'+
+      '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'Aktif':'Faal Değil')+'</label>'+
+      '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>'+
+      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF</label>';
+    permissionDocs.forEach(function(item){
+      permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+'</label>';
     });
     permissionHtml+='</div>';
     var certButtons = '';
@@ -2254,10 +2308,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
           '<p><strong>Öğrenci Şifresi:</strong> <span style="font-family:monospace;font-size:17px;color:#fff;">'+ensureAccessPin(d)+'</span> <button type="button" class="btn btn-secondary btn-small" onclick="regenerateAccessPin('+i+')">Yeni Şifre</button></p>' +
-          '<p><strong>Web Eğitmen / Temsilci Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
-          '<p><strong>Online Eğitim Erişimi:</strong> <label style="display:inline-flex;align-items:center;gap:7px;margin-left:6px;cursor:pointer;"><input type="checkbox" style="width:auto;" '+(d.onlineEducationAccess===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> '+(d.onlineEducationAccess===true?'🟢 Açık':'⚪ Kapalı')+'</label></p>' +
           permissionHtml +
-          '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
