@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga Türk International Kayıt Sorgulama</title>
-<!-- v58: online eğitim erişim yetkisi + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
+<!-- v59: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -2118,15 +2118,15 @@ function setOnlineEducationAccess(index,enabled,input){
     if(input) input.checked=!next;
     return;
   }
-  var previous=d.onlineEducationAuthorized===true;
-  d.onlineEducationAuthorized=next;
+  var previous=d.onlineEducationAccess===true;
+  d.onlineEducationAccess=next;
   var reg=encodeURIComponent(d.registerNo);
-  adminFetch('/diplomaData/'+reg+'/onlineEducationAuthorized.json',{
+  adminFetch('/diplomaData/'+reg+'/onlineEducationAccess.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
   }).then(function(){return syncStudentAccess(d);})
     .then(function(){filterDiplomas();})
     .catch(function(){
-      d.onlineEducationAuthorized=previous;
+      d.onlineEducationAccess=previous;
       if(input) input.checked=previous;
       alert(t('msgSaveError'));
       filterDiplomas();
@@ -2255,7 +2255,7 @@ function renderDiplomaList(filtered, isFiltering){
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
           '<p><strong>Öğrenci Şifresi:</strong> <span style="font-family:monospace;font-size:17px;color:#fff;">'+ensureAccessPin(d)+'</span> <button type="button" class="btn btn-secondary btn-small" onclick="regenerateAccessPin('+i+')">Yeni Şifre</button></p>' +
           '<p><strong>Web Eğitmen / Temsilci Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
-          '<p><strong>Online Eğitim Erişimi:</strong> <label style="display:inline-flex;align-items:center;gap:7px;margin-left:6px;cursor:pointer;"><input type="checkbox" style="width:auto;" '+(d.onlineEducationAuthorized===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> '+(d.onlineEducationAuthorized===true?'🟢 Açık':'⚪ Kapalı')+'</label></p>' +
+          '<p><strong>Online Eğitim Erişimi:</strong> <label style="display:inline-flex;align-items:center;gap:7px;margin-left:6px;cursor:pointer;"><input type="checkbox" style="width:auto;" '+(d.onlineEducationAccess===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> '+(d.onlineEducationAccess===true?'🟢 Açık':'⚪ Kapalı')+'</label></p>' +
           permissionHtml +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
