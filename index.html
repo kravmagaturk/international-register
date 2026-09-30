@@ -1315,6 +1315,31 @@ function prepareRegistryPortrait(photoData){
   });
 }
 
+function prepareDiplomaSquarePhoto(photoData){
+  return new Promise(function(resolve){
+    if(!photoData){ resolve(false); return; }
+    try{
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var sw=img.naturalWidth||img.width,sh=img.naturalHeight||img.height;
+          if(!sw||!sh){resolve(false);return;}
+          var sx=0,sy=0,cw=sw,ch=sh;
+          if(sw/sh>1.25){
+            sx=sw*(8/130); sy=sh*(20/82); cw=sw*(34/130); ch=sh*(34/82);
+          }
+          var side=Math.min(cw,ch);
+          sx+=(cw-side)/2; sy+=(ch-side)/2;
+          var canvas=document.createElement('canvas'); canvas.width=800; canvas.height=800;
+          canvas.getContext('2d').drawImage(img,sx,sy,side,side,0,0,800,800);
+          resolve(canvas.toDataURL('image/jpeg',0.92));
+        }catch(e){resolve(false);}
+      };
+      img.onerror=function(){resolve(false);}; img.src=photoData;
+    }catch(e){resolve(false);}
+  });
+}
+
 function downloadRegistryInfoPDF(record){
   if(!record) return;
   var d=record, jsPDF=window.jspdf.jsPDF;
@@ -1433,7 +1458,7 @@ function loadTemplate(kind){
   var files=TEMPLATE_FILES[kind]||[];
   function attempt(i){
     if(i>=files.length) throw new Error('PNG sablonu bulunamadi: '+files.join(' / '));
-    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260930-diploma2';
+    var u=files[i]+(files[i].indexOf('?')>=0?'&':'?')+'v=20260930-diploma3';
     return loadImageAsDataURL(u).catch(function(){ return attempt(i+1); });
   }
   return attempt(0).then(function(data){templateCache[kind]=data; return data;});
@@ -1571,43 +1596,24 @@ function drawCertificateFrame(doc,W,H,logo){
 
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
-  var d=record,isTR=lang==='tr';
+  var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
   var qrPromise=makeQrDataUrl(buildQrUrl(d.registerNo)).catch(function(){return null;});
-  var portraitPromise=prepareRegistryPortrait(d.webPortrait || d.photo).catch(function(){return false;});
+  var portraitPromise=prepareDiplomaSquarePhoto(d.webPortrait || d.photo).catch(function(){return false;});
   Promise.all([qrPromise,templatePromise,portraitPromise]).then(function(parts){
     var qr=parts[0],template=parts[1],portrait=parts[2],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
-    doc.setFillColor(245,241,232); doc.setDrawColor(184,121,0); doc.setLineWidth(0.6);
-    doc.roundedRect(20.0,91.0,38.0,50.7,1.8,1.8,'FD');
-    if(portrait){ try{ doc.addImage(portrait,'JPEG',20.0,91.0,38.0,50.7); }catch(e){} }
-
-    addPdfUnicodeText(doc,isTR?'Bu diploma':'This diploma certifies that',148.5,82.0,{fontSize:13,family:'Arial'});
-    addFittedPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),148.5,96.5,132.0,27,18,{bold:true,family:'Arial'});
-    doc.setDrawColor(184,121,0); doc.setLineWidth(0.45); doc.line(84.0,102.0,213.0,102.0);
-    addPdfUnicodeText(doc,isTR?'Krav Maga eğitim gerekliliklerini başarıyla tamamlayarak':'has successfully completed the Krav Maga requirements',148.5,110.0,{fontSize:11,family:'Arial'});
-    addFittedPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),148.5,123.0,112.0,21,15,{bold:true,family:'Arial'});
-    addPdfUnicodeText(doc,isTR?'BRANŞ / SEVİYE':'BRANCH / LEVEL',148.5,129.5,{fontSize:8,bold:true,family:'Arial'});
-
-    addPdfUnicodeText(doc,isTR?'SİCİL NUMARASI':'REGISTER NUMBER',39.0,149.0,{fontSize:8,bold:true,family:'Arial'});
-    addFittedPdfUnicodeText(doc,String(d.registerNo||''),39.0,157.0,38.0,13,9,{bold:true,family:'Arial'});
-
-    doc.setDrawColor(25,25,25); doc.setLineWidth(0.3); doc.line(115.0,167.0,182.0,167.0);
-    if(d.instructorName){
-      addFittedPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR')+(isTR?' - EĞİTMEN':' - INSTRUCTOR'),148.5,174.0,72.0,10,7.5,{bold:true,family:'Arial'});
-    }else{
-      addPdfUnicodeText(doc,isTR?'EĞİTMEN':'INSTRUCTOR',148.5,174.0,{fontSize:9,bold:true,family:'Arial'});
-    }
-
-    if(qr){
-      doc.setFillColor(255,255,255); doc.setDrawColor(184,121,0); doc.setLineWidth(0.5);
-      doc.roundedRect(245.0,123.0,35.0,35.0,1.5,1.5,'FD');
-      doc.addImage(qr,'PNG',247.0,125.0,31.0,31.0);
-      addPdfUnicodeText(doc,isTR?'DİPLOMA DOĞRULAMA':'VERIFY DIPLOMA',262.5,163.0,{fontSize:7,bold:true,family:'Arial'});
-    }
+    if(portrait){ try{ doc.addImage(portrait,'JPEG',24.5,86.5,36.0,36.0); }catch(e){} }
+    addFittedPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),146.5,95.6,124.0,25,16,{bold:true,family:'Arial'});
+    addFittedPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),146.5,124.0,90.0,19,13,{bold:true,family:'Arial'});
+    addFittedPdfUnicodeText(doc,String(d.registerNo||''),42.8,150.0,35.0,11,8,{bold:true,family:'Arial'});
+    addFittedPdfUnicodeText(doc,String(d.joinDate||''),42.8,163.0,35.0,10.5,8,{bold:true,family:'Arial'});
+    addFittedPdfUnicodeText(doc,String(d.examDate||''),42.8,177.8,35.0,10.5,8,{bold:true,family:'Arial'});
+    if(d.instructorName) addFittedPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),146.5,164.2,72.0,10,7.5,{bold:true,family:'Arial'});
+    if(qr) doc.addImage(qr,'PNG',238.0,126.5,25.0,25.0);
     doc.save('diploma-'+d.registerNo+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'general_template'});
   }).catch(function(err){ alert('PDF oluşturulamadı: '+err.message); });
