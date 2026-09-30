@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krav Maga Türk International Kayıt Sorgulama</title>
-<!-- v57: genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
+<!-- v58: online eğitim erişim yetkisi + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -2110,6 +2110,28 @@ function toggleStatus(index){
     .then(function(){ filterDiplomas(); })
     .catch(function(){ alert(t('msgSaveError')); filterDiplomas(); });
 }
+function setOnlineEducationAccess(index,enabled,input){
+  var d=diplomaData[index]; if(!d) return;
+  var next=enabled===true;
+  var action=next?'açmak':'kapatmak';
+  if(!confirm(d.studentName+' ('+d.registerNo+') için online eğitim erişimini '+action+' istiyor musunuz?')){
+    if(input) input.checked=!next;
+    return;
+  }
+  var previous=d.onlineEducationAuthorized===true;
+  d.onlineEducationAuthorized=next;
+  var reg=encodeURIComponent(d.registerNo);
+  adminFetch('/diplomaData/'+reg+'/onlineEducationAuthorized.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
+  }).then(function(){return syncStudentAccess(d);})
+    .then(function(){filterDiplomas();})
+    .catch(function(){
+      d.onlineEducationAuthorized=previous;
+      if(input) input.checked=previous;
+      alert(t('msgSaveError'));
+      filterDiplomas();
+    });
+}
 function setDownloadPermission(index,kind,docIndex,enabled){
   var d=diplomaData[index]; if(!d) return;
   var perms=getDownloadPermissions(d);
@@ -2233,6 +2255,7 @@ function renderDiplomaList(filtered, isFiltering){
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
           '<p><strong>Öğrenci Şifresi:</strong> <span style="font-family:monospace;font-size:17px;color:#fff;">'+ensureAccessPin(d)+'</span> <button type="button" class="btn btn-secondary btn-small" onclick="regenerateAccessPin('+i+')">Yeni Şifre</button></p>' +
           '<p><strong>Web Eğitmen / Temsilci Profili:</strong> '+(d.publicInstructor===true?'🟢 Açık':'⚪ Kapalı')+'</p>' +
+          '<p><strong>Online Eğitim Erişimi:</strong> <label style="display:inline-flex;align-items:center;gap:7px;margin-left:6px;cursor:pointer;"><input type="checkbox" style="width:auto;" '+(d.onlineEducationAuthorized===true?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> '+(d.onlineEducationAuthorized===true?'🟢 Açık':'⚪ Kapalı')+'</label></p>' +
           permissionHtml +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
