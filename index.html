@@ -1656,7 +1656,7 @@ function downloadPDF(record, lang){
     addFittedPdfUnicodeText(doc,String(d.registerNo||''),42.8,150.0,35.0,11,8,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.joinDate||''),42.8,163.0,35.0,10.5,8,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.examDate||''),42.8,177.8,35.0,10.5,8,{bold:true,family:'Arial'});
-    if(d.instructorName) addFittedPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),146.5,164.2,72.0,10,7.5,{bold:true,family:'Arial'});
+    if(d.instructorName) addFittedPdfUnicodeText(doc,String(d.instructorName).toLocaleUpperCase('tr-TR'),146.5,164.2,72.0,13,9.5,{bold:true,family:'Arial'});
     if(qr) doc.addImage(qr,'PNG',238.0,126.5,25.0,25.0);
     doc.save('diploma-'+d.registerNo+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,lang:lang,type:'general_template'});
