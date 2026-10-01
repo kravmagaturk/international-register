@@ -2410,9 +2410,18 @@ function renderDiplomaList(filtered, isFiltering){
       });
       documentMenus += '</select>';
     }
-    var registryMenu = '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')">' +
-      '<option value="">📋 Kayıt Bilgisi</option><option value="registry-info">Kayıt Bilgisi PDF</option></select>';
     var perms=getDownloadPermissions(d);
+    var registryMenu = '<details style="width:100%;min-width:190px;border:1px solid #38383d;background:#09090a;">'+
+      '<summary style="cursor:pointer;padding:9px 10px;font-weight:800;color:#fff;list-style:none;">📋 Kayıt Bilgisi ▾</summary>'+
+      '<div style="padding:6px 10px 10px;">'+
+        '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin:0 0 7px;" onclick="handleAdminPdfMenu({value:\'registry-info\',selectedIndex:0},'+i+')">Kayıt Bilgisi PDF</button>'+
+        '<label style="display:block;margin:5px 0 8px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> PDF Yetkisi — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>'+
+        REGISTRY_INFO_SECTIONS.map(function(section){
+          var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
+          return '<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registrySections.indexOf(section)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(perms.registrySections.indexOf(section)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
+        }).join('')+
+      '</div>'+
+    '</details>';
     var permissionDocs=[];
     var permissionKeys={};
     docs.forEach(function(x,di){
@@ -2435,19 +2444,7 @@ function renderDiplomaList(filtered, isFiltering){
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'🟢 Açık':'🔴 Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</label>'+
-      '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>'+
-      '<details style="margin:4px 0;border:1px solid #303034;background:#111113;">'+
-        '<summary style="cursor:pointer;padding:9px 10px;font-weight:800;color:#fff;list-style:none;">📋 Kayıt Bilgisi ▾</summary>'+
-        '<div style="padding:2px 10px 10px 10px;">'+
-          '<label style="display:block;margin:5px 0 8px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Kayıt Bilgisi PDF — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>'+
-          '<div style="margin:5px 0 4px 18px;padding:7px 9px;border-left:2px solid #444;">'+
-            REGISTRY_INFO_SECTIONS.map(function(section){
-              var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
-              return '<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registrySections.indexOf(section)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(perms.registrySections.indexOf(section)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
-            }).join('')+
-          '</div>'+
-        '</div>'+
-      '</details>';
+      '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>';
     permissionDocs.forEach(function(item){
       permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+' — '+(perms.documents.indexOf(item.index)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
     });
