@@ -1,3 +1,9 @@
-name = "kravmaga-portrait"
+﻿name = "kravmaga-portrait"
 main = "worker.js"
 compatibility_date = "2026-09-20"
+
+[ai]
+binding = "AI"
+
+[vars]
+FIREBASE_API_KEY = "AIzaSyAS8VB0ikbZXuhVQNzgn_ZbQWGXExijmKA"

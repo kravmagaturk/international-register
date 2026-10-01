@@ -4,27 +4,19 @@ const ALLOWED_ORIGINS = new Set([
   "https://kravmagaturk.github.io"
 ]);
 
-const OPENAI_MODEL = "gpt-image-2.5-sunburst";
-
-function isAllowedOrigin(origin) {
-  if (ALLOWED_ORIGINS.has(origin)) return true;
-  try {
-    const u = new URL(origin);
-    return u.protocol === "https:" && u.hostname === "kravmagaturk.github.io";
-  } catch {
-    return false;
-  }
-}
+const ADMIN_EMAIL = "bulicet@gmail.com";
+const AI_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 
 function corsHeaders(origin) {
   return {
-    "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? origin : "https://kravmagaturk.github.io",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://kravmagaturk.github.io",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
 }
+
 function json(data, status, origin) {
   return new Response(JSON.stringify(data), {
     status,
@@ -37,23 +29,47 @@ function json(data, status, origin) {
 }
 
 function base64ToBytes(base64) {
-  const binary = atob(base64.replace(/\s/g, ""));
+  const clean = base64.replace(/\s/g, "");
+  const binary = atob(clean);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
 
-function defaultPrompt(registerNo, studentName) {
-  return [
-    "Edit the supplied student photo into the official Krav Maga Turk academy portrait.",
-    "Keep exactly the same person and preserve facial identity, age, hairstyle, glasses, eye shape and recognizable facial features.",
-    "Chest-up professional portrait, black martial arts t-shirt, small 1948 Krav Maga Turk logo on the left chest.",
-    "Black and deep red brush-stroke background, realistic oil-paint texture, strong studio portrait lighting.",
-    "Do not copy the original background. Do not add another person, watermark, random text or extra logos.",
-    "Keep the face natural and recognizable; do not beautify into a different identity.",
-    registerNo ? "Registry reference: " + registerNo + "." : "",
-    studentName ? "Student: " + studentName + "." : ""
-  ].filter(Boolean).join(" ");
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function verifyFirebaseAdmin(idToken, env) {
+  if (!env.FIREBASE_API_KEY) throw new Error("FIREBASE_API_KEY secret is missing.");
+
+  const response = await fetch(
+    "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" +
+      encodeURIComponent(env.FIREBASE_API_KEY),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken })
+    }
+  );
+
+  if (!response.ok) return false;
+
+  const data = await response.json();
+  const email =
+    data &&
+    Array.isArray(data.users) &&
+    data.users[0] &&
+    data.users[0].email
+      ? String(data.users[0].email).toLowerCase()
+      : "";
+
+  return email === ADMIN_EMAIL;
 }
 
 export default {
@@ -61,92 +77,159 @@ export default {
     const origin = request.headers.get("Origin") || "";
 
     if (request.method === "OPTIONS") {
-      if (!isAllowedOrigin(origin)) return new Response(null, { status: 403 });
-      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+      if (!ALLOWED_ORIGINS.has(origin)) {
+        return new Response(null, { status: 403 });
+      }
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(origin)
+      });
     }
 
     if (request.method === "GET") {
-      return json({
-        ok: true,
-        service: "Krav Maga Turk OpenAI Portrait",
-        status: env.OPENAI_API_KEY ? "ready" : "needs_openai_api_key",
-        model: OPENAI_MODEL
-      }, 200, origin);
+      return json(
+        {
+          ok: true,
+          service: "Krav Maga Turk Portrait AI",
+          status: "ready",
+          authentication: "Firebase Admin",
+          model: AI_MODEL
+        },
+        200,
+        origin
+      );
     }
 
     if (request.method !== "POST") {
       return json({ ok: false, error: "Method not allowed." }, 405, origin);
     }
 
-    if (!isAllowedOrigin(origin)) {
+    if (!ALLOWED_ORIGINS.has(origin)) {
       return json({ ok: false, error: "Origin not allowed." }, 403, origin);
     }
 
-    if (!env.OPENAI_API_KEY) {
-      return json({ ok: false, error: "OpenAI API key is not configured." }, 503, origin);
-    }
-
     try {
-      const body = await request.json();
+      const authorization = request.headers.get("Authorization") || "";
+      const idToken = authorization.startsWith("Bearer ")
+        ? authorization.slice(7).trim()
+        : "";
+
+      if (!idToken) {
+        return json({ ok: false, error: "Login required." }, 401, origin);
+      }
+
+      const isAdmin = await verifyFirebaseAdmin(idToken, env);
+      if (!isAdmin) {
+        return json({ ok: false, error: "Unauthorized." }, 403, origin);
+      }
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ ok: false, error: "Invalid JSON." }, 400, origin);
+      }
+
       const imageData = String((body && body.image) || "");
-      const match = imageData.match(/^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
+      const match = imageData.match(
+        /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=\s]+)$/i
+      );
 
       if (!match) {
-        return json({ ok: false, error: "A valid PNG, JPEG or WebP photo is required." }, 400, origin);
+        return json(
+          { ok: false, error: "A valid PNG, JPEG or WebP photo is required." },
+          400,
+          origin
+        );
       }
 
-      const mime = match[1].toLowerCase() === "png"
-        ? "image/png"
-        : match[1].toLowerCase() === "webp"
-          ? "image/webp"
-          : "image/jpeg";
+      const imageBytes = base64ToBytes(match[2]);
 
-      const bytes = base64ToBytes(match[2]);
-      if (!bytes.length || bytes.length > 8 * 1024 * 1024) {
-        return json({ ok: false, error: "Photo size is invalid." }, 413, origin);
+      if (!imageBytes.length) {
+        return json({ ok: false, error: "Photo is empty." }, 400, origin);
       }
 
-      const reg = String((body && body.registerNo) || "").slice(0, 40);
-      const name = String((body && body.studentName) || "").slice(0, 120);
-      const prompt = String((body && body.prompt) || defaultPrompt(reg, name)).slice(0, 8000);
+      if (imageBytes.length > 8 * 1024 * 1024) {
+        return json(
+          { ok: false, error: "Photo is too large. Maximum size is 8 MB." },
+          413,
+          origin
+        );
+      }
 
+      const prompt = [
+        "Use input image 0 as the identity reference.",
+        "Create a square illustrated portrait of exactly the same person.",
+        "Preserve recognizable facial identity, age, hair, beard, skin tone and facial proportions.",
+        "Professional Krav Maga instructor portrait, chest-up composition, black training clothing, confident neutral defensive stance.",
+        "Premium realistic graphic-novel illustration, dramatic black and deep red textured background, crisp studio lighting.",
+        "Do not add text, letters, logos, badges or watermarks."
+      ].join(" ");
+
+      const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
       const form = new FormData();
-      form.append("model", OPENAI_MODEL);
+      form.append("input_image_0", inputBlob, "reference." + match[1].toLowerCase());
       form.append("prompt", prompt);
-      form.append("image", new Blob([bytes], { type: mime }), "reference." + (mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg"));
-      form.append("size", "1024x1536");
-      form.append("quality", "medium");
-      form.append("output_format", "jpeg");
-      form.append("output_compression", "88");
-      form.append("n", "1");
+      form.append("width", "768");
+      form.append("height", "768");
+      form.append("guidance", "4");
 
-      const response = await fetch("https://api.openai.com/v1/images/edits", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + env.OPENAI_API_KEY },
-        body: form
+      const formResponse = new Response(form);
+      const formStream = formResponse.body;
+      const formContentType = formResponse.headers.get("content-type");
+
+      const result = await env.AI.run(AI_MODEL, {
+        multipart: {
+          body: formStream,
+          contentType: formContentType
+        }
       });
 
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const message = data && data.error && data.error.message ? data.error.message : "OpenAI image edit failed.";
-        return json({ ok: false, error: message }, response.status, origin);
+      let outputBytes;
+      let contentType = "image/png";
+
+      if (result && typeof result === "object" && typeof result.image === "string") {
+        outputBytes = base64ToBytes(result.image);
+      } else if (result instanceof Response) {
+        const ct = result.headers.get("Content-Type") || "";
+        if (ct.includes("application/json")) {
+          const data = await result.json();
+          if (!data || !data.image) throw new Error("Workers AI returned no image.");
+          outputBytes = base64ToBytes(data.image);
+        } else {
+          contentType = ct || contentType;
+          outputBytes = new Uint8Array(await result.arrayBuffer());
+        }
+      } else if (result instanceof ReadableStream) {
+        outputBytes = new Uint8Array(await new Response(result).arrayBuffer());
+      } else if (result instanceof ArrayBuffer) {
+        outputBytes = new Uint8Array(result);
+      } else if (ArrayBuffer.isView(result)) {
+        outputBytes = new Uint8Array(result.buffer, result.byteOffset, result.byteLength);
+      } else {
+        throw new Error("Workers AI returned an unsupported image response.");
       }
 
-      const generated = data && data.data && data.data[0] && data.data[0].b64_json;
-      if (!generated || generated.length < 1000) {
-        return json({ ok: false, error: "OpenAI did not return image data." }, 502, origin);
+      if (!outputBytes || !outputBytes.length) {
+        throw new Error("Workers AI returned an empty image.");
       }
 
-      return json({
-        ok: true,
-        image: "data:image/jpeg;base64," + generated,
-        model: OPENAI_MODEL
-      }, 200, origin);
-    } catch (err) {
-      return json({
-        ok: false,
-        error: (err && err.message) || String(err)
-      }, 500, origin);
+      const webPortrait =
+        "data:" + contentType.split(";")[0] + ";base64," + bytesToBase64(outputBytes);
+
+      return json({ ok: true, webPortrait }, 200, origin);
+    } catch (error) {
+      return json(
+        {
+          ok: false,
+          error:
+            error && error.message
+              ? error.message
+              : "Çizim oluşturulamadı."
+        },
+        500,
+        origin
+      );
     }
   }
 };
