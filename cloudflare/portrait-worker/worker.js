@@ -158,12 +158,12 @@ export default {
       }
 
       const prompt = [
-        "Use input image 0 as the identity reference.",
-        "Create a square illustrated portrait of exactly the same person.",
-        "Preserve recognizable facial identity, age, hair, beard, skin tone and facial proportions.",
-        "Professional Krav Maga instructor portrait, chest-up composition, black training clothing, confident neutral defensive stance.",
-        "Premium realistic graphic-novel illustration, dramatic black and deep red textured background, crisp studio lighting.",
-        "Do not add text, letters, logos, badges or watermarks."
+        "Use input image 0 as the strict identity reference and keep exactly the same person.",
+        "Identity fidelity is the highest priority. Do not reinterpret, beautify, age, de-age, slim, widen or otherwise redesign the face.",
+        "Preserve the exact facial geometry, apparent age, hairstyle, hairline, glasses, beard or stubble, skin tone, eye shape, nose, mouth, jawline and recognizable facial proportions from the source photo.",
+        "Keep the original body build and natural expression as close to the source as possible.",
+        "Only transform presentation: chest-up professional Krav Maga academy portrait, plain black martial arts training shirt, dramatic black and deep red brush-stroke background, restrained realistic oil-paint texture, crisp studio lighting.",
+        "Do not copy the original background. Do not add text, letters, logos, badges, watermarks or extra people."
       ].join(" ");
 
       const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
