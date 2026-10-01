@@ -1008,7 +1008,15 @@ function buildPublicDiplomaRecord(record){
     country:record.country||'',
     city:record.city||'',
     district:record.district||'',
-    level:recordDocuments(record).map(function(x){return documentLabel(x);}).join(' • ') || publicLevelText(record),
+    level:(function(){
+      var seen={};
+      return recordDocuments(record).map(function(x){return documentLabel(x);}).filter(function(label){
+        var key=String(label||'').toLocaleLowerCase('tr-TR');
+        if(!key || seen[key]) return false;
+        seen[key]=true;
+        return true;
+      }).join(' • ');
+    })() || normalizeLevelText(publicLevelText(record)),
     webPortrait:record.webPortraitUrl||record.webPortrait||'',
     photo:''
   };
@@ -1451,10 +1459,17 @@ function downloadRegistryInfoPDF(record){
       return section && perms.registrySections.indexOf(section)>=0;
     });
     // Kayıt Bilgisi PDF: yalnız yönetici tarafından onaylanan belge/seviye grupları basılır.
-    var registryLevels=docs.map(function(x){ return String((x&&x.level)||'').trim(); }).filter(Boolean);
+    var registryLevels=[];
+    docs.forEach(function(x){
+      normalizeLevelText((x&&x.level)||'').split(/\s*•\s*/).filter(Boolean).forEach(function(level){
+        if(registryLevels.indexOf(level)===-1) registryLevels.push(level);
+      });
+    });
     if(!registryLevels.length && d.level){
       var fallbackSection=registryInfoSectionForLevel(d.level);
-      if(fallbackSection && perms.registrySections.indexOf(fallbackSection)>=0) registryLevels=[String(d.level).trim()];
+      if(fallbackSection && perms.registrySections.indexOf(fallbackSection)>=0){
+        registryLevels=normalizeLevelText(d.level).split(/\s*•\s*/).filter(Boolean);
+      }
     }
     // Diploma/Belge satırı ana belgeleri; Seviye satırı alt seviyeleri gösterir.
     var registryMainLevels=[], registrySubLevels=[];
@@ -1888,11 +1903,25 @@ function recordForDocument(d, docIndex){
     _documentIndex:docIndex
   });
 }
+function normalizeLevelText(level){
+  var raw=String(level||'').trim().replace(/\s+/g,' ');
+  if(!raw) return '';
+  var seen={};
+  return raw.split(/\s*•\s*/).map(function(part){
+    return part.trim().replace(/\b([^\s]+)\s+\1\b/gi,'$1').trim();
+  }).filter(function(part){
+    if(!part) return false;
+    var key=part.toLocaleLowerCase('tr-TR');
+    if(seen[key]) return false;
+    seen[key]=true;
+    return true;
+  }).join(' • ');
+}
 function documentLabel(x){
-  return (x && x.level) ? x.level : 'Belge';
+  return (x && x.level) ? normalizeLevelText(x.level) : 'Belge';
 }
 function documentMenuLabel(x){
-  var level = String((x&&x.level)||'').trim().replace(/\b([^\s]+)\s+\1\b/gi,'$1');
+  var level = normalizeLevelText((x&&x.level)||'');
   var main = level.split(/\s+Level\s+/i)[0];
   var names = {
     'Close Protection':'Diploma-CPO (Yakın Koruma)',
