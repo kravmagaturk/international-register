@@ -2342,7 +2342,7 @@ function addDiploma(){
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
       country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal',
-      accessPin:'', downloadPermissions:{onlineEducation:false,registryInfo:false,documents:[]}
+      accessPin:'', downloadPermissions:{onlineEducation:false,registryInfo:false,registrySections:[],registryDegrees:{},documents:[]}
     };
     ensureAccessPin(record);
     diplomaData.push(record);
@@ -2585,6 +2585,9 @@ function renderDiplomaList(filtered, isFiltering){
     var permissionDocs=[];
     var permissionKeys={};
     docs.forEach(function(x,di){
+      var normalizedLevel=normalizeLevelText((x&&x.level)||'');
+      // Practitioner / Graduate / Expert seviye yetkileri yalnız Kayıt Bilgisi menüsünden yönetilir.
+      if(/^(Practitioner|Graduate|Expert)\s+Level\s+[1-5]$/i.test(normalizedLevel)) return;
       var label=documentMenuLabel(x);
       var words=String(label||'').trim().replace(/\s+/g,' ').split(' ');
       var normalizedWords=words.filter(function(word,wi){return wi===0 || word.toLocaleLowerCase('tr-TR')!==words[wi-1].toLocaleLowerCase('tr-TR');});
