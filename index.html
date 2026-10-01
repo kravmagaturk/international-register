@@ -670,10 +670,11 @@ function setPortraitState(state,msg){
   var x=map[state]||map.waiting; box.classList.remove('hidden');box.style.background=x[0];box.style.color=x[1];box.textContent=x[2]+' '+msg;
 }
 function addOfficial1948Logo(portraitDataUrl){
-  return new Promise(function(resolve,reject){
+  return new Promise(function(resolve){
     var portrait=new Image();
     portrait.onload=function(){
       var logo=new Image();
+      logo.crossOrigin='anonymous';
       logo.onload=function(){
         try{
           var canvas=document.createElement('canvas');
@@ -682,20 +683,30 @@ function addOfficial1948Logo(portraitDataUrl){
           var ctx=canvas.getContext('2d');
           ctx.drawImage(portrait,0,0,canvas.width,canvas.height);
           var base=Math.min(canvas.width,canvas.height);
-          var size=Math.round(base*0.12);
-          var x=Math.round(canvas.width*0.675);
-          var y=Math.round(canvas.height*0.645);
+          var size=Math.round(base*0.115);
+          // Kullanıcının istediği görünür sol göğüs bölgesi.
+          var x=Math.round(canvas.width*0.20);
+          var y=Math.round(canvas.height*0.64);
           var ratio=(logo.naturalWidth&&logo.naturalHeight)?(logo.naturalWidth/logo.naturalHeight):1;
           var drawW=size,drawH=size;
           if(ratio>1) drawH=Math.round(size/ratio); else if(ratio<1) drawW=Math.round(size*ratio);
           ctx.drawImage(logo,x,y,drawW,drawH);
           resolve(canvas.toDataURL('image/jpeg',0.94));
-        }catch(e){reject(e);}
+        }catch(e){
+          console.warn('1948 logo bindirme hatası; portre logosuz devam ediyor.',e);
+          resolve(portraitDataUrl);
+        }
       };
-      logo.onerror=function(){reject(new Error('1948 logo yüklenemedi.'));};
-      logo.src='logo.png?v=1948';
+      logo.onerror=function(){
+        console.warn('1948 logo yüklenemedi; portre logosuz devam ediyor.');
+        resolve(portraitDataUrl);
+      };
+      logo.src='https://kravmagaturk.github.io/international-register/logo.png?v=1948';
     };
-    portrait.onerror=function(){reject(new Error('Üretilen portre okunamadı.'));};
+    portrait.onerror=function(){
+      console.warn('Üretilen portre okunamadı; orijinal AI çıktısı korunuyor.');
+      resolve(portraitDataUrl);
+    };
     portrait.src=portraitDataUrl;
   });
 }
