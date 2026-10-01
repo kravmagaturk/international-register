@@ -196,6 +196,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
         <div style="margin-bottom:20px;">
           <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
+          <button class="btn" id="btn-book-subscribers" onclick="toggleBookSubscribers()">📚 Kitap Aboneleri</button>
           <button class="btn btn-secondary" id="btn-master-support" onclick="openMasterSupport()">🛟 Master / ChatGPT</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
@@ -207,6 +208,12 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <button class="btn btn-pdf btn-small" id="btn-export-logs-pdf" onclick="exportLogsAsPDF()">📄 Logları PDF Olarak İndir</button>
           </div>
           <div id="security-logs-list" class="log-list"><div class="spinner"></div></div>
+        </div>
+
+        <div id="book-subscribers-section" class="hidden" style="margin-bottom:20px;">
+          <h4 style="margin-bottom:10px;color:#d32f2f;">📚 Kitap Aboneleri / Mail Trafiği</h4>
+          <div id="book-subscriber-summary" style="margin-bottom:10px;font-size:13px;color:#555;"></div>
+          <div id="book-subscribers-list" class="log-list"><div class="spinner"></div></div>
         </div>
 
         <div id="add-form" class="hidden">
@@ -2661,6 +2668,59 @@ function toggleSecurityLogs(){
   var section = document.getElementById('security-logs-section');
   if(securityLogsVisible){ section.classList.remove('hidden'); loadSecurityLogs(); }
   else { section.classList.add('hidden'); }
+}
+var bookSubscribersVisible=false;
+function bookAdminEscape(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});
+}
+function bookAdminDate(v){
+  if(!v)return '-';
+  var d=new Date(v); if(isNaN(d.getTime()))return bookAdminEscape(v);
+  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function toggleBookSubscribers(){
+  bookSubscribersVisible=!bookSubscribersVisible;
+  var section=document.getElementById('book-subscribers-section');
+  if(bookSubscribersVisible){section.classList.remove('hidden');loadBookSubscribers();}
+  else{section.classList.add('hidden');}
+}
+function loadBookSubscribers(){
+  var list=document.getElementById('book-subscribers-list');
+  var summary=document.getElementById('book-subscriber-summary');
+  if(!currentAdminUser){
+    list.innerHTML='<p style="color:#c62828;">Yönetici oturumu gerekli.</p>'; return;
+  }
+  list.innerHTML='<div class="spinner"></div>'; summary.textContent='Yükleniyor...';
+  currentAdminUser.getIdToken(true).then(function(token){
+    return fetch('https://kravmaga.com.tr/online-akademi/kitap-abonelik/api/admin/subscribers',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idToken:token})
+    });
+  }).then(function(res){
+    return res.json().then(function(data){if(!res.ok)throw new Error(data.error||('HTTP '+res.status));return data;});
+  }).then(function(data){
+    var subs=Array.isArray(data.subscribers)?data.subscribers:[];
+    var events=Array.isArray(data.events)?data.events:[];
+    var latestByEmail={};
+    events.forEach(function(ev){if(!latestByEmail[ev.email])latestByEmail[ev.email]=ev;});
+    summary.textContent='Toplam '+subs.length+' kitap abonesi';
+    if(!subs.length){list.innerHTML='<p style="text-align:center;color:#999;">Henüz kitap abonesi yok.</p>';return;}
+    var html='';
+    subs.forEach(function(s){
+      var ev=latestByEmail[s.email]||null;
+      var status=s.status==='active'?'🟢 Aktif':(s.status==='verified'?'🟢 Doğrulandı':(s.status==='pending'?'🟡 E-posta Onayı Bekliyor':'⚪ '+bookAdminEscape(s.status||'-')));
+      html+='<div class="log-item" style="padding:10px 0;">'+
+        '<div><strong>'+bookAdminEscape(s.full_name||'-')+'</strong> — '+bookAdminEscape(s.email||'-')+'</div>'+
+        '<div class="log-ip">Durum: '+status+' | Kayıt: '+bookAdminDate(s.created_at)+' | Son erişim: '+bookAdminDate(s.last_seen_at)+'</div>'+
+        (ev?'<div class="log-ip">Son mail/olay: '+bookAdminEscape(ev.event_type||'-')+' — '+bookAdminDate(ev.created_at)+'</div>':'')+
+      '</div>';
+    });
+    list.innerHTML=html;
+  }).catch(function(err){
+    summary.textContent='';
+    list.innerHTML='<p style="color:#c62828;">Kitap aboneleri yüklenemedi: '+bookAdminEscape(err.message||err)+'</p>';
+  });
 }
 function logTypeBadge(type){
   if(type === 'download') return '<span class="log-badge log-badge-download">'+t('logTypeDownload')+'</span>';
