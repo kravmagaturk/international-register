@@ -664,13 +664,20 @@ function createKmtMasterBackup(){
   var oldText=btn?btn.textContent:'';
   var token='',backupData=null,websiteSha=null,registerSha=null;
   if(btn){btn.disabled=true;btn.textContent='⏳ Sistem verileri toplanıyor...';}
+  function backupFetch(url,options,stage){
+    return fetch(url,options).catch(function(){
+      return new Promise(function(resolve){setTimeout(resolve,1200);}).then(function(){return fetch(url,options);});
+    }).catch(function(err){
+      throw new Error(stage+' bağlantısı kurulamadı: '+(err&&err.message?err.message:err));
+    });
+  }
   currentAdminUser.getIdToken(true).then(function(t){
     token=t;
-    return fetch('https://kravmaga.com.tr/kmt-master-backup/api/create-data',{
+    return backupFetch('https://kravmaga.com.tr/kmt-master-backup/api/create-data',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','Cache-Control':'no-store'},
       body:JSON.stringify({idToken:token})
-    });
+    },'Sistem verileri');
   }).then(function(res){
     return res.text().then(function(text){
       var data=null;
@@ -684,22 +691,28 @@ function createKmtMasterBackup(){
   }).then(function(data){
     backupData=data;
     if(btn)btn.textContent='⏳ Kaynak arşivleri alınıyor...';
-    function getSource(repo,sha){
-      return fetch('https://kravmaga.com.tr/kmt-master-backup/api/source',{
+    function getSource(repo,sha,label){
+      return backupFetch('https://kravmaga.com.tr/kmt-master-backup/api/source',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','Cache-Control':'no-store'},
         body:JSON.stringify({idToken:token,repo:repo,sha:sha})
-      }).then(function(res){
-        if(!res.ok)throw new Error(repo+' kaynak arşivi alınamadı: HTTP '+res.status);
+      },label).then(function(res){
+        if(!res.ok)throw new Error(label+' alınamadı: HTTP '+res.status);
         return res.arrayBuffer();
       });
     }
     websiteSha=backupData&&backupData.heads&&backupData.heads.website?backupData.heads.website.sha:null;
     registerSha=backupData&&backupData.heads&&backupData.heads.register?backupData.heads.register.sha:null;
-    return Promise.all([
-      getSource('website',websiteSha),
-      getSource('register',registerSha)
-    ]);
+    var sourceBuffers=[];
+    if(btn)btn.textContent='⏳ Website kaynak arşivi alınıyor...';
+    return getSource('website',websiteSha,'Website kaynak arşivi').then(function(buf){
+      sourceBuffers[0]=buf;
+      if(btn)btn.textContent='⏳ Register kaynak arşivi alınıyor...';
+      return getSource('register',registerSha,'Register kaynak arşivi');
+    }).then(function(buf){
+      sourceBuffers[1]=buf;
+      return sourceBuffers;
+    });
   }).then(function(sourceBuffers){
     if(btn)btn.textContent='⏳ KMT ZIP paketleniyor...';
     var zip=new JSZip();
