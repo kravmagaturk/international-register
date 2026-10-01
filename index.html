@@ -2712,17 +2712,41 @@ function loadBookSubscribers(){
     var html='';
     subs.forEach(function(s){
       var ev=latestByEmail[s.email]||null;
-      var status=s.status==='active'?'🟢 Aktif':(s.status==='verified'?'🟢 Doğrulandı':(s.status==='pending'?'🟡 E-posta Onayı Bekliyor':'⚪ '+bookAdminEscape(s.status||'-')));
+      var isEnabled=s.status==='active'||s.status==='verified';
+      var status=isEnabled?'🟢 Aktif':(s.status==='pending'?'🟡 E-posta Onayı Bekliyor':'⚪ İnaktif');
+      var actionLabel=isEnabled?'⛔ İnaktif Yap':'✅ Aktif Yap';
+      var actionStyle=isEnabled?'background:#8b1e1e;border-color:#8b1e1e;color:#fff;':'background:#178a3b;border-color:#178a3b;color:#fff;';
       html+='<div class="log-item" style="padding:10px 0;">'+
         '<div><strong>'+bookAdminEscape(s.full_name||'-')+'</strong> — '+bookAdminEscape(s.email||'-')+'</div>'+
         '<div class="log-ip">Durum: '+status+' | Kayıt: '+bookAdminDate(s.created_at)+' | Son erişim: '+bookAdminDate(s.last_seen_at)+'</div>'+
         (ev?'<div class="log-ip">Son mail/olay: '+bookAdminEscape(ev.event_type||'-')+' — '+bookAdminDate(ev.created_at)+'</div>':'')+
+        '<div style="margin-top:7px;"><button type="button" class="btn btn-small" style="'+actionStyle+'" onclick="setBookSubscriberActive('+Number(s.id)+','+(!isEnabled)+',this)">'+actionLabel+'</button></div>'+
       '</div>';
     });
     list.innerHTML=html;
   }).catch(function(err){
     summary.textContent='';
     list.innerHTML='<p style="color:#c62828;">Kitap aboneleri yüklenemedi: '+bookAdminEscape(err.message||err)+'</p>';
+  });
+}
+function setBookSubscriberActive(subscriberId,enabled,button){
+  if(!currentAdminUser)return;
+  var verb=enabled?'aktif etmek':'inaktif yapmak';
+  if(!confirm('Bu kitap abonesini '+verb+' istediğinize emin misiniz?'))return;
+  if(button){button.disabled=true;button.textContent='İşleniyor...';}
+  currentAdminUser.getIdToken(true).then(function(token){
+    return fetch('https://kravmaga.com.tr/online-akademi/kitap-abonelik/api/admin/subscriber-status',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idToken:token,subscriberId:Number(subscriberId),enabled:enabled===true})
+    });
+  }).then(function(res){
+    return res.json().then(function(data){if(!res.ok)throw new Error(data.error||('HTTP '+res.status));return data;});
+  }).then(function(){
+    loadBookSubscribers();
+  }).catch(function(err){
+    alert('Abone durumu değiştirilemedi: '+(err.message||err));
+    if(button)button.disabled=false;
   });
 }
 function logTypeBadge(type){
