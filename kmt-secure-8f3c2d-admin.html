@@ -2000,8 +2000,10 @@ function showLoginForm(message){
 function adminLogin(){
   var btn=document.getElementById('login-btn');
   if(btn){btn.disabled=true;btn.textContent='Google doğrulamaya yönlendiriliyor...';}
+  sessionStorage.setItem('kmtAdminAuthPending','1');
   googleProvider.setCustomParameters({prompt:'select_account'});
   auth.signInWithRedirect(googleProvider).catch(function(err){
+    sessionStorage.removeItem('kmtAdminAuthPending');
     if(btn){btn.disabled=false;btn.textContent='🔐 Google ile Giriş Yap';}
     showLoginForm('❌ Google girişi başlatılamadı: '+(err&&err.message?err.message:(err&&err.code?err.code:err)));
   });
@@ -2912,12 +2914,15 @@ function exportLogsAsPDF(){
 }
 document.addEventListener('DOMContentLoaded', function(){
   auth.onAuthStateChanged(function(user){
-    if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+    var authPending=sessionStorage.getItem('kmtAdminAuthPending')==='1';
+    if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && authPending){
+      sessionStorage.removeItem('kmtAdminAuthPending');
       currentAdminUser=user;
       showAdminPanel(user);
     } else if(user){
-      auth.signOut().then(function(){
-        showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
+      sessionStorage.removeItem('kmtAdminAuthPending');
+      auth.signOut().finally(function(){
+        showLoginForm();
       });
     } else {
       showLoginForm();
