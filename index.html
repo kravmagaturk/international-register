@@ -2606,15 +2606,20 @@ function renderDiplomaList(filtered, isFiltering){
       }
     });
     var isActive=!isInactiveStatus(d.status);
+    var permissionDot=function(enabled){
+      return '<span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+(enabled?'#39d98a':'#e53935')+';box-shadow:0 0 0 1px rgba(255,255,255,.18);"></span>';
+    };
+    var permissionRowStyle='display:grid;grid-template-columns:26px 18px minmax(0,1fr) auto;align-items:center;column-gap:8px;margin:7px 0;color:#f2f2f2;';
     var permissionHtml='<details style="margin-top:10px;border:1px solid #303034;background:#0b0b0c;">'+
       '<summary style="cursor:pointer;padding:12px;font-weight:800;color:#fff;list-style:none;">Yetkilendirme ▾</summary>'+
       '<div style="padding:0 12px 12px;">'+
-      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'🟢 Açık':'🔴 Kapalı')+'</label>'+
-      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</label>'+
-      '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</label>'+
+      '<label style="'+permissionRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)">'+permissionDot(d.publicInstructor===true)+'<span>Web Eğitmen / Temsilci Profili</span><span style="white-space:nowrap;">'+(d.publicInstructor===true?'Açık':'Kapalı')+'</span></label>'+
+      '<label style="'+permissionRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)">'+permissionDot(perms.onlineEducation)+'<span>Online Eğitim Erişimi</span><span style="white-space:nowrap;">'+(perms.onlineEducation?'Açık':'Kapalı')+'</span></label>'+
+      '<label style="'+permissionRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)">'+permissionDot(isActive)+'<span>Faal Öğrenci</span><span style="white-space:nowrap;">'+(isActive?'Aktif':'Faal Değil')+'</span></label>'+
       '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>';
     permissionDocs.forEach(function(item){
-      permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+' — '+(perms.documents.indexOf(item.index)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
+      var docEnabled=perms.documents.indexOf(item.index)>=0;
+      permissionHtml+='<label style="'+permissionRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(docEnabled?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)">'+permissionDot(docEnabled)+'<span>'+item.label+'</span><span style="white-space:nowrap;">'+(docEnabled?'Açık':'Kapalı')+'</span></label>';
     });
     permissionHtml+='</div></details>';
     var certButtons = '';
