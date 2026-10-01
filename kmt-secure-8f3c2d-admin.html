@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
 <link rel="icon" type="image/png" href="https://kravmaga.com.tr/assets/brand/logo-1948.png">
 <link rel="apple-touch-icon" href="https://kravmaga.com.tr/assets/brand/logo-1948.png">
 <meta name="description" content="Krav Maga Türk öğrenci, eğitmen ve diploma kayıt sorgulama ekranı.">
-<link rel="canonical" href="https://kravmaga.com.tr/register">
+<!-- Yönetici alanı bilerek canonical/index dışında tutulur -->
 <meta property="og:locale" content="tr_TR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Krav Maga Türk">
@@ -23,7 +25,7 @@
 <meta name="twitter:title" content="Krav Maga Türk International Kayıt Sorgulama">
 <meta name="twitter:description" content="Krav Maga Türk öğrenci, eğitmen ve diploma kayıt sorgulama ekranı.">
 <meta name="twitter:image" content="https://kravmaga.com.tr/assets/social/register-1200x630.jpg?v=20261001">
-<title>Krav Maga Türk International Kayıt Sorgulama</title>
+<title>KMT Güvenli Yönetici Alanı</title>
 <!-- v62: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="qrcode.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
@@ -145,7 +147,6 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 .content{background:#0d0d0f;padding:32px;}
 .tab-content h2,.tab-content h3,.tab-content h4{color:#fff!important;}
 #query-content>h2{font-size:clamp(25px,4vw,36px);line-height:1.1;margin-bottom:10px;}
-#admin-content{display:none!important;}
 #query-content>p{color:#999;margin-bottom:24px;}
 .form-group label{color:#c8c8c8;}
 .form-group input,.form-group select,.search-filter-bar input,.search-filter-bar select,.pdf-output-select{background:#09090a;color:#fff;border:1px solid #38383d;border-radius:4px;outline:none;}
@@ -174,11 +175,11 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
     <p id="txt-subtitle">Kayıt Sorgulama</p>
   </div>
   <div class="tabs">
-    <button class="tab active" id="tab-query-btn" onclick="showTab('query')">Kayıt Sorgula</button>
-    <button class="tab" id="tab-admin-btn" style="display:none!important" tabindex="-1" aria-hidden="true">Yönetici Paneli</button>
+    <button class="tab" id="tab-query-btn" style="display:none!important" tabindex="-1" aria-hidden="true">Kayıt Sorgula</button>
+    <button class="tab active" id="tab-admin-btn" onclick="showTab('admin')">Yönetici Paneli</button>
   </div>
   <div class="content">
-    <div id="query-content" class="tab-content active">
+    <div id="query-content" class="tab-content">
       <h2 id="txt-queryHeading">Krav Maga Türk International Kayıt Sorgulama</h2>
       <p id="txt-queryDesc">Bu panel bilgi amaçlıdır. Sicil numarası ile kayıt durumu ve temel eğitim bilgileri sorgulanabilir.</p>
       <div class="form-group">
@@ -195,7 +196,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
       <div id="searchResult"></div>
     </div>
 
-    <div id="admin-content" class="tab-content">
+    <div id="admin-content" class="tab-content active">
       <div id="login-form">
         <div style="text-align:center;margin-bottom:30px;">
           <div style="display:inline-block;background:linear-gradient(135deg,#d32f2f,#b71c1c);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
