@@ -228,8 +228,63 @@ async function createBackupData(request,env){
   files["CHECKLIST.md"]=doc.checklist;
   files["SECRETS-REQUIRED.md"]=doc.secrets;
   files["MEDIA-MANIFEST.md"]=doc.media;
+  const currentState={
+    schemaVersion:"1.0",
+    generatedAt:now,
+    purpose:"SUP source-of-truth snapshot for Krav Maga Turk production recovery and migration",
+    sourceOfTruth:{
+      website:{repository:"kravmagaturk/kravmaga-turk-website",branch:"main",commit:heads.website&&heads.website.sha?heads.website.sha:null,trust:"production-source"},
+      register:{repository:"kravmagaturk/international-register",branch:"main",commit:heads.register&&heads.register.sha?heads.register.sha:null,trust:"production-source"},
+      firebase:{projectId:"kravmaga-diploma",databaseUrl:"https://kravmaga-diploma-default-rtdb.firebaseio.com",trust:"production-data"},
+      d1:{databaseName:"kravmaga-online-akademi",databaseId:"8187ea4f-22a7-419e-9eb1-82fc97fe8c03",trust:"production-data"}
+    },
+    productionUrls:[
+      "https://kravmaga.com.tr/",
+      "https://kravmaga.com.tr/register",
+      "https://kravmaga.com.tr/online-akademi",
+      "https://kravmaga.com.tr/online-akademi/kitap-abonelik"
+    ],
+    workerState:{
+      portrait:{name:"kravmaga-portrait",lastKnownVersion:"f4c7d5fd-07ba-4615-91d4-86551530de28",trust:"production"},
+      bookAccess:{name:"kravmaga-book-access",lastKnownVersion:"318d1563-3736-4d3e-b3e8-f2fbcfaf0c53",trust:"production"},
+      onlineVideo:{name:"kravmaga-online-video",lastKnownVersion:"b7ed8ef2-add7-47a7-9f58-cd269e635b17",trust:"production-route-owner"},
+      masterBackup:{name:"kmt-master-backup",trust:"read-only-backup-service"}
+    },
+    sourceTrust:{
+      "SOURCES/kravmaga-turk-website-*.zip":"trusted snapshot from exact main commit",
+      "SOURCES/international-register-*.zip":"trusted snapshot from exact main commit",
+      "WORKERS/book-access/worker.js":"trusted stored source snapshot",
+      "WORKERS/portrait/worker.js":"trusted stored source snapshot",
+      "UNVERIFIED_LOCAL_SOURCE/online-akademi-worker.js":"DO NOT DEPLOY BLINDLY - local source has previously diverged from production"
+    },
+    criticalRoutes:{
+      register:"/register",
+      onlineAcademy:"/online-akademi*",
+      bookSubscription:"/online-akademi/kitap-abonelik*",
+      portraitWorker:"https://kravmaga-portrait.bulicet.workers.dev",
+      masterBackup:"/kmt-master-backup*"
+    },
+    recoveryOrder:[
+      "Read KMT-CURRENT-STATE.json first.",
+      "Compare live production with repository commit heads and Worker route ownership.",
+      "Do not overwrite working production from an unverified local source.",
+      "Create rollback before any repair.",
+      "Apply the smallest isolated change.",
+      "Verify syntax and production behavior.",
+      "Generate a new KMT MASTER BACKUP after successful verification."
+    ],
+    safeguards:[
+      "No real secret values are stored in this backup.",
+      "Large video binaries and large Firebase base64 media are represented by manifests rather than duplicated.",
+      "Production data remains authoritative until migration cutover is explicitly approved."
+    ],
+    firebaseExport:{nodes:Object.keys(fb.data),errors:fb.errors,mediaFieldsOmitted:fb.media.length},
+    d1Tables:Object.keys(d1.tables)
+  };
+  files["KMT-CURRENT-STATE.json"]=JSON.stringify(currentState,null,2);
   files["manifest.json"]=JSON.stringify({
     generatedAt:now,
+    currentStateFile:"KMT-CURRENT-STATE.json",
     production:{domain:"kravmaga.com.tr",firebaseProject:"kravmaga-diploma",d1Database:"kravmaga-online-akademi"},
     repositoryHeads:heads,
     firebaseNodes:Object.keys(fb.data),
