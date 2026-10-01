@@ -661,7 +661,7 @@ function createKmtMasterBackup(){
   if(btn&&btn.disabled)return;
   if(!confirm('Son çalışan KMT sisteminin salt-okunur yedek paketi hazırlansın mı?\\n\\nCanlı sistem ve veriler değiştirilmez. Hazırlama 20–60 saniye sürebilir.'))return;
   var oldText=btn?btn.textContent:'';
-  var token='',backupData=null;
+  var token='',backupData=null,websiteSha=null,registerSha=null;
   if(btn){btn.disabled=true;btn.textContent='⏳ Sistem verileri toplanıyor...';}
   currentAdminUser.getIdToken(true).then(function(t){
     token=t;
@@ -693,8 +693,8 @@ function createKmtMasterBackup(){
         return res.arrayBuffer();
       });
     }
-    var websiteSha=backupData&&backupData.heads&&backupData.heads.website?backupData.heads.website.sha:null;
-    var registerSha=backupData&&backupData.heads&&backupData.heads.register?backupData.heads.register.sha:null;
+    websiteSha=backupData&&backupData.heads&&backupData.heads.website?backupData.heads.website.sha:null;
+    registerSha=backupData&&backupData.heads&&backupData.heads.register?backupData.heads.register.sha:null;
     return Promise.all([
       getSource('website',websiteSha),
       getSource('register',registerSha)
