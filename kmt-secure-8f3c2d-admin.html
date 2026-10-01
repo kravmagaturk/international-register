@@ -1999,11 +1999,29 @@ function showLoginForm(message){
 }
 function adminLogin(){
   var btn=document.getElementById('login-btn');
-  if(btn){btn.disabled=true;btn.textContent='Google doğrulamaya yönlendiriliyor...';}
+  if(btn){btn.disabled=true;btn.textContent='Google doğrulama açılıyor...';}
   googleProvider.setCustomParameters({prompt:'select_account'});
-  auth.signInWithRedirect(googleProvider).catch(function(err){
+  auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){
+    return auth.signInWithPopup(googleProvider);
+  }).then(function(result){
+    var user=result&&result.user?result.user:null;
+    if(!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+      return auth.signOut().then(function(){
+        throw new Error('UNAUTHORIZED_EMAIL');
+      });
+    }
+    currentAdminUser=user;
+    showAdminPanel(user);
+  }).catch(function(err){
+    if(err && err.message==='UNAUTHORIZED_EMAIL'){
+      showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
+    }else if(err && err.code==='auth/popup-closed-by-user'){
+      showLoginForm();
+    }else{
+      showLoginForm('❌ Google girişi başarısız: '+(err&&err.message?err.message:(err&&err.code?err.code:err)));
+    }
+  }).finally(function(){
     if(btn){btn.disabled=false;btn.textContent='🔐 Google ile Giriş Yap';}
-    showLoginForm('❌ Google girişi başlatılamadı: '+(err&&err.message?err.message:(err&&err.code?err.code:err)));
   });
 }
 async function loadAllDiplomas() {
@@ -2911,24 +2929,9 @@ function exportLogsAsPDF(){
   doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 document.addEventListener('DOMContentLoaded', function(){
-  auth.getRedirectResult().then(function(result){
-    var user=result&&result.user?result.user:null;
-    if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
-      currentAdminUser=user;
-      showAdminPanel(user);
-      return;
-    }
-    if(user){
-      return auth.signOut().then(function(){
-        showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
-      });
-    }
-    return auth.signOut().catch(function(){}).then(function(){
-      showLoginForm();
-    });
-  }).catch(function(err){
-    auth.signOut().catch(function(){});
-    showLoginForm('❌ Google doğrulama sonucu alınamadı: '+(err&&err.message?err.message:(err&&err.code?err.code:err)));
+  auth.signOut().catch(function(){}).finally(function(){
+    currentAdminUser=null;
+    showLoginForm();
   });
 
 applyStaticLanguage();
