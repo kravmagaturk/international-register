@@ -12,6 +12,12 @@ function json(data,status,extra){
   status=status||200; extra=extra||{};
   return new Response(JSON.stringify(data),{status:status,headers:Object.assign({"content-type":"application/json; charset=utf-8","cache-control":"no-store"},extra)});
 }
+function snapshotText(value){
+  if(typeof value==="string")return value;
+  if(value&&typeof value==="object"&&typeof value.value==="string")return value.value;
+  if(value==null)return "";
+  return JSON.stringify(value,null,2);
+}
 async function verifyAdmin(idToken,env){
   if(!idToken||!env.FIREBASE_API_KEY)return false;
   const r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:lookup?key="+encodeURIComponent(env.FIREBASE_API_KEY),{
@@ -219,12 +225,12 @@ async function createBackupData(request,env){
     },fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
   const files={};
   files["README.txt"]="KMT MASTER BACKUP\nGenerated: "+now+"\nRead-only package. No real secret values are included.\n";
-  files["WORKERS/book-access/worker.js"]=BOOK_SOURCE;
-  files["WORKERS/book-access/wrangler.toml"]=BOOK_WRANGLER;
-  files["WORKERS/portrait/worker.js"]=PORTRAIT_SOURCE;
-  files["WORKERS/portrait/wrangler.toml"]=PORTRAIT_WRANGLER;
-  files["UNVERIFIED_LOCAL_SOURCE/online-akademi-worker.js"]=ONLINE_LOCAL_SOURCE;
-  files["UNVERIFIED_LOCAL_SOURCE/online-akademi-wrangler.toml"]=ONLINE_WRANGLER;
+  files["WORKERS/book-access/worker.js"]=snapshotText(BOOK_SOURCE);
+  files["WORKERS/book-access/wrangler.toml"]=snapshotText(BOOK_WRANGLER);
+  files["WORKERS/portrait/worker.js"]=snapshotText(PORTRAIT_SOURCE);
+  files["WORKERS/portrait/wrangler.toml"]=snapshotText(PORTRAIT_WRANGLER);
+  files["UNVERIFIED_LOCAL_SOURCE/online-akademi-worker.js"]=snapshotText(ONLINE_LOCAL_SOURCE);
+  files["UNVERIFIED_LOCAL_SOURCE/online-akademi-wrangler.toml"]=snapshotText(ONLINE_WRANGLER);
   files["DATABASE/d1-schema.sql"]=d1.schema;
   for(const name of Object.keys(d1.tables))files["DATABASE/d1-"+name+".json"]=JSON.stringify(d1.tables[name],null,2);
   for(const node of Object.keys(fb.data))files["DATABASE/firebase-"+node+".json"]=JSON.stringify(fb.data[node],null,2);

@@ -703,7 +703,12 @@ function createKmtMasterBackup(){
     if(btn)btn.textContent='⏳ KMT ZIP paketleniyor...';
     var zip=new JSZip();
     Object.keys(backupData.files||{}).forEach(function(path){
-      zip.file(path,backupData.files[path]);
+      var value=backupData.files[path];
+      if(typeof value!=='string'){
+        if(value&&typeof value==='object'&&typeof value.value==='string')value=value.value;
+        else value=JSON.stringify(value,null,2);
+      }
+      zip.file(path,value);
     });
     var websiteLabel=websiteSha?websiteSha.slice(0,8):'main';
     var registerLabel=registerSha?registerSha.slice(0,8):'main';
