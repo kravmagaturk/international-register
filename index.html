@@ -1036,13 +1036,31 @@ function registryInfoSectionForLevel(level){
   }
   return '';
 }
+function inferRegistryDegree(record,section){
+  var docs=recordDocuments(record);
+  for(var i=0;i<docs.length;i++){
+    var level=normalizeLevelText(docs[i]&&docs[i].level);
+    var m=level.match(new RegExp('^'+section+'\\s+Level\\s+([1-5])$','i'));
+    if(m) return 'Level '+m[1];
+  }
+  var raw=normalizeLevelText((record&&record.level)||'');
+  var m2=raw.match(new RegExp('^'+section+'\\s+Level\\s+([1-5])$','i'));
+  return m2 ? 'Level '+m2[1] : '';
+}
 function getDownloadPermissions(record){
   var p=(record&&record.downloadPermissions)||{};
   var hasRegistrySections=Array.isArray(p.registrySections);
+  var savedDegrees=(p.registryDegrees&&typeof p.registryDegrees==='object')?p.registryDegrees:{};
+  var degrees={};
+  ['Practitioner','Graduate','Expert'].forEach(function(section){
+    var v=String(savedDegrees[section]||'').trim();
+    degrees[section]=/^Level [1-5]$/.test(v)?v:inferRegistryDegree(record,section);
+  });
   return {
     onlineEducation:p.onlineEducation===true || (p.onlineEducation===undefined && record&&record.onlineEducationAccess===true),
     registryInfo:p.registryInfo===true,
     registrySections:hasRegistrySections?p.registrySections.filter(function(x){return REGISTRY_INFO_SECTIONS.indexOf(x)>=0;}):REGISTRY_INFO_SECTIONS.slice(),
+    registryDegrees:degrees,
     documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
   };
 }
@@ -1473,6 +1491,16 @@ function downloadRegistryInfoPDF(record){
         registryLevels=normalizeLevelText(d.level).split(/\s*•\s*/).filter(Boolean);
       }
     }
+    // Practitioner / Graduate / Expert için sağdaki Kayıt Bilgisi menüsünde seçilen derece kesin kaynaktır.
+    ['Practitioner','Graduate','Expert'].forEach(function(section){
+      if(perms.registrySections.indexOf(section)<0) return;
+      var degree=perms.registryDegrees&&perms.registryDegrees[section];
+      if(!degree) return;
+      registryLevels=registryLevels.filter(function(level){
+        return registryInfoSectionForLevel(level)!==section;
+      });
+      registryLevels.push(section+' '+degree);
+    });
     // Instructor yalnız açık web rolü kaynağından eklenir; eski documents/level verisine bağlı değildir.
     var explicitPublicRoles=Array.isArray(d.publicRoles)?d.publicRoles.slice():(d.publicRole?[d.publicRole]:[]);
     if(perms.registrySections.indexOf('Instructor')>=0 && explicitPublicRoles.indexOf('Instructor')>=0){
@@ -2353,6 +2381,17 @@ function setDownloadPermission(index,kind,docIndex,enabled){
     var selected=perms.registrySections.filter(function(x){return x!==section;});
     if(enabled===true && REGISTRY_INFO_SECTIONS.indexOf(section)>=0) selected.push(section);
     perms.registrySections=REGISTRY_INFO_SECTIONS.filter(function(x){return selected.indexOf(x)>=0;});
+  }else if(kind==='registryDegree'){
+    var degreeSection=String(docIndex||'');
+    var degreeValue=String(enabled||'');
+    if(['Practitioner','Graduate','Expert'].indexOf(degreeSection)>=0){
+      perms.registryDegrees=perms.registryDegrees||{};
+      perms.registryDegrees[degreeSection]=/^Level [1-5]$/.test(degreeValue)?degreeValue:'';
+      if(perms.registryDegrees[degreeSection] && perms.registrySections.indexOf(degreeSection)<0){
+        perms.registrySections.push(degreeSection);
+        perms.registrySections=REGISTRY_INFO_SECTIONS.filter(function(x){return perms.registrySections.indexOf(x)>=0;});
+      }
+    }
   }else if(kind==='document'){
     docIndex=Number(docIndex);
     var arr=perms.documents.filter(function(x){return x!==docIndex;});
@@ -2454,7 +2493,16 @@ function renderDiplomaList(filtered, isFiltering){
         '<label style="display:block;margin:5px 0 8px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> PDF Yetkisi — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>'+
         REGISTRY_INFO_SECTIONS.map(function(section){
           var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
-          return '<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registrySections.indexOf(section)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(perms.registrySections.indexOf(section)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
+          var enabled=perms.registrySections.indexOf(section)>=0;
+          var row='<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(enabled?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(enabled?'🟢 Açık':'🔴 Kapalı')+'</label>';
+          if(['Practitioner','Graduate','Expert'].indexOf(section)>=0){
+            var current=perms.registryDegrees[section]||'';
+            row+='<select style="width:calc(100% - 18px);margin:2px 0 6px 18px;background:#111;color:#fff;border:1px solid #444;padding:5px;" onchange="setDownloadPermission('+i+',\'registryDegree\',\''+section+'\',this.value)">'+
+              '<option value="">Alt seviye seçin</option>'+
+              [1,2,3,4,5].map(function(n){var v='Level '+n;return '<option value="'+v+'" '+(current===v?'selected':'')+'>'+v+'</option>';}).join('')+
+            '</select>';
+          }
+          return row;
         }).join('')+
       '</div>'+
     '</details>';
