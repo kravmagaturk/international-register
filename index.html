@@ -239,11 +239,11 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group">
             <label id="txt-lblJoinDateForm">Akademiye Giriş Tarihi:</label>
-            <input type="date" id="joinDate">
+            <input type="text" id="joinDate" inputmode="numeric" autocomplete="off" placeholder="GG.AA.YYYY veya YYYY-AA-GG">
           </div>
           <div class="form-group">
             <label id="txt-lblExamDateForm">Sınav Tarihi:</label>
-            <input type="date" id="examDate">
+            <input type="text" id="examDate" inputmode="numeric" autocomplete="off" placeholder="GG.AA.YYYY veya YYYY-AA-GG">
           </div>
           <div class="form-group">
             <label id="txt-lblExamLocForm">Sınav Yeri:</label>
@@ -589,14 +589,29 @@ function logSecurityEvent(type, details){
     return adminFetch('/securityLogs.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   }).catch(function(){});
 }
-function formatDateForDisplay(isoDate){
-  var d = new Date(isoDate);
-  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+function normalizeDateParts(value){
+  var s=String(value||'').trim();
+  if(!s) return null;
+  var m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if(m) return {day:Number(m[1]),month:Number(m[2]),year:Number(m[3])};
+  m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return {day:Number(m[3]),month:Number(m[2]),year:Number(m[1])};
+  return null;
+}
+function isValidDateParts(p){
+  if(!p||p.year<1900||p.year>2100||p.month<1||p.month>12||p.day<1||p.day>31) return false;
+  var d=new Date(p.year,p.month-1,p.day);
+  return d.getFullYear()===p.year && d.getMonth()===p.month-1 && d.getDate()===p.day;
+}
+function formatDateForDisplay(value){
+  var p=normalizeDateParts(value);
+  if(!isValidDateParts(p)) return '';
+  return String(p.day).padStart(2,'0')+'.'+String(p.month).padStart(2,'0')+'.'+p.year;
 }
 function formatDateForInput(displayDate){
-  var parts = (displayDate||'').split('.');
-  if(parts.length===3) return parts[2]+'-'+parts[1]+'-'+parts[0];
-  return '';
+  var p=normalizeDateParts(displayDate);
+  if(!isValidDateParts(p)) return displayDate||'';
+  return String(p.day).padStart(2,'0')+'.'+String(p.month).padStart(2,'0')+'.'+p.year;
 }
 function showTab(name){
   var tabs = document.querySelectorAll('.tab');
@@ -2164,11 +2179,13 @@ function addDiploma(){
   var mainLevel = document.getElementById('mainLevel').value;
   var subLevel = document.getElementById('subLevel').value;
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
+  var formattedExamDate = formatDateForDisplay(examDate);
+  var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
+  if(!formattedExamDate){ alert('Sınav tarihini GG.AA.YYYY veya YYYY-AA-GG formatında girin.'); return; }
+  if(joinDateRaw && !formattedJoinDate){ alert('Akademiye giriş tarihini GG.AA.YYYY veya YYYY-AA-GG formatında girin.'); return; }
   // Web profil çizimi kayıt için zorunlu değildir. AI servisi geçici olarak çalışmasa da sicil kaydı yapılabilmelidir.
 
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
-  var formattedExamDate = formatDateForDisplay(examDate);
-  var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
   var newDoc = { level:levelText, examDate:formattedExamDate, examLocation:examLocation, instructorName:instructorName, type:docTypeForLevel(levelText) };
 
   var saveBtn = document.getElementById('save-btn');
