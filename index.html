@@ -693,9 +693,11 @@ function createKmtMasterBackup(){
         return res.arrayBuffer();
       });
     }
+    var websiteSha=backupData&&backupData.heads&&backupData.heads.website?backupData.heads.website.sha:null;
+    var registerSha=backupData&&backupData.heads&&backupData.heads.register?backupData.heads.register.sha:null;
     return Promise.all([
-      getSource('website',backupData.heads.website.sha),
-      getSource('register',backupData.heads.register.sha)
+      getSource('website',websiteSha),
+      getSource('register',registerSha)
     ]);
   }).then(function(sourceBuffers){
     if(btn)btn.textContent='⏳ KMT ZIP paketleniyor...';
@@ -703,8 +705,10 @@ function createKmtMasterBackup(){
     Object.keys(backupData.files||{}).forEach(function(path){
       zip.file(path,backupData.files[path]);
     });
-    zip.file('SOURCES/kravmaga-turk-website-'+backupData.heads.website.sha.slice(0,8)+'.zip',sourceBuffers[0],{binary:true,compression:'STORE'});
-    zip.file('SOURCES/international-register-'+backupData.heads.register.sha.slice(0,8)+'.zip',sourceBuffers[1],{binary:true,compression:'STORE'});
+    var websiteLabel=websiteSha?websiteSha.slice(0,8):'main';
+    var registerLabel=registerSha?registerSha.slice(0,8):'main';
+    zip.file('SOURCES/kravmaga-turk-website-'+websiteLabel+'.zip',sourceBuffers[0],{binary:true,compression:'STORE'});
+    zip.file('SOURCES/international-register-'+registerLabel+'.zip',sourceBuffers[1],{binary:true,compression:'STORE'});
     return zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},function(meta){
       if(btn)btn.textContent='⏳ KMT ZIP %'+Math.round(meta.percent);
     });

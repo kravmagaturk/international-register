@@ -213,7 +213,10 @@ async function createBackupData(request,env){
       firebaseExport(env,idToken),
       d1Export(env)
     ]);
-    const heads={website:all[0],register:all[1]},fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
+    const heads={
+      website:all[0]||{sha:null,date:null,ref:"main"},
+      register:all[1]||{sha:null,date:null,ref:"main"}
+    },fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
   const files={};
   files["README.txt"]="KMT MASTER BACKUP\nGenerated: "+now+"\nRead-only package. No real secret values are included.\n";
   files["WORKERS/book-access/worker.js"]=BOOK_SOURCE;
@@ -318,12 +321,12 @@ async function sourceArchive(request,env){
   if(!(await verifyAdmin(idToken,env)))return json({error:"unauthorized"},403);
   const repo=String(body.repo||"");
   const sha=String(body.sha||"");
-  if(!/^[0-9a-f]{40}$/i.test(sha))return json({error:"invalid-sha"},400);
+  const ref=/^[0-9a-f]{40}$/i.test(sha)?sha:"main";
   let slug="",name="";
-  if(repo==="website"){slug="kravmagaturk/kravmaga-turk-website";name="kravmaga-turk-website-"+sha.slice(0,8)+".zip";}
-  else if(repo==="register"){slug="kravmagaturk/international-register";name="international-register-"+sha.slice(0,8)+".zip";}
+  if(repo==="website"){slug="kravmagaturk/kravmaga-turk-website";name="kravmaga-turk-website-"+(ref==="main"?"main":ref.slice(0,8))+".zip";}
+  else if(repo==="register"){slug="kravmagaturk/international-register";name="international-register-"+(ref==="main"?"main":ref.slice(0,8))+".zip";}
   else return json({error:"invalid-repo"},400);
-  const r=await fetch("https://codeload.github.com/"+slug+"/zip/"+sha,{headers:{"user-agent":"KMT-Master-Backup/1.0","cache-control":"no-store"}});
+  const r=await fetch("https://codeload.github.com/"+slug+"/zip/"+ref,{headers:{"user-agent":"KMT-Master-Backup/1.0","cache-control":"no-store"}});
   if(!r.ok)return json({error:"source-fetch-failed",status:r.status},502);
   const h=new Headers();
   h.set("content-type","application/zip");
