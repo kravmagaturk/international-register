@@ -1999,19 +1999,12 @@ function showLoginForm(message){
 }
 function adminLogin(){
   var btn=document.getElementById('login-btn');
-  btn.disabled=true; btn.textContent='Google açılıyor...';
-  auth.signInWithPopup(googleProvider).then(function(result){
-    var user=result.user;
-    if(!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-      return logSecurityEvent('login_failed',{attemptedEmail:user&&user.email?user.email:''}).then(function(){
-        return auth.signOut();
-      }).then(function(){ throw new Error('UNAUTHORIZED_EMAIL'); });
-    }
-    showAdminPanel(user);
-  }).catch(function(err){
-    if(err && err.message==='UNAUTHORIZED_EMAIL') showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
-    else if(err && err.code!=='auth/popup-closed-by-user') showLoginForm('⚠️ Google girişi başarısız: '+(err.message||err.code||''));
-  }).finally(function(){ btn.disabled=false; btn.textContent='🔐 Google ile Giriş Yap'; });
+  if(btn){btn.disabled=true;btn.textContent='Google doğrulamaya yönlendiriliyor...';}
+  googleProvider.setCustomParameters({prompt:'select_account'});
+  auth.signInWithRedirect(googleProvider).catch(function(err){
+    if(btn){btn.disabled=false;btn.textContent='🔐 Google ile Giriş Yap';}
+    showLoginForm('❌ Google girişi başlatılamadı: '+(err&&err.message?err.message:(err&&err.code?err.code:err)));
+  });
 }
 async function loadAllDiplomas() {
         try {
