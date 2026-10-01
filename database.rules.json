@@ -7,10 +7,14 @@
       ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     },
     "publicDiplomaData": {
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
       ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",
       "$registerNo": {
         ".read": true
       }
+    },
+    "downloadLogs": {
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     },
     "downloadPackages": {
       ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",

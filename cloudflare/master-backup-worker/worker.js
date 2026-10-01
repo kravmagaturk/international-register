@@ -118,11 +118,31 @@ async function fetchBytes(url){
   return new Uint8Array(await r.arrayBuffer());
 }
 async function repoHead(repo){
-  try{
-    const r=await fetch("https://api.github.com/repos/"+repo+"/commits/main",{headers:{"user-agent":"KMT-Master-Backup/1.0"}});
-    if(!r.ok)return null;
-    const d=await r.json();return {sha:d.sha,date:d.commit&&d.commit.committer?d.commit.committer.date:null};
-  }catch(e){return null;}
+  const endpoints=[
+    "https://api.github.com/repos/"+repo+"/git/ref/heads/main",
+    "https://api.github.com/repos/"+repo+"/commits/main"
+  ];
+  const errors=[];
+  for(let attempt=0;attempt<2;attempt++){
+    for(const endpoint of endpoints){
+      try{
+        const r=await fetch(endpoint+(endpoint.includes("?")?"&":"?")+"_kmt="+Date.now(),{
+          headers:{
+            "user-agent":"KMT-Master-Backup/2.0",
+            "accept":"application/vnd.github+json",
+            "cache-control":"no-store"
+          }
+        });
+        if(!r.ok){errors.push("HTTP "+r.status);continue;}
+        const d=await r.json();
+        const sha=(d&&d.object&&d.object.sha)||d.sha||"";
+        const date=d&&d.commit&&d.commit.committer?d.commit.committer.date:null;
+        if(/^[0-9a-f]{40}$/i.test(sha))return {sha:sha,date:date,verified:true};
+        errors.push("invalid-sha");
+      }catch(e){errors.push(e&&e.message?e.message:String(e));}
+    }
+  }
+  throw new Error("GitHub exact head unavailable for "+repo+" ("+errors.slice(-4).join(", ")+")");
 }
 function makeDocs(now,heads,fb){
   const systemMap=[
@@ -219,10 +239,14 @@ async function createBackupData(request,env){
       firebaseExport(env,idToken),
       d1Export(env)
     ]);
-    const heads={
-      website:all[0]||{sha:null,date:null,ref:"main"},
-      register:all[1]||{sha:null,date:null,ref:"main"}
-    },fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
+    const heads={website:all[0],register:all[1]},fb=all[2],d1=all[3];
+    if(!heads.website||!heads.register||!heads.website.sha||!heads.register.sha){
+      throw new Error("Exact repository commit verification failed.");
+    }
+    if(fb.errors&&fb.errors.length){
+      throw new Error("Firebase export incomplete: "+fb.errors.join(" | "));
+    }
+    const doc=makeDocs(now,heads,fb);
   const files={};
   files["README.txt"]="KMT MASTER BACKUP\nGenerated: "+now+"\nRead-only package. No real secret values are included.\n";
   files["WORKERS/book-access/worker.js"]=snapshotText(BOOK_SOURCE);
@@ -327,12 +351,12 @@ async function sourceArchive(request,env){
   if(!(await verifyAdmin(idToken,env)))return json({error:"unauthorized"},403);
   const repo=String(body.repo||"");
   const sha=String(body.sha||"");
-  const ref=/^[0-9a-f]{40}$/i.test(sha)?sha:"main";
+  if(!/^[0-9a-f]{40}$/i.test(sha))return json({error:"exact-sha-required"},400);
   let slug="",name="";
-  if(repo==="website"){slug="kravmagaturk/kravmaga-turk-website";name="kravmaga-turk-website-"+(ref==="main"?"main":ref.slice(0,8))+".zip";}
-  else if(repo==="register"){slug="kravmagaturk/international-register";name="international-register-"+(ref==="main"?"main":ref.slice(0,8))+".zip";}
+  if(repo==="website"){slug="kravmagaturk/kravmaga-turk-website";name="kravmaga-turk-website-"+sha.slice(0,8)+".zip";}
+  else if(repo==="register"){slug="kravmagaturk/international-register";name="international-register-"+sha.slice(0,8)+".zip";}
   else return json({error:"invalid-repo"},400);
-  const r=await fetch("https://codeload.github.com/"+slug+"/zip/"+ref,{headers:{"user-agent":"KMT-Master-Backup/1.0","cache-control":"no-store"}});
+  const r=await fetch("https://codeload.github.com/"+slug+"/zip/"+sha,{headers:{"user-agent":"KMT-Master-Backup/2.0","cache-control":"no-store"}});
   if(!r.ok)return json({error:"source-fetch-failed",status:r.status},502);
   const h=new Headers();
   h.set("content-type","application/zip");
@@ -340,11 +364,23 @@ async function sourceArchive(request,env){
   h.set("cache-control","no-store, max-age=0");
   return new Response(r.body,{status:200,headers:h});
 }
+async function diagnostics(){
+  try{
+    const heads=await Promise.all([
+      repoHead("kravmagaturk/kravmaga-turk-website"),
+      repoHead("kravmagaturk/international-register")
+    ]);
+    return json({ok:true,website:heads[0],register:heads[1]});
+  }catch(e){
+    return json({ok:false,error:e&&e.message?e.message:String(e)},500);
+  }
+}
 export default {
   async fetch(request,env){
     const url=new URL(request.url);
     if(url.pathname==="/kmt-master-backup/api/create-data"&&request.method==="POST")return createBackupData(request,env);
     if(url.pathname==="/kmt-master-backup/api/source"&&request.method==="POST")return sourceArchive(request,env);
+    if(url.pathname==="/kmt-master-backup/diagnostics")return diagnostics();
     if(url.pathname==="/kmt-master-backup/health")return json({ok:true,service:"KMT MASTER BACKUP",mode:"read-only"});
     return new Response("Not found",{status:404});
   }
