@@ -88,7 +88,10 @@ async function firebaseExport(env,idToken){
 }
 async function d1Export(env){
   const tablesRes=await env.DB.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
-  const tables=(tablesRes.results||[]).filter(function(x){return /^[A-Za-z0-9_]+$/.test(x.name);});
+  const excludedTables=new Set(["_cf_KV","admin_tokens","student_sessions","video_tickets","student_login_attempts"]);
+  const tables=(tablesRes.results||[]).filter(function(x){
+    return /^[A-Za-z0-9_]+$/.test(x.name) && !excludedTables.has(x.name);
+  });
   const schema=tables.map(function(t){return t.sql;}).filter(Boolean).join(";\n\n")+";\n";
   const out={};
   for(const t of tables){
@@ -199,17 +202,18 @@ function makeDocs(now,heads,fb){
   return {systemMap:systemMap,deployment:deployment,rollback:rollback,checklist:checklist,secrets:secrets,media:media};
 }
 async function createBackupData(request,env){
-  let body={};try{body=await request.json();}catch(e){return json({error:"invalid-json"},400);}
-  const idToken=String(body.idToken||"");
-  if(!(await verifyAdmin(idToken,env)))return json({error:"unauthorized"},403);
-  const now=new Date().toISOString();
-  const all=await Promise.all([
-    repoHead("kravmagaturk/kravmaga-turk-website"),
-    repoHead("kravmagaturk/international-register"),
-    firebaseExport(env,idToken),
-    d1Export(env)
-  ]);
-  const heads={website:all[0],register:all[1]},fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
+  try{
+    let body={};try{body=await request.json();}catch(e){return json({error:"invalid-json"},400);}
+    const idToken=String(body.idToken||"");
+    if(!(await verifyAdmin(idToken,env)))return json({error:"unauthorized"},403);
+    const now=new Date().toISOString();
+    const all=await Promise.all([
+      repoHead("kravmagaturk/kravmaga-turk-website"),
+      repoHead("kravmagaturk/international-register"),
+      firebaseExport(env,idToken),
+      d1Export(env)
+    ]);
+    const heads={website:all[0],register:all[1]},fb=all[2],d1=all[3],doc=makeDocs(now,heads,fb);
   const files={};
   files["README.txt"]="KMT MASTER BACKUP\nGenerated: "+now+"\nRead-only package. No real secret values are included.\n";
   files["WORKERS/book-access/worker.js"]=BOOK_SOURCE;
@@ -298,8 +302,15 @@ async function createBackupData(request,env){
     },
     notes:["No real secret values included.","Online Academy local source is unverified against production."]
   },null,2);
-  const stamp=now.replace(/[-:]/g,"").replace("T","-").slice(0,13);
-  return json({ok:true,filename:"KMT-MASTER-BACKUP-"+stamp+".zip",heads:heads,files:files});
+    const stamp=now.replace(/[-:]/g,"").replace("T","-").slice(0,13);
+    return json({ok:true,filename:"KMT-MASTER-BACKUP-"+stamp+".zip",heads:heads,files:files});
+  }catch(e){
+    return json({
+      error:"backup-data-failed",
+      message:e&&e.message?e.message:String(e),
+      stage:"create-data"
+    },500);
+  }
 }
 async function sourceArchive(request,env){
   let body={};try{body=await request.json();}catch(e){return json({error:"invalid-json"},400);}

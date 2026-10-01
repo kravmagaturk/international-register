@@ -671,8 +671,13 @@ function createKmtMasterBackup(){
       body:JSON.stringify({idToken:token})
     });
   }).then(function(res){
-    return res.json().then(function(data){
-      if(!res.ok)throw new Error(data.error||('HTTP '+res.status));
+    return res.text().then(function(text){
+      var data=null;
+      try{data=JSON.parse(text);}catch(e){
+        var preview=String(text||'').replace(/\s+/g,' ').slice(0,140);
+        throw new Error('Backup servisi JSON yerine beklenmeyen yanıt verdi (HTTP '+res.status+'): '+preview);
+      }
+      if(!res.ok)throw new Error((data.error||'HTTP '+res.status)+(data.message?': '+data.message:''));
       return data;
     });
   }).then(function(data){
