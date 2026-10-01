@@ -773,9 +773,18 @@ function requestChatGPTPortrait(){
       });
     });
   }).catch(function(e){
-    var errorText=(e&&e.message)||String(e);
-    setPortraitState('error','Çizim oluşturulamadı: '+errorText);
-    if(statusEl){statusEl.textContent='⚠️ Çizim oluşturulamadı. Tekrar deneyin: '+errorText;statusEl.style.color='#b71c1c';}
+    var rawError=(e&&e.message)||String(e);
+    var quotaExceeded=/4006|daily free allocation|used up your daily free allocation|10,000 neurons/i.test(rawError);
+    var errorText=quotaExceeded
+      ? 'Günlük AI çizim kotası doldu. Kota yenilendiğinde tekrar deneyin.'
+      : rawError;
+    setPortraitState('error',errorText);
+    if(statusEl){
+      statusEl.textContent=quotaExceeded
+        ? '⚠️ Günlük AI çizim kotası doldu. Öğrenci kaydı etkilenmedi. Kota yenilendiğinde tekrar deneyin.'
+        : '⚠️ Çizim oluşturulamadı. Tekrar deneyin: '+errorText;
+      statusEl.style.color='#b71c1c';
+    }
     adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
       method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'error',error:errorText,failedAt:new Date().toISOString()})
     }).catch(function(){});
