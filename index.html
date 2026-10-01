@@ -2606,8 +2606,9 @@ function renderDiplomaList(filtered, isFiltering){
       }
     });
     var isActive=!isInactiveStatus(d.status);
-    var permissionHtml='<div style="margin-top:10px;padding:12px;border:1px solid #303034;background:#0b0b0c;">'+
-      '<div style="font-weight:800;color:#fff;margin-bottom:8px;">Yetkilendirme</div>'+
+    var permissionHtml='<details style="margin-top:10px;border:1px solid #303034;background:#0b0b0c;">'+
+      '<summary style="cursor:pointer;padding:12px;font-weight:800;color:#fff;list-style:none;">Yetkilendirme ▾</summary>'+
+      '<div style="padding:0 12px 12px;">'+
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'🟢 Açık':'🔴 Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</label>'+
@@ -2615,7 +2616,7 @@ function renderDiplomaList(filtered, isFiltering){
     permissionDocs.forEach(function(item){
       permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+' — '+(perms.documents.indexOf(item.index)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
     });
-    permissionHtml+='</div>';
+    permissionHtml+='</div></details>';
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
