@@ -1133,7 +1133,7 @@ function getDownloadPermissions(record){
   return {
     onlineEducation:p.onlineEducation===true || (p.onlineEducation===undefined && record&&record.onlineEducationAccess===true),
     registryInfo:p.registryInfo===true,
-    registrySections:hasRegistrySections?p.registrySections.filter(function(x){return REGISTRY_INFO_SECTIONS.indexOf(x)>=0;}):REGISTRY_INFO_SECTIONS.slice(),
+    registrySections:hasRegistrySections?p.registrySections.filter(function(x){return REGISTRY_INFO_SECTIONS.indexOf(x)>=0;}):[],
     registryDegrees:degrees,
     documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
   };
@@ -2562,18 +2562,22 @@ function renderDiplomaList(filtered, isFiltering){
       documentMenus += '</select>';
     }
     var perms=getDownloadPermissions(d);
+    var registryDot=function(enabled){
+      return '<span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+(enabled?'#39d98a':'#e53935')+';box-shadow:0 0 0 1px rgba(255,255,255,.18);"></span>';
+    };
+    var registryRowStyle='display:grid;grid-template-columns:26px 18px minmax(0,1fr) auto;align-items:center;column-gap:8px;margin:7px 0;color:#f2f2f2;';
     var registryMenu = '<details style="width:100%;min-width:190px;border:1px solid #38383d;background:#09090a;">'+
       '<summary style="cursor:pointer;padding:9px 10px;font-weight:800;color:#fff;list-style:none;">📋 Kayıt Bilgisi ▾</summary>'+
       '<div style="padding:6px 10px 10px;">'+
-        '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin:0 0 7px;" onclick="handleAdminPdfMenu({value:\'registry-info\',selectedIndex:0},'+i+')">Kayıt Bilgisi PDF</button>'+
-        '<label style="display:block;margin:5px 0 8px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> PDF Yetkisi — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>'+
+        '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin:0 0 9px;" onclick="handleAdminPdfMenu({value:\'registry-info\',selectedIndex:0},'+i+')">Kayıt Bilgisi PDF</button>'+
+        '<label style="'+registryRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)">'+registryDot(perms.registryInfo)+'<span>PDF Yetkisi</span><span style="white-space:nowrap;">'+(perms.registryInfo?'Açık':'Kapalı')+'</span></label>'+
         REGISTRY_INFO_SECTIONS.map(function(section){
           var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
           var enabled=perms.registrySections.indexOf(section)>=0;
-          var row='<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(enabled?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(enabled?'🟢 Açık':'🔴 Kapalı')+'</label>';
+          var row='<label style="'+registryRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(enabled?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)">'+registryDot(enabled)+'<span>'+label+'</span><span style="white-space:nowrap;">'+(enabled?'Açık':'Kapalı')+'</span></label>';
           if(['Practitioner','Graduate','Expert'].indexOf(section)>=0){
             var current=perms.registryDegrees[section]||'';
-            row+='<select style="width:calc(100% - 18px);margin:2px 0 6px 18px;background:#111;color:#fff;border:1px solid #444;padding:5px;" onchange="setDownloadPermission('+i+',\'registryDegree\',\''+section+'\',this.value)">'+
+            row+='<select style="width:calc(100% - 52px);margin:2px 0 8px 52px;background:#111;color:#fff;border:1px solid #444;padding:7px 9px;" onchange="setDownloadPermission('+i+',\'registryDegree\',\''+section+'\',this.value)">'+
               '<option value="">Alt seviye seçin</option>'+
               [1,2,3,4,5].map(function(n){var v='Level '+n;return '<option value="'+v+'" '+(current===v?'selected':'')+'>'+v+'</option>';}).join('')+
             '</select>';
