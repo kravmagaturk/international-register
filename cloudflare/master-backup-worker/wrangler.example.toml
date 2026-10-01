@@ -1,0 +1,17 @@
+name = "kmt-master-backup"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+routes = [
+  { pattern = "kravmaga.com.tr/kmt-master-backup*", zone_name = "kravmaga.com.tr" }
+]
+
+[vars]
+FIREBASE_API_KEY = "SET_FROM_APPROVED_PRODUCTION_CONFIG"
+FIREBASE_DATABASE_URL = "https://kravmaga-diploma-default-rtdb.firebaseio.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kravmaga-online-akademi"
+database_id = "8187ea4f-22a7-419e-9eb1-82fc97fe8c03"

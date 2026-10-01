@@ -27,6 +27,7 @@
 <!-- v62: online eğitim erişim alanı + genel diploma + Junior/Kids/Asistan/Instructor alt seviyeleri + Katılım/Seminer -->
 <script src="qrcode.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
+<script src="jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <style>
@@ -213,7 +214,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
           <button class="btn" id="btn-book-subscribers" onclick="toggleBookSubscribers()">📚 Kitap Aboneleri</button>
-          <button class="btn btn-secondary" id="btn-master-support" onclick="openMasterSupport()">🛟 Master / ChatGPT</button>
+          <button class="btn btn-secondary" id="btn-master-support" onclick="createKmtMasterBackup()">🧰 KMT MASTER BACKUP</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
 
@@ -647,15 +648,74 @@ function showTab(name){
   if(activeContent) activeContent.classList.add('active');
 }
 var currentWebPortraitData = '';
-function openMasterSupport(){
+function createKmtMasterBackup(){
   if(!currentAdminUser){
-    alert('Bu bağlantı yalnızca yönetici girişi sonrasında kullanılabilir.');
+    alert('KMT MASTER BACKUP yalnızca yönetici girişi sonrasında kullanılabilir.');
     return;
   }
-  var msg='Krav Maga Türk Master destek bağlantısı.\\n\\nChatGPT açılacak. Bu düğme yönetici panelinden ChatGPT’ye hızlı geçiş sağlar; panele veya Firebase verilerine ChatGPT için otomatik erişim vermez.\\n\\nAcil geri dönüş gerekiyorsa açılan proje sohbetinde “geriye dön” yazın. Önce kontrol ve onay aşaması uygulanacaktır.';
-  if(confirm(msg+'\\n\\nChatGPT’yi yeni sekmede açmak istiyor musunuz?')){
-    window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
+  if(typeof JSZip==='undefined'){
+    alert('KMT MASTER BACKUP paketleme bileşeni yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
+    return;
   }
+  var btn=document.getElementById('btn-master-support');
+  if(btn&&btn.disabled)return;
+  if(!confirm('Son çalışan KMT sisteminin salt-okunur yedek paketi hazırlansın mı?\\n\\nCanlı sistem ve veriler değiştirilmez. Hazırlama 20–60 saniye sürebilir.'))return;
+  var oldText=btn?btn.textContent:'';
+  var token='',backupData=null;
+  if(btn){btn.disabled=true;btn.textContent='⏳ Sistem verileri toplanıyor...';}
+  currentAdminUser.getIdToken(true).then(function(t){
+    token=t;
+    return fetch('https://kravmaga.com.tr/kmt-master-backup/api/create-data',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idToken:token})
+    });
+  }).then(function(res){
+    return res.json().then(function(data){
+      if(!res.ok)throw new Error(data.error||('HTTP '+res.status));
+      return data;
+    });
+  }).then(function(data){
+    backupData=data;
+    if(btn)btn.textContent='⏳ Kaynak arşivleri alınıyor...';
+    function getSource(repo,sha){
+      return fetch('https://kravmaga.com.tr/kmt-master-backup/api/source',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({idToken:token,repo:repo,sha:sha})
+      }).then(function(res){
+        if(!res.ok)throw new Error(repo+' kaynak arşivi alınamadı: HTTP '+res.status);
+        return res.arrayBuffer();
+      });
+    }
+    return Promise.all([
+      getSource('website',backupData.heads.website.sha),
+      getSource('register',backupData.heads.register.sha)
+    ]);
+  }).then(function(sourceBuffers){
+    if(btn)btn.textContent='⏳ KMT ZIP paketleniyor...';
+    var zip=new JSZip();
+    Object.keys(backupData.files||{}).forEach(function(path){
+      zip.file(path,backupData.files[path]);
+    });
+    zip.file('SOURCES/kravmaga-turk-website-'+backupData.heads.website.sha.slice(0,8)+'.zip',sourceBuffers[0],{binary:true,compression:'STORE'});
+    zip.file('SOURCES/international-register-'+backupData.heads.register.sha.slice(0,8)+'.zip',sourceBuffers[1],{binary:true,compression:'STORE'});
+    return zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}},function(meta){
+      if(btn)btn.textContent='⏳ KMT ZIP %'+Math.round(meta.percent);
+    });
+  }).then(function(blob){
+    var filename=(backupData&&backupData.filename)||'KMT-MASTER-BACKUP.zip';
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},30000);
+    alert('KMT MASTER BACKUP hazırlandı ve indirme başlatıldı.\\n\\nDosya: '+filename);
+  }).catch(function(err){
+    alert('KMT MASTER BACKUP hazırlanamadı: '+(err&&err.message?err.message:err));
+  }).finally(function(){
+    if(btn){btn.disabled=false;btn.textContent=oldText||'🧰 KMT MASTER BACKUP';}
+  });
 }
 
 const PORTRAIT_ASSET_BASE='portrait-assets/approved/';
