@@ -2912,10 +2912,17 @@ function exportLogsAsPDF(){
 }
 document.addEventListener('DOMContentLoaded', function(){
   auth.onAuthStateChanged(function(user){
-  if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
-    currentAdminUser=user;
-  } else if(user){ auth.signOut(); }
-});
+    if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+      currentAdminUser=user;
+      showAdminPanel(user);
+    } else if(user){
+      auth.signOut().then(function(){
+        showLoginForm('❌ Bu Google hesabının yönetici yetkisi yok.');
+      });
+    } else {
+      showLoginForm();
+    }
+  });
 
 applyStaticLanguage();
   var searchInput = document.getElementById('searchRegister');
