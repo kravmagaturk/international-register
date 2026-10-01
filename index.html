@@ -96,7 +96,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .pdf-btn-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
 .pdf-btn-row .btn{margin:0;padding:6px 10px;font-size:12px;}
 .pdf-output-select{min-width:190px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;}
-.permission-panel{margin-top:12px;padding:14px;border:1px solid #303034;border-radius:7px;background:#0b0b0c;max-width:720px}.permission-title{font-weight:800;color:#fff;margin:0 0 10px}.permission-row{display:grid;grid-template-columns:24px minmax(0,1fr) 105px;align-items:center;gap:8px;min-height:38px;margin:0;padding:6px 8px;border-bottom:1px solid #232327;cursor:pointer}.permission-row:last-child{border-bottom:0}.permission-row input{width:17px!important;height:17px;margin:0!important;accent-color:#1e9d4c}.permission-label{color:#ddd;line-height:1.3}.permission-state{justify-self:end;min-width:92px;text-align:center;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;white-space:nowrap}.permission-state.is-on{color:#9be9b6;background:#112a1a;border:1px solid #245b37}.permission-state.is-off{color:#ffaaaa;background:#321417;border:1px solid #713039}.permission-divider{height:1px;background:#3a3a3f;margin:10px 0}.permission-section-label{color:#999;font-size:11px;font-weight:800;letter-spacing:.6px;margin:0 8px 4px;text-transform:uppercase}
 .admin-export-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 15px 0;}
 
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
@@ -145,7 +144,6 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 #add-form .form-group[style*="background:#f7f7f7"],#add-form .form-group[style*="background:#fff7f7"]{background:#151517!important;border-color:#333!important;color:#ddd!important;}
 #publicRoles label{color:#ddd;}
 @media(max-width:600px){body:before{right:-18vw;opacity:.8}.container{margin:0;min-height:100vh;border-left:0;border-right:0}.header{padding:28px 16px 24px}.content{padding:22px 16px}.tabs{flex-direction:row}.tab{padding:13px 7px;font-size:14px}.lang-toggle{position:absolute;top:12px;right:12px;margin:0}.row-name{max-width:110px}}
-@media(max-width:600px){.permission-panel{padding:10px}.permission-row{grid-template-columns:22px minmax(0,1fr) 86px;padding:7px 4px;gap:6px}.permission-state{min-width:82px;font-size:11px}.permission-label{font-size:12px}}
 
 </style>
 </head>
@@ -2406,16 +2404,15 @@ function renderDiplomaList(filtered, isFiltering){
       }
     });
     var isActive=!isInactiveStatus(d.status);
-    var permissionHtml='<div class="permission-panel">'+
-      '<div class="permission-title">Yetkilendirme</div>'+
-      '<label class="permission-row"><input type="checkbox" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"><span class="permission-label">Web Eğitmen / Temsilci Profili</span><span class="permission-state '+(d.publicInstructor===true?'is-on':'is-off')+'">'+(d.publicInstructor===true?'🟢 Açık':'🔴 Kapalı')+'</span></label>'+
-      '<label class="permission-row"><input type="checkbox" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"><span class="permission-label">Online Eğitim Erişimi</span><span class="permission-state '+(perms.onlineEducation?'is-on':'is-off')+'">'+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</span></label>'+
-      '<label class="permission-row"><input type="checkbox" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"><span class="permission-label">Faal Öğrenci</span><span class="permission-state '+(isActive?'is-on':'is-off')+'">'+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</span></label>'+
-      '<div class="permission-divider"></div><div class="permission-section-label">Öğrenci indirme yetkileri</div>'+
-      '<label class="permission-row"><input type="checkbox" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"><span class="permission-label">Sicil Bilgi PDF</span><span class="permission-state '+(perms.registryInfo?'is-on':'is-off')+'">'+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</span></label>';
+    var permissionHtml='<div style="margin-top:10px;padding:12px;border:1px solid #303034;background:#0b0b0c;">'+
+      '<div style="font-weight:800;color:#fff;margin-bottom:8px;">Yetkilendirme</div>'+
+      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)"> Web Eğitmen / Temsilci Profili — '+(d.publicInstructor===true?'🟢 Açık':'🔴 Kapalı')+'</label>'+
+      '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</label>'+
+      '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</label>'+
+      '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>'+
+      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>';
     permissionDocs.forEach(function(item){
-      var documentAllowed=perms.documents.indexOf(item.index)>=0;
-      permissionHtml+='<label class="permission-row"><input type="checkbox" '+(documentAllowed?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"><span class="permission-label">'+item.label+'</span><span class="permission-state '+(documentAllowed?'is-on':'is-off')+'">'+(documentAllowed?'🟢 Açık':'🔴 Kapalı')+'</span></label>';
+      permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+' — '+(perms.documents.indexOf(item.index)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
     });
     permissionHtml+='</div>';
     var certButtons = '';
