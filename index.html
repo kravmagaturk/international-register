@@ -669,6 +669,36 @@ function setPortraitState(state,msg){
   var map={waiting:['#fff8e1','#8a5a00','🟡'],working:['#e3f2fd','#0d47a1','🔵'],approval:['#e8f5e9','#1b5e20','🟢'],approved:['#e8f5e9','#1b5e20','✓'],error:['#ffebee','#b71c1c','⚠️']};
   var x=map[state]||map.waiting; box.classList.remove('hidden');box.style.background=x[0];box.style.color=x[1];box.textContent=x[2]+' '+msg;
 }
+function addOfficial1948Logo(portraitDataUrl){
+  return new Promise(function(resolve,reject){
+    var portrait=new Image();
+    portrait.onload=function(){
+      var logo=new Image();
+      logo.onload=function(){
+        try{
+          var canvas=document.createElement('canvas');
+          canvas.width=portrait.naturalWidth||768;
+          canvas.height=portrait.naturalHeight||768;
+          var ctx=canvas.getContext('2d');
+          ctx.drawImage(portrait,0,0,canvas.width,canvas.height);
+          var base=Math.min(canvas.width,canvas.height);
+          var size=Math.round(base*0.12);
+          var x=Math.round(canvas.width*0.675);
+          var y=Math.round(canvas.height*0.645);
+          var ratio=(logo.naturalWidth&&logo.naturalHeight)?(logo.naturalWidth/logo.naturalHeight):1;
+          var drawW=size,drawH=size;
+          if(ratio>1) drawH=Math.round(size/ratio); else if(ratio<1) drawW=Math.round(size*ratio);
+          ctx.drawImage(logo,x,y,drawW,drawH);
+          resolve(canvas.toDataURL('image/jpeg',0.94));
+        }catch(e){reject(e);}
+      };
+      logo.onerror=function(){reject(new Error('1948 logo yüklenemedi.'));};
+      logo.src='logo.png?v=1948';
+    };
+    portrait.onerror=function(){reject(new Error('Üretilen portre okunamadı.'));};
+    portrait.src=portraitDataUrl;
+  });
+}
 function requestChatGPTPortrait(){
   if(editingIndex<0 || !diplomaData[editingIndex]){
     alert('Önce öğrenci kaydını kaydedin. Ardından Düzenle ekranından çizim talebi oluşturabilirsiniz.');
@@ -713,6 +743,8 @@ function requestChatGPTPortrait(){
           if(!res.ok || !data || !(data.webPortrait || data.image)) throw new Error((data&&data.error)||('Çizim servisi HTTP '+res.status));
           return data.webPortrait || data.image;
         });
+      }).then(function(generatedPortrait){
+        return addOfficial1948Logo(generatedPortrait);
       }).then(function(generatedPortrait){
         currentWebPortraitData=generatedPortrait;
         var preview=document.getElementById('webPortraitPreviewImg');
@@ -773,7 +805,7 @@ function approveChatGPTPortrait(){
    });
 }
 function prepareChatGPTPortraitRequest(reg,name){
-  return 'Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Mevcut öğrenci fotoğrafını kimlik referansı olarak kullan. Yüz kimliğini, yaşı, saçını, varsa gözlüğünü ve ayırt edici yüz özelliklerini koru. Göğüsten yukarı profesyonel Krav Maga akademi portresi; siyah dövüş sanatları tişörtü; sol göğüste küçük 1948 Krav Maga Türk logosu; siyah ve koyu kırmızı fırça darbeli arka plan; gerçekçi yağlı boya dokusu; güçlü stüdyo ışığı. Orijinal arka planı kopyalama. Ek kişi, filigran veya rastgele yazı ekleme.';
+  return 'Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Kaynak öğrenci fotoğrafını sıkı kimlik referansı olarak kullan. Yüz geometrisini, yaşı, saç çizgisini, saçını, varsa sakal/bıyığını, ten tonunu ve doğal ifadeyi mümkün olduğunca aynen koru. Gözlük yalnız kaynak fotoğrafta gerçekten varsa korunmalı; kaynakta gözlük yoksa hiçbir gözlük veya gözlük benzeri aksesuar eklenmemeli. Yüzü güzelleştirme, inceltme, genişletme veya yeniden tasarlama. Göğüsten yukarı, düz siyah dövüş sanatları tişörtü, siyah-koyu kırmızı fırça arka plan, hafif ve gerçekçi yağlı boya dokusu. Logo AI tarafından üretilmeyecek; resmi 1948 logo sistem tarafından sonradan eklenecek. Ek kişi, yazı, filigran, rozet veya kaynakta olmayan aksesuar ekleme.';
 }
 
 function previewWebPortrait(event){

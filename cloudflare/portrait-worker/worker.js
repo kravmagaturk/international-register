@@ -159,11 +159,13 @@ export default {
 
       const prompt = [
         "Use input image 0 as the strict identity reference and keep exactly the same person.",
-        "Identity fidelity is the highest priority. Do not reinterpret, beautify, age, de-age, slim, widen or otherwise redesign the face.",
-        "Preserve the exact facial geometry, apparent age, hairstyle, hairline, glasses, beard or stubble, skin tone, eye shape, nose, mouth, jawline and recognizable facial proportions from the source photo.",
-        "Keep the original body build and natural expression as close to the source as possible.",
-        "Only transform presentation: chest-up professional Krav Maga academy portrait, plain black martial arts training shirt, dramatic black and deep red brush-stroke background, restrained realistic oil-paint texture, crisp studio lighting.",
-        "Do not copy the original background. Do not add text, letters, logos, badges, watermarks or extra people."
+        "Identity fidelity is the highest priority. Match the source face as literally as possible; do not reinterpret, beautify, stylize, age, de-age, slim, widen or redesign the face.",
+        "Preserve the exact facial geometry, apparent age, hairstyle, hairline, beard or stubble if present, skin tone, eye shape, eyebrows, nose, mouth, jawline, ears and recognizable facial proportions from the source photo.",
+        "Eyewear rule is strict: preserve glasses only if glasses are clearly visible in the source photo. If the source person is not wearing glasses, do not add glasses, sunglasses or any eyewear under any circumstance.",
+        "Keep the original body build, head angle and natural expression as close to the source as possible.",
+        "Only transform presentation: chest-up professional Krav Maga academy portrait, plain black martial arts training shirt, black and deep red brush-stroke background, very subtle realistic painted texture, natural skin detail and crisp studio lighting.",
+        "The portrait should look like a faithful painted version of the source photograph, not a redesigned character.",
+        "Do not copy the original background. Do not add text, letters, logos, badges, watermarks, jewelry, eyewear not present in the source, or extra people."
       ].join(" ");
 
       const inputBlob = new Blob([imageBytes], { type: "image/" + (match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase()) });
@@ -172,7 +174,7 @@ export default {
       form.append("prompt", prompt);
       form.append("width", "768");
       form.append("height", "768");
-      form.append("guidance", "4");
+      form.append("guidance", "3");
 
       const formResponse = new Response(form);
       const formStream = formResponse.body;
