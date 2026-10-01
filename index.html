@@ -386,7 +386,7 @@ var levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
-  'Junior':['Level 1','Level 2','Level 3','Level 4','Level 5'], 'Kids':[], 'Asistan':[], 'Instructor':['Instructor','Kids Instructor'],
+  'Junior':['Level 1','Level 2','Level 3','Level 4','Level 5'], 'Kids':[], 'Asistan':[], 'Instructor':['Kids Instructor'],
   'Close Protection':[], 'Representative':[], 'Güvenlik':[], 'Teşekkür Belgesi':[], 'Katılım Belgesi':[], 'Seminer':[]
 };
 var CERT_ELIGIBLE_LEVEL = 'Teşekkür Belgesi';
@@ -803,7 +803,7 @@ function previewWebPortrait(event){
           diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
           return syncPublicInstructor(updated);
         }).then(function(){
-          if(statusEl) statusEl.textContent='✓ Onaylanan çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ekranı ve Sicil Bilgi PDF bu çizimi kullanır.';
+          if(statusEl) statusEl.textContent='✓ Onaylanan çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ekranı ve Kayıt Bilgisi PDF bu çizimi kullanır.';
         }).catch(function(err){
           console.error('Web çizimi otomatik bağlanamadı:',err);
           if(statusEl) statusEl.textContent='⚠️ Otomatik bağlama başarısız. Kaydı Güncelle düğmesiyle tekrar deneyin.';
@@ -1020,11 +1020,21 @@ function buildDownloadPackage(record){
   pkg.downloadPermissions=getDownloadPermissions(record);
   return pkg;
 }
+var REGISTRY_INFO_SECTIONS=['Instructor','Asistan','Teşekkür Belgesi','Close Protection','Practitioner','Graduate','Expert'];
+function registryInfoSectionForLevel(level){
+  var s=String(level||'').trim();
+  for(var i=0;i<REGISTRY_INFO_SECTIONS.length;i++){
+    if(s.indexOf(REGISTRY_INFO_SECTIONS[i])===0) return REGISTRY_INFO_SECTIONS[i];
+  }
+  return '';
+}
 function getDownloadPermissions(record){
   var p=(record&&record.downloadPermissions)||{};
+  var hasRegistrySections=Array.isArray(p.registrySections);
   return {
     onlineEducation:p.onlineEducation===true || (p.onlineEducation===undefined && record&&record.onlineEducationAccess===true),
     registryInfo:p.registryInfo===true,
+    registrySections:hasRegistrySections?p.registrySections.filter(function(x){return REGISTRY_INFO_SECTIONS.indexOf(x)>=0;}):REGISTRY_INFO_SECTIONS.slice(),
     documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
   };
 }
@@ -1215,7 +1225,7 @@ function renderAuthorizedDownloads(record){
     html+='<select class="pdf-output-select" onchange="handleUnlockedDocumentMenu(this)"><option value="">📄 Yetkili Diploma / Belgeler</option>'+options.join('')+'</select>';
   }
   if(perms.registryInfo){
-    html+=' <button class="btn btn-secondary btn-small" type="button" onclick="runPdfAction(\'registry-info\',lastUnlockedRecord)">📋 Sicil Bilgi PDF</button>';
+    html+=' <button class="btn btn-secondary btn-small" type="button" onclick="runPdfAction(\'registry-info\',lastUnlockedRecord)">📋 Kayıt Bilgisi PDF</button>';
   }
   if(!options.length && !perms.registryInfo){
     html+='<div class="message error" style="margin-top:10px;">Bu kayıt için indirilebilir belge yetkisi tanımlanmamış.</div>';
@@ -1435,10 +1445,17 @@ function downloadRegistryInfoPDF(record){
     if(portrait){ try{ doc.addImage(portrait,'JPEG',14.0,72.0,42.0,55.0); }catch(e){} }
     if(qr){ try{ doc.addImage(qr,'PNG',18.0,132.0,34.0,34.0); }catch(e){} }
 
-    var docs=recordDocuments(d);
-    // Tek sicil: kişinin bütün belge/seviyeleri LEVEL alanında birlikte gösterilir.
+    var perms=getDownloadPermissions(d);
+    var docs=recordDocuments(d).filter(function(x){
+      var section=registryInfoSectionForLevel(x&&x.level);
+      return section && perms.registrySections.indexOf(section)>=0;
+    });
+    // Kayıt Bilgisi PDF: yalnız yönetici tarafından onaylanan belge/seviye grupları basılır.
     var registryLevels=docs.map(function(x){ return String((x&&x.level)||'').trim(); }).filter(Boolean);
-    if(!registryLevels.length && d.level) registryLevels=[String(d.level).trim()];
+    if(!registryLevels.length && d.level){
+      var fallbackSection=registryInfoSectionForLevel(d.level);
+      if(fallbackSection && perms.registrySections.indexOf(fallbackSection)>=0) registryLevels=[String(d.level).trim()];
+    }
     // Diploma/Belge satırı ana belgeleri; Seviye satırı alt seviyeleri gösterir.
     var registryMainLevels=[], registrySubLevels=[];
     registryLevels.forEach(function(level){
@@ -1461,9 +1478,9 @@ function downloadRegistryInfoPDF(record){
     fitRegistry(activeDoc.examLocation||d.examLocation,119.0,144.0,100,11.5,8.5);
     fitRegistry(d.status==='pasif'?'PASİF / INACTIVE':'AKTİF / ACTIVE',119.0,155.0,100,11.5,9,{color:d.status==='pasif'?'#b9141c':'#159447'});
     fitRegistry(d.instructorName||'-',119.0,166.0,100,11.5,8.5);
-    doc.save('sicil-bilgi-'+String(d.registerNo||'kayit')+'.pdf');
+    doc.save('kayit-bilgisi-'+String(d.registerNo||'kayit')+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_landscape_template'});
-  }).catch(function(err){console.error(err);alert('Sicil bilgi PDF oluşturulamadı: '+err.message);});
+  }).catch(function(err){console.error(err);alert('Kayıt Bilgisi PDF oluşturulamadı: '+err.message);});
 }
 
 function downloadStudentListPDF(){
@@ -2295,6 +2312,11 @@ function setDownloadPermission(index,kind,docIndex,enabled){
   var perms=getDownloadPermissions(d);
   if(kind==='registry'){
     perms.registryInfo=enabled===true;
+  }else if(kind==='registrySection'){
+    var section=String(docIndex||'');
+    var selected=perms.registrySections.filter(function(x){return x!==section;});
+    if(enabled===true && REGISTRY_INFO_SECTIONS.indexOf(section)>=0) selected.push(section);
+    perms.registrySections=REGISTRY_INFO_SECTIONS.filter(function(x){return selected.indexOf(x)>=0;});
   }else if(kind==='document'){
     docIndex=Number(docIndex);
     var arr=perms.documents.filter(function(x){return x!==docIndex;});
@@ -2385,7 +2407,7 @@ function renderDiplomaList(filtered, isFiltering){
       documentMenus += '</select>';
     }
     var registryMenu = '<select class="pdf-output-select" onchange="handleAdminPdfMenu(this,'+i+')">' +
-      '<option value="">📋 Sicil Bilgi</option><option value="registry-info">Sicil Bilgi — Tüm Seviyeler</option></select>';
+      '<option value="">📋 Kayıt Bilgisi</option><option value="registry-info">Kayıt Bilgisi PDF</option></select>';
     var perms=getDownloadPermissions(d);
     var permissionDocs=[];
     var permissionKeys={};
@@ -2410,7 +2432,14 @@ function renderDiplomaList(filtered, isFiltering){
       '<label style="display:block;margin:6px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.onlineEducation?'checked':'')+' onchange="setOnlineEducationAccess('+i+',this.checked,this)"> Online Eğitim Erişimi — '+(perms.onlineEducation?'🟢 Açık':'🔴 Kapalı')+'</label>'+
       '<label style="display:block;margin:6px 0 10px;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(isActive?'checked':'')+' onchange="setStudentActiveAccess('+i+',this.checked,this)"> Faal Öğrenci — '+(isActive?'🟢 Aktif':'🔴 Faal Değil')+'</label>'+
       '<div style="height:1px;background:#303034;margin:8px 0 10px;"></div>'+
-      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Sicil Bilgi PDF — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>';
+      '<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)"> Kayıt Bilgisi PDF — '+(perms.registryInfo?'🟢 Açık':'🔴 Kapalı')+'</label>'+
+      '<div style="margin:5px 0 8px 24px;padding:7px 9px;border-left:2px solid #444;">'+
+        '<div style="font-size:12px;color:#bbb;margin-bottom:5px;">Kayıt Bilgisi PDF içinde gösterilecek belge / dereceler:</div>'+
+        REGISTRY_INFO_SECTIONS.map(function(section){
+          var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
+          return '<label style="display:block;margin:3px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.registrySections.indexOf(section)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'registrySection\',\''+section.replace(/'/g,"\\'")+'\',this.checked)"> '+label+' — '+(perms.registrySections.indexOf(section)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
+        }).join('')+
+      '</div>';
     permissionDocs.forEach(function(item){
       permissionHtml+='<label style="display:block;margin:4px 0;"><input type="checkbox" style="width:auto;margin-right:6px;" '+(perms.documents.indexOf(item.index)>=0?'checked':'')+' onchange="setDownloadPermission('+i+',\'document\','+item.index+',this.checked)"> '+item.label+' — '+(perms.documents.indexOf(item.index)>=0?'🟢 Açık':'🔴 Kapalı')+'</label>';
     });
