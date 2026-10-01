@@ -1456,6 +1456,8 @@ function downloadRegistryInfoPDF(record){
     var perms=getDownloadPermissions(d);
     var docs=recordDocuments(d).filter(function(x){
       var section=registryInfoSectionForLevel(x&&x.level);
+      // Instructor artık documents/level kaynağından Kayıt Bilgisi PDF'ye alınmaz.
+      if(section==='Instructor') return false;
       return section && perms.registrySections.indexOf(section)>=0;
     });
     // Kayıt Bilgisi PDF: yalnız yönetici tarafından onaylanan belge/seviye grupları basılır.
@@ -1467,9 +1469,14 @@ function downloadRegistryInfoPDF(record){
     });
     if(!registryLevels.length && d.level){
       var fallbackSection=registryInfoSectionForLevel(d.level);
-      if(fallbackSection && perms.registrySections.indexOf(fallbackSection)>=0){
+      if(fallbackSection && fallbackSection!=='Instructor' && perms.registrySections.indexOf(fallbackSection)>=0){
         registryLevels=normalizeLevelText(d.level).split(/\s*•\s*/).filter(Boolean);
       }
+    }
+    // Instructor yalnız açık web rolü kaynağından eklenir; eski documents/level verisine bağlı değildir.
+    var explicitPublicRoles=Array.isArray(d.publicRoles)?d.publicRoles.slice():(d.publicRole?[d.publicRole]:[]);
+    if(perms.registrySections.indexOf('Instructor')>=0 && explicitPublicRoles.indexOf('Instructor')>=0){
+      registryLevels.unshift('Instructor');
     }
     // Diploma/Belge satırı ana belgeleri; Seviye satırı alt seviyeleri gösterir.
     var registryMainLevels=[], registrySubLevels=[];
