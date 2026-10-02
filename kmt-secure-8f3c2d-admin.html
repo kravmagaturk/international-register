@@ -399,6 +399,7 @@ var currentPhotoData = '';
 var editingIndex = -1;
 var addingDocumentIndex = -1;
 var expandedRows = {};
+var expandedAdminPanels = {};
 var lastSearchedRecord = null;
 var lastUnlockedRecord = null;
 var publicPinAttempts = {};
@@ -2359,12 +2360,12 @@ function setPublicInstructorAccess(index,enabled,input){
   adminFetch('/diplomaData/'+reg+'/publicInstructor.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
   }).then(function(){return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]);})
-    .then(function(){filterDiplomas();})
+    .then(function(){refreshDiplomaListPreservingView(index,'permissions');})
     .catch(function(){
       d.publicInstructor=previous;
       if(input) input.checked=previous;
       alert(t('msgSaveError'));
-      filterDiplomas();
+      refreshDiplomaListPreservingView(index,'permissions');
     });
 }
 function setStudentActiveAccess(index,enabled,input){
@@ -2375,12 +2376,12 @@ function setStudentActiveAccess(index,enabled,input){
   adminFetch('/diplomaData/'+encodeURIComponent(d.registerNo)+'.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)
   }).then(function(){return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]);})
-    .then(function(){filterDiplomas();})
+    .then(function(){refreshDiplomaListPreservingView(index,'permissions');})
     .catch(function(){
       d.status=previous;
       if(input) input.checked=!isInactiveStatus(previous);
       alert(t('msgSaveError'));
-      filterDiplomas();
+      refreshDiplomaListPreservingView(index,'permissions');
     });
 }
 function setOnlineEducationAccess(index,enabled,input){
@@ -2401,13 +2402,13 @@ function setOnlineEducationAccess(index,enabled,input){
   adminFetch('/diplomaData/'+reg+'.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)
   }).then(function(){return syncStudentAccess(d);})
-    .then(function(){filterDiplomas();})
+    .then(function(){refreshDiplomaListPreservingView(index,'permissions');})
     .catch(function(){
       d.onlineEducationAccess=previousAccess;
       d.downloadPermissions=previousPermissions;
       if(input) input.checked=previousPermissions.onlineEducation===true;
       alert(t('msgSaveError'));
-      filterDiplomas();
+      refreshDiplomaListPreservingView(index,'permissions');
     });
 }
 function setDownloadPermission(index,kind,docIndex,enabled){
@@ -2442,8 +2443,11 @@ function setDownloadPermission(index,kind,docIndex,enabled){
   adminFetch('/diplomaData/'+encodeURIComponent(d.registerNo)+'/downloadPermissions.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(perms)
   }).then(function(){return syncStudentAccess(d);})
-    .then(function(){filterDiplomas();})
-    .catch(function(){alert(t('msgSaveError'));});
+    .then(function(){refreshDiplomaListPreservingView(index,kind.indexOf('registry')===0?'registry':'permissions');})
+    .catch(function(){
+      alert(t('msgSaveError'));
+      refreshDiplomaListPreservingView(index,kind.indexOf('registry')===0?'registry':'permissions');
+    });
 }
 function regenerateAccessPin(index){
   var d=diplomaData[index]; if(!d) return;
@@ -2478,6 +2482,21 @@ function filterDiplomas(){
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
 }
+function rememberAdminPanel(registerNo,panel,isOpen){
+  if(!registerNo || !panel) return;
+  if(!expandedAdminPanels[registerNo]) expandedAdminPanels[registerNo]={};
+  expandedAdminPanels[registerNo][panel]=isOpen===true;
+}
+function refreshDiplomaListPreservingView(index,panel){
+  var d=diplomaData[index];
+  if(d){
+    expandedRows[index]=true;
+    if(panel) rememberAdminPanel(d.registerNo,panel,true);
+  }
+  var scrollTop=window.pageYOffset || document.documentElement.scrollTop || 0;
+  filterDiplomas();
+  window.requestAnimationFrame(function(){ window.scrollTo(0,scrollTop); });
+}
 function renderStats(){
   var statsBox = document.getElementById('stats-display');
   var total = diplomaData.length;
@@ -2502,6 +2521,7 @@ function renderDiplomaList(filtered, isFiltering){
   filtered.forEach(function(item){
     var d = item.d, i = item.i;
     var isOpen = !!expandedRows[i];
+    var panelState = expandedAdminPanels[d.registerNo] || {};
     var statusDot = isInactiveStatus(d.status) ? '🔴' : '🟢';
     var statusBadge = isInactiveStatus(d.status) ?
       '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusInactive')+'</span>' :
@@ -2529,7 +2549,7 @@ function renderDiplomaList(filtered, isFiltering){
       return '<span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+(enabled?'#39d98a':'#e53935')+';box-shadow:0 0 0 1px rgba(255,255,255,.18);"></span>';
     };
     var registryRowStyle='display:grid;grid-template-columns:26px 18px minmax(0,1fr) auto;align-items:center;column-gap:8px;margin:7px 0;color:#f2f2f2;';
-    var registryMenu = '<details style="width:100%;min-width:190px;border:1px solid #38383d;background:#09090a;">'+
+    var registryMenu = '<details '+(panelState.registry?'open ':'')+'ontoggle="rememberAdminPanel(\''+d.registerNo+'\',\'registry\',this.open)" style="width:100%;min-width:190px;border:1px solid #38383d;background:#09090a;">'+
       '<summary style="cursor:pointer;padding:9px 10px;font-weight:800;color:#fff;list-style:none;">📋 Kayıt Bilgisi ▾</summary>'+
       '<div style="padding:6px 10px 10px;">'+
         '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin:0 0 9px;" onclick="handleAdminPdfMenu({value:\'registry-info\',selectedIndex:0},'+i+')">Kayıt Bilgisi PDF</button>'+
@@ -2573,7 +2593,7 @@ function renderDiplomaList(filtered, isFiltering){
       return '<span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+(enabled?'#39d98a':'#e53935')+';box-shadow:0 0 0 1px rgba(255,255,255,.18);"></span>';
     };
     var permissionRowStyle='display:grid;grid-template-columns:26px 18px minmax(0,1fr) auto;align-items:center;column-gap:8px;margin:7px 0;color:#f2f2f2;';
-    var permissionHtml='<details style="margin-top:10px;border:1px solid #303034;background:#0b0b0c;">'+
+    var permissionHtml='<details '+(panelState.permissions?'open ':'')+'ontoggle="rememberAdminPanel(\''+d.registerNo+'\',\'permissions\',this.open)" style="margin-top:10px;border:1px solid #303034;background:#0b0b0c;">'+
       '<summary style="cursor:pointer;padding:12px;font-weight:800;color:#fff;list-style:none;">Yetkilendirme ▾</summary>'+
       '<div style="padding:0 12px 12px;">'+
       '<label style="'+permissionRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(d.publicInstructor===true?'checked':'')+' onchange="setPublicInstructorAccess('+i+',this.checked,this)">'+permissionDot(d.publicInstructor===true)+'<span>Web Eğitmen / Temsilci Profili</span><span style="white-space:nowrap;">'+(d.publicInstructor===true?'Açık':'Kapalı')+'</span></label>'+
