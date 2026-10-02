@@ -245,7 +245,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <input type="file" id="studentPhoto" accept="image/*" onchange="previewPhoto(event)">
             <div id="studentPhotoUploadStatus" style="font-size:12px;color:#777;margin:7px 0;">Seçtiğiniz öğrenci fotoğrafı burada önizlenir.</div>
             <div id="photoPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
-              <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('photoPreviewImg').src)"><img id="photoPreviewImg" alt="Öğrenci fotoğrafı"></div>
+              <div class="photo-frame-large" style="cursor:pointer;" onclick="openLightbox(document.getElementById('photoPreviewImg').src)"><img id="photoPreviewImg" alt="Öğrenci fotoğrafı"></div>
               <button type="button" class="btn btn-danger" id="btn-remove-photo" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
             </div>
           </div>
@@ -255,7 +255,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
             <div id="webPortraitUploadStatus" style="font-size:12px;color:#777;margin:7px 0;">Seçtiğiniz görsel burada önizlenir.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
-              <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
+              <div class="photo-frame-large" style="cursor:pointer;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
               <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Web profil görseli hazır.</div>
               <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Profil Görselini Kaldır</button>
             </div>
