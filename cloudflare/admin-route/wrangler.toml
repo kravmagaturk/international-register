@@ -1,0 +1,9 @@
+name = "kmt-admin-route"
+main = "worker.js"
+compatibility_date = "2026-10-02"
+workers_dev = true
+preview_urls = false
+
+routes = [
+  { pattern = "kravmaga.com.tr/kmt-admin*", zone_name = "kravmaga.com.tr" }
+]
