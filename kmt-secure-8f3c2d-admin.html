@@ -216,8 +216,10 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
           <button class="btn" id="btn-book-subscribers" onclick="toggleBookSubscribers()">📚 Kitap Aboneleri</button>
           <button class="btn btn-secondary" id="btn-master-support" onclick="createKmtMasterBackup()">🧰 KMT MASTER BACKUP</button>
+          <button class="btn btn-secondary" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">🔐 Güvenli Paketleri Eşitle</button>
           <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
+        <div id="secure-access-sync-status" style="margin:-8px 0 14px;color:#999;font-size:12px;"></div>
 
         <div id="security-logs-section" class="hidden" style="margin-bottom:20px;">
           <h4 id="txt-securityLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 Güvenlik ve İndirme Kayıtları</h4>
@@ -1925,6 +1927,52 @@ function adminLogin(){
     if(btn){btn.disabled=false;btn.textContent='🔐 Google ile Giriş Yap';}
   });
 }
+async function syncAllSecureAccessPackages(showAlert){
+  if(!currentAdminUser) throw new Error('ADMIN_AUTH_REQUIRED');
+  var btn=document.getElementById('btn-sync-secure-access');
+  var status=document.getElementById('secure-access-sync-status');
+  var oldText=btn?btn.textContent:'';
+  var succeeded=0,failed=[];
+  if(btn){btn.disabled=true;btn.textContent='⏳ Güvenli paketler eşitleniyor...';}
+  if(status){status.textContent='Öğrenci paketleri güvenli depoya aktarılıyor...';status.style.color='#999';}
+  try{
+    for(var i=0;i<diplomaData.length;i++){
+      var record=diplomaData[i];
+      try{
+        var hadPin=/^\d{5}$/.test(String(record.accessPin||''));
+        ensureAccessPin(record);
+        if(!record.downloadPermissions || typeof record.downloadPermissions!=='object'){
+          record.downloadPermissions={registryInfo:false,documents:[]};
+        }
+        if(!hadPin){
+          await adminFetch('/diplomaData/'+encodeURIComponent(record.registerNo)+'.json',{
+            method:'PATCH',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({accessPin:record.accessPin,downloadPermissions:record.downloadPermissions})
+          });
+        }
+        await syncStudentAccess(record);
+        succeeded++;
+      }catch(err){
+        failed.push({registerNo:record&&record.registerNo?record.registerNo:'-',message:err&&err.message?err.message:String(err)});
+        console.warn('Güvenli öğrenci paketi eşitlenemedi:',record&&record.registerNo,err);
+      }
+    }
+    var packageCount=null;
+    try{
+      var response=await registerAccessAdminFetch('/v1/admin/status',{method:'GET'});
+      var statusData=await response.json();
+      packageCount=Number(statusData.packageCount);
+    }catch(statusError){
+      console.warn('Güvenli paket sayısı doğrulanamadı:',statusError);
+    }
+    var summary='Güvenli paket eşitleme: '+succeeded+' başarılı, '+failed.length+' başarısız'+(packageCount!==null?' · Depoda '+packageCount+' paket':'')+'.';
+    if(status){status.textContent=summary;status.style.color=failed.length?'#ffb74d':'#39d98a';}
+    if(showAlert) alert(summary+(failed.length?'\n\nBaşarısız siciller: '+failed.map(function(x){return x.registerNo;}).join(', '):''));
+    return {succeeded:succeeded,failed:failed,packageCount:packageCount};
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=oldText||'🔐 Güvenli Paketleri Eşitle';}
+  }
+}
 async function loadAllDiplomas() {
         try {
             if (!currentAdminUser) {
@@ -1952,25 +2000,7 @@ async function loadAllDiplomas() {
             filterDiplomas();
 
             // Eski kayıtları yeni güvenli öğrenci erişim modeline arka planda eşitle.
-            Promise.all(diplomaData.map(async function(record){
-                try{
-                    var hadPin=/^\d{5}$/.test(String(record.accessPin||''));
-                    ensureAccessPin(record);
-                    if(!record.downloadPermissions || typeof record.downloadPermissions!=='object'){
-                        record.downloadPermissions={registryInfo:false,documents:[]};
-                    }
-                    if(!hadPin){
-                        await adminFetch('/diplomaData/'+encodeURIComponent(record.registerNo)+'.json',{
-                            method:'PATCH',
-                            headers:{'Content-Type':'application/json'},
-                            body:JSON.stringify({accessPin:record.accessPin,downloadPermissions:record.downloadPermissions})
-                        });
-                    }
-                    await Promise.all([syncPublicInstructor(record),syncStudentAccess(record)]);
-                }catch(err){
-                    console.warn('Öğrenci erişimi eşitlenemedi:', record && record.registerNo, err);
-                }
-            })).catch(function(err){
+            syncAllSecureAccessPackages(false).catch(function(err){
                 console.warn('Arka plan öğrenci erişim eşitlemesi tamamlanamadı:', err);
             });
         } catch (error) {
