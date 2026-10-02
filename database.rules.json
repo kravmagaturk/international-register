@@ -17,12 +17,8 @@
       ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     },
     "downloadPackages": {
-      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'",
-      "$registerNo": {
-        "$pin": {
-          ".read": true
-        }
-      }
+      ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     },
     "publicInstructors": {
       ".read": true,
@@ -30,7 +26,7 @@
     },
     "securityLogs": {
       ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",
-      ".write": true
+      ".write": "auth != null && auth.token.email == 'bulicet@gmail.com'"
     },
     "portraitRequests": {
       ".read": "auth != null && auth.token.email == 'bulicet@gmail.com'",

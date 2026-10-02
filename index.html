@@ -379,6 +379,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 
 <script>
 var FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
+var REGISTER_ACCESS_API_URL = 'https://kmt-register-access.bulicet.workers.dev';
 // === FIREBASE AUTH AYARLARI ===
 // Firebase Console > Project settings > Your apps > Web app bölümündeki değerleri girin.
 var firebaseConfig = {
@@ -403,7 +404,6 @@ var addingDocumentIndex = -1;
 var expandedRows = {};
 var lastSearchedRecord = null;
 var lastUnlockedRecord = null;
-var publicPinAttempts = {};
 var cachedLogoBase64 = null;
 var uiLang = localStorage.getItem('uiLang') || 'tr';
 
@@ -602,6 +602,17 @@ function adminFetch(path, options){
     var joiner = path.indexOf('?') >= 0 ? '&' : '?';
     return fetch(FIREBASE_URL + path + joiner + 'auth=' + encodeURIComponent(token), options).then(function(res){
       if(!res.ok) throw new Error('Firebase HTTP '+res.status);
+      return res;
+    });
+  });
+}
+function registerAccessAdminFetch(path, options){
+  if(!currentAdminUser) return Promise.reject(new Error('ADMIN_AUTH_REQUIRED'));
+  return currentAdminUser.getIdToken().then(function(token){
+    var requestOptions=Object.assign({},options||{});
+    requestOptions.headers=Object.assign({},requestOptions.headers||{}, {'Authorization':'Bearer '+token});
+    return fetch(REGISTER_ACCESS_API_URL+path,requestOptions).then(function(res){
+      if(!res.ok) return res.text().then(function(body){throw new Error('Register access HTTP '+res.status+': '+body);});
       return res;
     });
   });
@@ -1200,11 +1211,26 @@ function buildPublicDiplomaRecord(record){
   };
 }
 function buildDownloadPackage(record){
-  var pkg=Object.assign({},record);
-  delete pkg.accessPin;
-  delete pkg._firebaseKey;
-  pkg.downloadPermissions=getDownloadPermissions(record);
-  return pkg;
+  return {
+    registerNo:record.registerNo||'',
+    studentName:record.studentName||'',
+    joinDate:record.joinDate||'',
+    examDate:record.examDate||'',
+    examLocation:record.examLocation||'',
+    instructorName:record.instructorName||'',
+    country:record.country||'',
+    city:record.city||'',
+    district:record.district||'',
+    level:record.level||'',
+    documents:recordDocuments(record).map(function(doc){return Object.assign({},doc);}),
+    status:record.status||'faal',
+    publicInstructor:record.publicInstructor===true,
+    publicRole:record.publicRole||'',
+    publicRoles:Array.isArray(record.publicRoles)?record.publicRoles.slice():[],
+    webPortrait:record.webPortraitUrl||record.webPortrait||'',
+    webPortraitUrl:record.webPortraitUrl||'',
+    downloadPermissions:getDownloadPermissions(record)
+  };
 }
 var REGISTRY_INFO_SECTIONS=['Instructor','Asistan','Teşekkür Belgesi','Close Protection','Practitioner','Graduate','Expert'];
 function registryInfoSectionForLevel(level){
@@ -1248,7 +1274,7 @@ function syncStudentAccess(record){
   var reg=encodeURIComponent(record.registerNo);
   return Promise.all([
     adminFetch('/publicDiplomaData/'+reg+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildPublicDiplomaRecord(record))}),
-    adminFetch('/downloadPackages/'+reg+'/'+pin+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildDownloadPackage(record))})
+    registerAccessAdminFetch('/v1/admin/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:record.registerNo,pin:pin,record:buildDownloadPackage(record)})})
   ]);
 }
 function renderSearchResult(d){
@@ -1454,22 +1480,23 @@ function unlockStudentDownloads(){
     if(box) box.innerHTML='<div class="message error">5 haneli öğrenci şifresini girin.</div>';
     return;
   }
-  var state=publicPinAttempts[reg]||{count:0,lockedUntil:0};
-  if(state.lockedUntil>Date.now()){
-    var mins=Math.ceil((state.lockedUntil-Date.now())/60000);
-    if(box) box.innerHTML='<div class="message error">Çok fazla hatalı deneme. '+mins+' dakika sonra tekrar deneyin.</div>';
-    return;
-  }
-  fetch(FIREBASE_URL+'/downloadPackages/'+encodeURIComponent(reg)+'/'+encodeURIComponent(pin)+'.json')
-    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
+  fetch(REGISTER_ACCESS_API_URL+'/v1/unlock',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({registerNo:reg,pin:pin})
+  })
+    .then(function(res){
+      return res.json().catch(function(){return {};}).then(function(data){
+        if(!res.ok){
+          var err=new Error(res.status===429?'RATE_LIMITED':'BAD_PIN');
+          err.retryAfter=Number(data.retryAfter||0);
+          throw err;
+        }
+        return data.record;
+      });
+    })
     .then(function(pkg){
-      if(!pkg || !pkg.registerNo){
-        state.count++;
-        if(state.count>=5){ state.count=0; state.lockedUntil=Date.now()+15*60*1000; }
-        publicPinAttempts[reg]=state;
-        throw new Error('BAD_PIN');
-      }
-      publicPinAttempts[reg]={count:0,lockedUntil:0};
+      if(!pkg || !pkg.registerNo) throw new Error('BAD_PIN');
       lastUnlockedRecord=normalizePublicRecord(pkg,reg);
       lastUnlockedRecord.downloadPermissions=pkg.downloadPermissions||{};
       renderAuthorizedDownloads(lastUnlockedRecord);
@@ -1477,7 +1504,10 @@ function unlockStudentDownloads(){
     })
     .catch(function(err){
       if(box){
-        if(err&&err.message==='BAD_PIN') box.innerHTML='<div class="message error">Şifre hatalı.</div>';
+        if(err&&err.message==='RATE_LIMITED'){
+          var mins=Math.max(1,Math.ceil((err.retryAfter||900)/60));
+          box.innerHTML='<div class="message error">Çok fazla hatalı deneme. '+mins+' dakika sonra tekrar deneyin.</div>';
+        }else if(err&&err.message==='BAD_PIN') box.innerHTML='<div class="message error">Şifre hatalı.</div>';
         else box.innerHTML='<div class="message error">Şifre doğrulanamadı. Lütfen tekrar deneyin.</div>';
       }
     });
@@ -2588,17 +2618,12 @@ function setDownloadPermission(index,kind,docIndex,enabled){
 }
 function regenerateAccessPin(index){
   var d=diplomaData[index]; if(!d) return;
-  var oldPin=String(d.accessPin||'');
   var next;
   do{ next=generateAccessPin(); }while(diplomaData.some(function(x,j){return j!==index&&String(x.accessPin||'')===next;}));
   d.accessPin=next;
   var reg=encodeURIComponent(d.registerNo);
   adminFetch('/diplomaData/'+reg+'/accessPin.json',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
-  }).then(function(){
-    if(/^\d{5}$/.test(oldPin)){
-      return adminFetch('/downloadPackages/'+reg+'/'+oldPin+'.json',{method:'DELETE'});
-    }
   }).then(function(){return syncStudentAccess(d);})
     .then(function(){filterDiplomas();alert('Yeni öğrenci şifresi: '+next);})
     .catch(function(){alert(t('msgSaveError'));});
@@ -2774,7 +2799,8 @@ function deleteDiploma(i){
       adminFetch('/diplomaData/'+reg+'.json',{method:'DELETE'}),
       adminFetch('/publicDiplomaData/'+reg+'.json',{method:'DELETE'}),
       adminFetch('/downloadPackages/'+reg+'.json',{method:'DELETE'}),
-      adminFetch('/publicInstructors/'+reg+'.json',{method:'DELETE'})
+      adminFetch('/publicInstructors/'+reg+'.json',{method:'DELETE'}),
+      registerAccessAdminFetch('/v1/admin/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:d.registerNo})})
     ]).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
