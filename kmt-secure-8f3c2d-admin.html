@@ -251,7 +251,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
             <label>Web Profil Görseli:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Dışarıda hazırlanıp onaylanan JPG, PNG ya da WebP görselini seçin. Görsel, kayıt kaydedildiğinde sicile bağlanır.</div>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Dışarıda hazırlanıp onaylanan JPG, PNG ya da WebP görselini seçin. Sistem resmi kesmeden otomatik olarak 3:4 portre çerçevesine yerleştirir. Önerilen ölçü: 900×1200 piksel.</div>
             <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
             <div id="webPortraitUploadStatus" style="font-size:12px;color:#777;margin:7px 0;">Seçtiğiniz görsel burada önizlenir.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
@@ -756,17 +756,29 @@ function previewWebPortrait(event){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      var size = 448;
+      var targetWidth = 600, targetHeight = 800;
       var canvas = document.createElement('canvas');
-      canvas.width = size; canvas.height = size;
+      canvas.width = targetWidth; canvas.height = targetHeight;
       var ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
-      var sourceSize = Math.min(iw, ih);
-      var sx = (iw-sourceSize)/2, sy = (ih-sourceSize)/2;
-      ctx.drawImage(img,sx,sy,sourceSize,sourceSize,0,0,size,size);
-      currentWebPortraitData = canvas.toDataURL('image/jpeg',0.86);
+
+      // Arka planı aynı fotoğrafın yumuşatılmış sürümüyle doldur; böylece
+      // farklı en/boy oranlarında siyah boşluk oluşmaz ve ana resim kesilmez.
+      var coverScale = Math.max(targetWidth/iw,targetHeight/ih);
+      var coverWidth = iw*coverScale, coverHeight = ih*coverScale;
+      ctx.save();
+      ctx.filter = 'blur(22px) brightness(0.55)';
+      ctx.drawImage(img,(targetWidth-coverWidth)/2,(targetHeight-coverHeight)/2,coverWidth,coverHeight);
+      ctx.restore();
+
+      // Ana görselin tamamını güvenli kenar payıyla 3:4 çerçeveye sığdır.
+      var padding = 12;
+      var containScale = Math.min((targetWidth-padding*2)/iw,(targetHeight-padding*2)/ih);
+      var drawWidth = iw*containScale, drawHeight = ih*containScale;
+      ctx.drawImage(img,(targetWidth-drawWidth)/2,(targetHeight-drawHeight)/2,drawWidth,drawHeight);
+      currentWebPortraitData = canvas.toDataURL('image/jpeg',0.9);
       document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
       document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
 
