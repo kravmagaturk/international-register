@@ -250,17 +250,14 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             </div>
           </div>
           <div class="form-group" style="background:#f7f7f7;border:1px solid #ddd;padding:12px;border-radius:7px;">
-            <label>Web Profil Çizimi:</label>
-            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Öğrenci fotoğrafından çizimi oluşturun veya onaylanan JPG, PNG ya da WebP dosyasını seçin. Hazır çizim onaydan sonra sicile bağlanır.</div>
+            <label>Web Profil Görseli:</label>
+            <div style="font-size:12px;color:#555;margin:6px 0 10px;line-height:1.5;">Dışarıda hazırlanıp onaylanan JPG, PNG ya da WebP görselini seçin. Görsel, kayıt kaydedildiğinde sicile bağlanır.</div>
             <input type="file" id="webPortrait" accept="image/*" onchange="previewWebPortrait(event)">
-            <div id="chatgptPortraitState" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:7px;font-size:13px;font-weight:800;"></div>
-            <div id="webPortraitAiStatus" style="font-size:12px;color:#777;margin:7px 0;">Onaylanan çizimi seçtiğinizde burada önizleme görünür.</div>
-            <button type="button" class="btn btn-secondary" onclick="requestChatGPTPortrait()" style="background:#8a5a00;border-color:#8a5a00;color:#fff;margin:0 7px 10px 0;">🎨 Çizimi Oluştur</button>
+            <div id="webPortraitUploadStatus" style="font-size:12px;color:#777;margin:7px 0;">Seçtiğiniz görsel burada önizlenir.</div>
             <div id="webPortraitPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:zoom-in;" onclick="openLightbox(document.getElementById('webPortraitPreviewImg').src)"><img id="webPortraitPreviewImg" alt="Web profil çizimi"></div>
-              <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Web çizimi hazır.</div>
-              <button type="button" class="btn btn-secondary" onclick="approveChatGPTPortrait()" style="background:#178a3b;border-color:#178a3b;color:#fff;margin-right:7px;">✓ Çizimi Onayla</button>
-              <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Çizimini Kaldır</button>
+              <div style="font-size:12px;color:#2e7d32;margin:7px 0;">✓ Web profil görseli hazır.</div>
+              <button type="button" class="btn btn-danger" onclick="clearWebPortraitPreview()">Web Profil Görselini Kaldır</button>
             </div>
           </div>
           <div class="form-group">
@@ -306,7 +303,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
               <label><input type="checkbox" value="Representative" style="width:auto;"> Temsilci</label>
               <label><input type="checkbox" value="Expert" style="width:auto;"> Expert</label>
             </div>
-            <small style="display:block;margin-top:7px;color:#666;">Bir rol seçildiğinde kayıt bilgi arama arşivinde yayınlanır. Sicil fotoğrafı varsa web profil çizimi oluşturma onayı kayıt sırasında istenir.</small>
+            <small style="display:block;margin-top:7px;color:#666;">Bir rol seçildiğinde kayıt bilgi arama arşivinde yayınlanır. İsterseniz dışarıda hazırlanmış web profil görselini yukarıdaki alandan yükleyebilirsiniz.</small>
           </div>
           <div class="form-group">
             <label id="txt-lblMainLevel">Ana Seviye:</label>
@@ -747,199 +744,6 @@ function createKmtMasterBackup(){
   });
 }
 
-const PORTRAIT_ASSET_BASE='portrait-assets/approved/';
-const SOURCE_PHOTO_ASSET_BASE='portrait-assets/source/';
-const PORTRAIT_API_URL='https://kravmaga-portrait.bulicet.workers.dev';
-function approvedPortraitAssetUrl(reg){return PORTRAIT_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
-function sourcePhotoAssetUrl(reg){return SOURCE_PHOTO_ASSET_BASE+encodeURIComponent(reg)+'.jpg';}
-function watchApprovedPortraitAsset(reg){
-  var tries=0,maxTries=80;
-  function check(){
-    tries++;
-    var url=approvedPortraitAssetUrl(reg);
-    var img=new Image();
-    img.onload=function(){
-      currentWebPortraitData=url;
-      var preview=document.getElementById('webPortraitPreviewImg');
-      if(preview) preview.src=url+'?v='+Date.now();
-      var box=document.getElementById('webPortraitPreviewBox');
-      if(box) box.classList.remove('hidden');
-      setPortraitState('approval','Çizim hazır — onayınızı bekliyor — '+reg);
-      var s=document.getElementById('webPortraitAiStatus');
-      if(s){s.textContent='✓ ChatGPT çizimi GitHub deposunda hazır. Kontrol edip “Çizimi Onayla” düğmesine basın.';s.style.color='#2e7d32';}
-    };
-    img.onerror=function(){
-      if(tries<maxTries) setTimeout(check,15000);
-    };
-    img.src=url+'?v='+Date.now();
-  }
-  check();
-}
-function portraitRequestKey(reg){return String(reg||'').replace(/[.#$\[\]\/]/g,'_');}
-function setPortraitState(state,msg){
-  var box=document.getElementById('chatgptPortraitState'); if(!box)return;
-  var map={waiting:['#fff8e1','#8a5a00','🟡'],working:['#e3f2fd','#0d47a1','🔵'],approval:['#e8f5e9','#1b5e20','🟢'],approved:['#e8f5e9','#1b5e20','✓'],error:['#ffebee','#b71c1c','⚠️']};
-  var x=map[state]||map.waiting; box.classList.remove('hidden');box.style.background=x[0];box.style.color=x[1];box.textContent=x[2]+' '+msg;
-}
-function addOfficial1948Logo(portraitDataUrl){
-  return new Promise(function(resolve){
-    var portrait=new Image();
-    portrait.onload=function(){
-      var logo=new Image();
-      logo.crossOrigin='anonymous';
-      logo.onload=function(){
-        try{
-          var canvas=document.createElement('canvas');
-          canvas.width=portrait.naturalWidth||768;
-          canvas.height=portrait.naturalHeight||768;
-          var ctx=canvas.getContext('2d');
-          ctx.drawImage(portrait,0,0,canvas.width,canvas.height);
-          var base=Math.min(canvas.width,canvas.height);
-          var size=Math.round(base*0.115);
-          // Kullanıcının istediği görünür sol göğüs bölgesi.
-          var x=Math.round(canvas.width*0.20);
-          var y=Math.round(canvas.height*0.64);
-          var ratio=(logo.naturalWidth&&logo.naturalHeight)?(logo.naturalWidth/logo.naturalHeight):1;
-          var drawW=size,drawH=size;
-          if(ratio>1) drawH=Math.round(size/ratio); else if(ratio<1) drawW=Math.round(size*ratio);
-          ctx.drawImage(logo,x,y,drawW,drawH);
-          resolve(canvas.toDataURL('image/jpeg',0.94));
-        }catch(e){
-          console.warn('1948 logo bindirme hatası; portre logosuz devam ediyor.',e);
-          resolve(portraitDataUrl);
-        }
-      };
-      logo.onerror=function(){
-        console.warn('1948 logo yüklenemedi; portre logosuz devam ediyor.');
-        resolve(portraitDataUrl);
-      };
-      logo.src='https://kravmagaturk.github.io/international-register/logo.png?v=1948';
-    };
-    portrait.onerror=function(){
-      console.warn('Üretilen portre okunamadı; orijinal AI çıktısı korunuyor.');
-      resolve(portraitDataUrl);
-    };
-    portrait.src=portraitDataUrl;
-  });
-}
-function requestChatGPTPortrait(){
-  if(editingIndex<0 || !diplomaData[editingIndex]){
-    alert('Önce öğrenci kaydını kaydedin. Ardından Düzenle ekranından çizim talebi oluşturabilirsiniz.');
-    return Promise.resolve(false);
-  }
-  var d=diplomaData[editingIndex],reg=d.registerNo;
-  var source=currentPhotoData || d.photo || '';
-  if(!source){
-    setPortraitState('error','Çizim için öğrenci fotoğrafı gerekli — '+reg);
-    alert('Çizim talebi için önce öğrenci fotoğrafı ekleyin.');
-    return Promise.resolve(false);
-  }
-  var request={
-    registerNo:reg,
-    studentName:d.studentName || document.getElementById('studentName').value.trim(),
-    sourcePhoto:source,
-    prompt:prepareChatGPTPortraitRequest(reg,d.studentName),
-    status:'waiting',
-    requestedAt:new Date().toISOString()
-  };
-  setPortraitState('working','Çizim oluşturuluyor — '+reg);
-  var statusEl=document.getElementById('webPortraitAiStatus');
-  if(statusEl){statusEl.textContent='Öğrenci fotoğrafı güvenli çizim servisine gönderiliyor...';statusEl.style.color='#0d47a1';}
-  return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
-    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)
-  }).then(function(){
-    var updated=Object.assign({},d,{portraitStatus:'waiting',portraitRequestedAt:request.requestedAt});
-    delete updated._firebaseKey;
-    return adminFetch('/diplomaData/'+encodeURIComponent(reg)+'.json',{
-      method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)
-    }).then(function(){
-      diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});
-      if(!currentAdminUser) throw new Error('Yönetici oturumu bulunamadı.');
-      return currentAdminUser.getIdToken().then(function(token){
-        return fetch(PORTRAIT_API_URL,{
-          method:'POST',
-          headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-          body:JSON.stringify({image:source,registerNo:reg,studentName:request.studentName,prompt:request.prompt})
-        });
-      }).then(function(res){
-        return res.json().catch(function(){return {};}).then(function(data){
-          if(!res.ok || !data || !(data.webPortrait || data.image)) throw new Error((data&&data.error)||('Çizim servisi HTTP '+res.status));
-          return data.webPortrait || data.image;
-        });
-      }).then(function(generatedPortrait){
-        return addOfficial1948Logo(generatedPortrait);
-      }).then(function(generatedPortrait){
-        currentWebPortraitData=generatedPortrait;
-        var preview=document.getElementById('webPortraitPreviewImg');
-        if(preview) preview.src=generatedPortrait;
-        var previewBox=document.getElementById('webPortraitPreviewBox');
-        if(previewBox) previewBox.classList.remove('hidden');
-        var readyAt=new Date().toISOString();
-        return adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
-          method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approval',generatedAt:readyAt})
-        }).then(function(){
-          setPortraitState('approval','Çizim hazır — onayınızı bekliyor — '+reg);
-          if(statusEl){statusEl.textContent='✓ Çizim hazır. Kontrol edip “Çizimi Onayla” düğmesine basın.';statusEl.style.color='#2e7d32';}
-          return true;
-        });
-      });
-    });
-  }).catch(function(e){
-    var rawError=(e&&e.message)||String(e);
-    var quotaExceeded=/4006|daily free allocation|used up your daily free allocation|10,000 neurons/i.test(rawError);
-    var errorText=quotaExceeded
-      ? 'Günlük AI çizim kotası doldu. Kota yenilendiğinde tekrar deneyin.'
-      : rawError;
-    setPortraitState('error',errorText);
-    if(statusEl){
-      statusEl.textContent=quotaExceeded
-        ? '⚠️ Günlük AI çizim kotası doldu. Öğrenci kaydı etkilenmedi. Kota yenilendiğinde tekrar deneyin.'
-        : '⚠️ Çizim oluşturulamadı. Tekrar deneyin: '+errorText;
-      statusEl.style.color='#b71c1c';
-    }
-    adminFetch('/portraitRequests/'+encodeURIComponent(portraitRequestKey(reg))+'.json',{
-      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'error',error:errorText,failedAt:new Date().toISOString()})
-    }).catch(function(){});
-    return false;
-  });
-}
-function approveChatGPTPortrait(){
-  if(editingIndex<0||!diplomaData[editingIndex])return;
-  var d=diplomaData[editingIndex],reg=d.registerNo;
-  if(!currentWebPortraitData){alert('Önce onaylanacak çizim hazır olmalı.');return;}
-  var raw=String(currentWebPortraitData||'');
-  var isData=/^data:image\/(png|jpe?g|webp);base64,/i.test(raw);
-  var stableUrl=(!isData && (raw.indexOf('portrait-assets/approved/')===0 || raw.indexOf('/portrait-assets/approved/')>=0 || raw.indexOf('https://raw.githubusercontent.com/kravmagaturk/international-register/main/portrait-assets/approved/')===0))?raw.split('?')[0]:'';
-  if(!isData && !stableUrl){
-    setPortraitState('error','Çizim biçimi geçersiz — '+reg);
-    return;
-  }
-  var updated=Object.assign({},d,{
-    webPortrait:isData?raw:'',
-    webPortraitUrl:stableUrl,
-    portraitStatus:'approved',
-    portraitUpdatedAt:new Date().toISOString(),
-    portraitVersion:Date.now()
-  });
-  delete updated._firebaseKey;
-  adminFetch('/diplomaData/'+encodeURIComponent(reg)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)})
-   .then(function(){
-     diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:d._firebaseKey});
-     return Promise.all([syncPublicInstructor(updated),syncStudentAccess(updated)]);
-   })
-   .then(function(){
-     setPortraitState('approved','Onaylandı ve web profiline bağlandı — '+reg);
-     var s=document.getElementById('webPortraitAiStatus');
-     if(s){s.textContent='✓ Onaylandı. Çizim sicil ve sorgu ekranında aktif.';s.style.color='#2e7d32';}
-   })
-   .catch(function(e){
-     setPortraitState('error','Onay kaydedilemedi: '+(e.message||e));
-   });
-}
-function prepareChatGPTPortraitRequest(reg,name){
-  return 'Krav Maga Türk web profil çizim isteği. Sicil: '+(reg||'-')+' | Öğrenci: '+(name||'-')+'. Kaynak öğrenci fotoğrafını sıkı kimlik referansı olarak kullan. Yüz geometrisini, yaşı, saç çizgisini, saçını, varsa sakal/bıyığını, ten tonunu ve doğal ifadeyi mümkün olduğunca aynen koru. Gözlük yalnız kaynak fotoğrafta gerçekten varsa korunmalı; kaynakta gözlük yoksa hiçbir gözlük veya gözlük benzeri aksesuar eklenmemeli. Yüzü güzelleştirme, inceltme, genişletme veya yeniden tasarlama. Göğüsten yukarı, düz siyah dövüş sanatları tişörtü, siyah-koyu kırmızı fırça arka plan, hafif ve gerçekçi yağlı boya dokusu. Logo AI tarafından üretilmeyecek; resmi 1948 logo sistem tarafından sonradan eklenecek. Ek kişi, yazı, filigran, rozet veya kaynakta olmayan aksesuar ekleme.';
-}
-
 function previewWebPortrait(event){
   var file = event.target.files[0];
   if(!file) return;
@@ -966,14 +770,14 @@ function previewWebPortrait(event){
       document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
       document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
 
-      // Düzenlenen mevcut sicilde onaylı çizimi seçer seçmez otomatik bağla.
+      // Düzenlenen mevcut sicilde onaylı görseli seçer seçmez otomatik bağla.
       // Yeni kayıtta sicil no henüz oluşmadığı için normal Kaydet akışı kullanılır.
       if(editingIndex >= 0 && diplomaData[editingIndex] && diplomaData[editingIndex].registerNo){
         var target = diplomaData[editingIndex];
         var updated = Object.assign({}, target, {webPortrait:currentWebPortraitData});
         delete updated._firebaseKey;
-        var statusEl=document.getElementById('webPortraitAiStatus');
-        if(statusEl) statusEl.textContent='Çizim sicile otomatik bağlanıyor...';
+        var statusEl=document.getElementById('webPortraitUploadStatus');
+        if(statusEl) statusEl.textContent='Görsel sicile otomatik bağlanıyor...';
         adminFetch('/diplomaData/' + encodeURIComponent(target.registerNo) + '.json',{
           method:'PUT',
           headers:{'Content-Type':'application/json'},
@@ -982,7 +786,7 @@ function previewWebPortrait(event){
           diplomaData[editingIndex]=Object.assign({},updated,{_firebaseKey:target._firebaseKey});
           return syncPublicInstructor(updated);
         }).then(function(){
-          if(statusEl) statusEl.textContent='✓ Onaylanan çizim '+target.registerNo+' siciline otomatik bağlandı. Sorgu ekranı ve Kayıt Bilgisi PDF bu çizimi kullanır.';
+          if(statusEl) statusEl.textContent='✓ Onaylanan görsel '+target.registerNo+' siciline otomatik bağlandı. Sorgu ekranı ve Kayıt Bilgisi PDF bu görseli kullanır.';
         }).catch(function(err){
           console.error('Web çizimi otomatik bağlanamadı:',err);
           if(statusEl) statusEl.textContent='⚠️ Otomatik bağlama başarısız. Kaydı Güncelle düğmesiyle tekrar deneyin.';
@@ -2270,22 +2074,6 @@ function editDiploma(index){
     document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
   } else { clearWebPortraitPreview(); }
-  // GitHub'daki onay adayı çizimi kaydı açarken de kontrol et.
-  (function(){
-    var asset=approvedPortraitAssetUrl(d.registerNo);
-    var test=new Image();
-    test.onload=function(){
-      currentWebPortraitData=asset;
-      var img=document.getElementById('webPortraitPreviewImg');
-      if(img) img.src=asset+'?v='+Date.now();
-      var box=document.getElementById('webPortraitPreviewBox');
-      if(box) box.classList.remove('hidden');
-      setPortraitState('approval','Çizim hazır — onayınızı bekliyor — '+d.registerNo);
-      var s=document.getElementById('webPortraitAiStatus');
-      if(s){s.textContent='✓ ChatGPT çizimi GitHub deposunda hazır. Kontrol edip “Çizimi Onayla” düğmesine basın.';s.style.color='#2e7d32';}
-    };
-    test.src=asset+'?v='+Date.now();
-  })();
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
@@ -2471,19 +2259,7 @@ function addDiploma(){
     return Promise.all([syncPublicInstructor(record),syncStudentAccess(record)]);
   }).then(function(){
     filterDiplomas();
-    var needsPortrait=publicRoles.length && currentPhotoData && !currentWebPortraitData;
-    if(needsPortrait && confirm('Bu kayıt '+publicRoles.join(', ')+' olarak web bilgi arama arşivinde gösterilecek. Sicil fotoğrafından web profil çizimi şimdi oluşturulsun mu?')){
-      var savedIndex=diplomaData.findIndex(function(x){ return x.registerNo===registerNo; });
-      if(savedIndex>=0){
-        editingIndex=savedIndex;
-        // Form alanlarını kaydedilmiş üyeden yeniden yükle; yetkili eğitmen adı öğrenci adına karışmasın.
-        document.getElementById('studentName').value=diplomaData[savedIndex].studentName||'';
-        document.getElementById('instructorName').value=diplomaData[savedIndex].instructorName||'';
-        requestChatGPTPortrait();
-      }
-    } else {
-      hideAddForm();
-    }
+    hideAddForm();
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
   }).catch(function(){
