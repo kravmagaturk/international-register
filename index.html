@@ -1965,14 +1965,21 @@ function downloadPDF(record, lang){
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
   var qrPromise=makeQrDataUrl(buildQrUrl(d.registerNo)).catch(function(){return null;});
-  var portraitPromise=prepareDiplomaSquarePhoto(d.webPortrait || d.photo).catch(function(){return false;});
+  // Sicil PDF ile aynı onaylı portre verisini ve aynı 42:55 yerleşim oranını kullan.
+  var portraitPromise=prepareRegistryPortrait(d.webPortrait || d.photo).catch(function(){return false;});
   Promise.all([qrPromise,templatePromise,portraitPromise]).then(function(parts){
     var qr=parts[0],template=parts[1],portrait=parts[2],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
-    if(portrait){ try{ doc.addImage(portrait,'JPEG',22.5,81.8,40.6,44.2); }catch(e){} }
+    if(portrait){
+      try{
+        doc.setFillColor(9,9,10);
+        doc.rect(22.5,81.8,40.6,44.2,'F');
+        doc.addImage(portrait,'JPEG',25.925,81.8,33.75,44.2);
+      }catch(e){}
+    }
     addFittedPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),146.5,95.6,124.0,25,16,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),146.5,124.0,90.0,19,13,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.registerNo||''),42.8,150.0,35.0,11,8,{bold:true,family:'Arial'});
