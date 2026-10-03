@@ -82,8 +82,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .public-kvkk-text{margin-top:10px;padding:12px 14px;background:#101012;border:1px solid #303034;border-radius:4px;color:#aaa;font-size:12px;line-height:1.65;}
 .public-kvkk-text a{color:#fff;text-decoration:underline;}
 .hidden{display:none;}
-.photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;background:#09090a;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.photo-frame img{width:100%;height:100%;object-fit:cover;background:#09090a;display:block;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
 .photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
 .photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#09090a;}
@@ -1327,10 +1327,7 @@ function renderAuthorizedDownloads(record){
   if(options.length){
     html+='<select class="pdf-output-select" onchange="handleUnlockedDocumentMenu(this)"><option value="">📄 Yetkili Diploma / Belgeler</option>'+options.join('')+'</select>';
   }
-  if(perms.registryInfo){
-    html+=' <button class="btn btn-secondary btn-small" type="button" onclick="runPdfAction(\'registry-info\',lastUnlockedRecord)">📋 Kayıt Bilgisi PDF</button>';
-  }
-  if(!options.length && !perms.registryInfo){
+  if(!options.length){
     html+='<div class="message error" style="margin-top:10px;">Bu kayıt için indirilebilir belge yetkisi tanımlanmamış.</div>';
   }
   box.innerHTML=html;
@@ -1390,7 +1387,10 @@ function runPdfAction(value, record){
   if(value === 'diploma-tr') downloadPDF(record,'tr');
   else if(value === 'diploma-en') downloadPDF(record,'en');
   else if(value === 'diploma-he') downloadPDF(record,'he');
-  else if(value === 'registry-info') downloadRegistryInfoPDF(record);
+  else if(value === 'registry-info'){
+    if(!currentAdminUser){ alert('Sicil PDF yalnızca yönetici panelinden oluşturulabilir.'); return; }
+    downloadRegistryInfoPDF(record);
+  }
 
   else if(value === 'cert-tr') downloadAppreciationCertificate(record,'tr');
   else if(value === 'cert-en') downloadAppreciationCertificate(record,'en');
@@ -1428,6 +1428,10 @@ function handleAdminAllDocumentsMenu(sel, index){
   var raw = sel.value;
   sel.selectedIndex = 0;
   if(!raw || !diplomaData[index]) return;
+  if(raw === 'registry-info'){
+    runPdfAction('registry-info', diplomaData[index]);
+    return;
+  }
   var parts = raw.split('|');
   var docIndex = parseInt(parts[0],10);
   var action = parts[1] || '';
@@ -1535,6 +1539,7 @@ function prepareDiplomaSquarePhoto(photoData){
 
 function downloadRegistryInfoPDF(record){
   if(!record) return;
+  if(!currentAdminUser){ alert('Sicil PDF yalnızca yönetici panelinden oluşturulabilir.'); return; }
   var d=record, jsPDF=window.jspdf.jsPDF;
   Promise.all([loadTemplate('registryInfo'),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareRegistryPortrait(d.webPortrait || d.photo)]).then(function(parts){
     var template=parts[0],qr=parts[1],portrait=parts[2],W=297,H=210,doc=new jsPDF('l','mm','a4');
@@ -1823,14 +1828,21 @@ function downloadPDF(record, lang){
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
   var qrPromise=makeQrDataUrl(buildQrUrl(d.registerNo)).catch(function(){return null;});
-  var portraitPromise=prepareDiplomaSquarePhoto(d.webPortrait || d.photo).catch(function(){return false;});
+  // Sicil PDF ile aynı onaylı portre verisini ve aynı 42:55 yerleşim oranını kullan.
+  var portraitPromise=prepareRegistryPortrait(d.webPortrait || d.photo).catch(function(){return false;});
   Promise.all([qrPromise,templatePromise,portraitPromise]).then(function(parts){
     var qr=parts[0],template=parts[1],portrait=parts[2],jsPDF=window.jspdf.jsPDF;
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
 
-    if(portrait){ try{ doc.addImage(portrait,'JPEG',24.5,86.5,36.0,36.0); }catch(e){} }
+    if(portrait){
+      try{
+        doc.setFillColor(9,9,10);
+        doc.rect(22.5,81.8,40.6,44.2,'F');
+        doc.addImage(portrait,'JPEG',25.925,81.8,33.75,44.2);
+      }catch(e){}
+    }
     addFittedPdfUnicodeText(doc,String(d.studentName||'').toLocaleUpperCase('tr-TR'),146.5,95.6,124.0,25,16,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.level||'').toLocaleUpperCase('tr-TR'),146.5,124.0,90.0,19,13,{bold:true,family:'Arial'});
     addFittedPdfUnicodeText(doc,String(d.registerNo||''),42.8,150.0,35.0,11,8,{bold:true,family:'Arial'});
@@ -2584,10 +2596,10 @@ function renderDiplomaList(filtered, isFiltering){
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
     var docs = recordDocuments(d);
-    var documentMenus = '';
+    var documentMenus = '<select class="pdf-output-select" onchange="handleAdminAllDocumentsMenu(this,'+i+')">' +
+        '<option value="">📄 Diplomalar / Belgeler</option>'+
+        '<option value="registry-info">📋 Sicil PDF (Yönetici)</option>';
     if(docs.length){
-      documentMenus = '<select class="pdf-output-select" onchange="handleAdminAllDocumentsMenu(this,'+i+')">' +
-        '<option value="">📄 Diplomalar / Belgeler</option>';
       var seenDocumentMenuLabels={};
       docs.forEach(function(x,di){
         var label = documentMenuLabel(x);
@@ -2596,8 +2608,8 @@ function renderDiplomaList(filtered, isFiltering){
         seenDocumentMenuLabels[menuKey]=true;
         documentMenus += '<option value="'+di+'|'+documentDefaultAction(x)+'">'+label+'</option>';
       });
-      documentMenus += '</select>';
     }
+    documentMenus += '</select>';
     var perms=getDownloadPermissions(d);
     var registryDot=function(enabled){
       return '<span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+(enabled?'#39d98a':'#e53935')+';box-shadow:0 0 0 1px rgba(255,255,255,.18);"></span>';
@@ -2606,8 +2618,7 @@ function renderDiplomaList(filtered, isFiltering){
     var registryMenu = '<details '+(panelState.registry?'open ':'')+'ontoggle="rememberAdminPanel(\''+d.registerNo+'\',\'registry\',this.open)" style="width:100%;min-width:190px;border:1px solid #38383d;background:#09090a;">'+
       '<summary style="cursor:pointer;padding:9px 10px;font-weight:800;color:#fff;list-style:none;">📋 Kayıt Bilgisi ▾</summary>'+
       '<div style="padding:6px 10px 10px;">'+
-        '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin:0 0 9px;" onclick="handleAdminPdfMenu({value:\'registry-info\',selectedIndex:0},'+i+')">Kayıt Bilgisi PDF</button>'+
-        '<label style="'+registryRowStyle+'"><input type="checkbox" style="width:18px;height:18px;margin:0;" '+(perms.registryInfo?'checked':'')+' onchange="setDownloadPermission('+i+',\'registry\',-1,this.checked)">'+registryDot(perms.registryInfo)+'<span>PDF Yetkisi</span><span style="white-space:nowrap;">'+(perms.registryInfo?'Açık':'Kapalı')+'</span></label>'+
+        '<div style="font-size:12px;color:#bbb;margin:0 0 9px;line-height:1.45;">Sicil PDF yalnızca yönetici panelindeki “Diplomalar / Belgeler” menüsünden oluşturulur. Aşağıdan PDF içinde gösterilecek kayıtları seçin.</div>'+
         REGISTRY_INFO_SECTIONS.map(function(section){
           var label=section==='Teşekkür Belgesi'?'Teşekkür':section;
           var enabled=perms.registrySections.indexOf(section)>=0;
