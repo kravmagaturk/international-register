@@ -1823,6 +1823,15 @@ function drawCertificateFrame(doc,W,H,logo){
   if(logo){try{doc.addImage(logo,'PNG',W/2-14,12,28,28);}catch(e){}}
 }
 
+function drawGeneralDiplomaGoldFrame(doc,W,H){
+  // Closed vector border completes the top edge without changing the template.
+  doc.saveGraphicsState();
+  doc.setDrawColor(190,132,12);
+  doc.setLineWidth(0.45);
+  doc.rect(7.1,3.5,W-14.2,H-10.5,'S');
+  doc.restoreGraphicsState();
+}
+
 function downloadPDF(record, lang){
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record;
@@ -1835,6 +1844,7 @@ function downloadPDF(record, lang){
     var W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('diploma-genel.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
+    drawGeneralDiplomaGoldFrame(doc,W,H);
 
     if(portrait){
       try{
