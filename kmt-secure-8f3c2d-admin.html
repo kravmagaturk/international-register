@@ -1002,20 +1002,9 @@ function renderInstructorCard(){
     return Promise.reject(missingPhoto);
   }
   var photoPromise=Promise.resolve(savedPhoto);
-  var job=Promise.all([cardImage('instructor-id-template.png'),makeQrDataUrl(buildQrUrl(d.registerNo)),photoPromise,cardImage('logo.png')]);
+  var job=Promise.all([cardImage('instructor-id-blank.png'),makeQrDataUrl(buildQrUrl(d.registerNo)),photoPromise]);
   return job.then(function(parts){
     ctx.clearRect(0,0,1536,1024);ctx.drawImage(parts[0],0,0,1536,1024);
-    ctx.fillStyle='#fff';
-    // Şablondaki örnek yazılar yalnızca dinamik veri alanlarının içinde temizlenir.
-    [[60,350,300,366],[412,375,386,54],[424,449,390,56],[411,563,322,46],[401,690,273,40],[768,683,232,46],[1233,418,243,242]].forEach(function(r){ctx.fillRect(r[0],r[1],r[2],r[3]);});
-    ctx.strokeStyle='#090909';ctx.lineWidth=4;
-    [[412,375,386,54],[424,449,390,56],[411,563,322,46],[401,690,273,40],[768,683,232,46]].forEach(function(r){ctx.strokeRect(r[0]+2,r[1]+2,r[2]-4,r[3]-4);});
-    ctx.fillStyle='#090909';ctx.fillRect(58,91,216,182);ctx.drawImage(parts[3],73,93,187,180);
-    ctx.fillRect(1230,124,240,100);
-    ctx.fillStyle='#e21b27';ctx.beginPath();ctx.arc(1350,174,46,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(1339,174,27,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#e21b27';ctx.beginPath();ctx.arc(1348,168,23,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();for(var k=0;k<10;k++){var a=-Math.PI/2+k*Math.PI/5,r=k%2?6:14;ctx.lineTo(1375+Math.cos(a)*r,174+Math.sin(a)*r);}ctx.closePath();ctx.fill();
     var name=String(d.studentName||'').trim();
     var title=instructorCardCodes(d);
     var number=String(d.registerNo||'').trim();
@@ -1758,7 +1747,7 @@ var TEMPLATE_FILES = {
   diplomaEn: ['yeni_master_2.png'],
   honorTr: ['yeni_master_2.png'],
   honorEn: ['yeni_master_2.png'],
-  instructorId: ['instructor-id-template.png']
+  instructorId: ['instructor-id-blank.png']
 };
 var templateCache = {};
 function loadImageAsDataURL(url){
