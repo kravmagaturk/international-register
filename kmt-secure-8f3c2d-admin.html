@@ -378,7 +378,11 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 <div id="instructor-card-editor" class="hidden" role="dialog" aria-modal="true" aria-label="Eğitmen kartı" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);overflow:auto;padding:20px;box-sizing:border-box;">
   <div style="max-width:1000px;margin:auto;background:#18181b;color:#fff;padding:20px;border:1px solid #555;border-radius:8px;">
     <h3 style="margin-top:0;">Eğitmen Üyelik Kartı</h3>
-    <p style="font-size:13px;color:#bbb;">Ad, sicil, belge kodları ve fotoğraf kayıttan alınır. Düzenleme tarihi çıktının alındığı gündür; geçerlilik 5 yıldır. PDF ölçüsü yatay 8 × 5 cm'dir.</p>
+    <p style="font-size:13px;color:#bbb;">Ad, sicil ve fotoğraf kayıttan alınır. Kayıttaki branşı ve varsa alt seviyesini seçin. Düzenleme tarihi çıktı günüdür; PDF ölçüsü yatay 8 × 5 cm'dir.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+      <label>Branş<select id="card-branch" onchange="updateInstructorCardSublevels();renderInstructorCard().catch(function(){})" style="display:block;min-width:200px;padding:8px;background:#09090a;color:#fff;"></select></label>
+      <label>Alt seviye<select id="card-sublevel" onchange="renderInstructorCard().catch(function(){})" style="display:block;min-width:200px;padding:8px;background:#09090a;color:#fff;"></select></label>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
       <button type="button" class="btn" onclick="renderInstructorCard()">Önizlemeyi Güncelle</button>
       <button type="button" class="btn btn-pdf" onclick="saveInstructorCardPDF()">PDF İndir</button>
@@ -970,19 +974,49 @@ function cardImage(src){
 function cardDisplayDate(value){
   return String(value.getDate()).padStart(2,'0')+'.'+String(value.getMonth()+1).padStart(2,'0')+'.'+value.getFullYear();
 }
-function instructorCardCodes(d){
-  var levels=recordDocuments(d).map(function(x){return String(x.level||'').toLowerCase();});
-  var codes=[];
-  if(levels.some(function(x){return x.indexOf('close protection')>=0;})) codes.push('CPO');
-  if(levels.some(function(x){return x.indexOf('instructor')>=0;})) codes.push('INSTR');
-  if(levels.some(function(x){return x.indexOf('practitioner')>=0;})) codes.push('PRCT');
-  if(levels.some(function(x){return x.indexOf('graduate')>=0;})) codes.push('GRD');
-  return codes.length===1 && codes[0]==='INSTR' ? 'INSTRUCTOR' : codes.join('-');
+var CARD_BRANCH_LABELS={Instructor:'Instructor','Close Protection':'Yakın Koruma',Expert:'Expert',Asistan:'Asistan','Güvenlik':'Güvenlik'};
+function cardBranchFromLevel(level){
+  var text=String(level||'').trim();
+  if(/^Close Protection\b/i.test(text)) return 'Close Protection';
+  if(/^Instructor\b|\bInstructor$/i.test(text)) return 'Instructor';
+  if(/^Expert\b/i.test(text)) return 'Expert';
+  if(/^Asistan\b/i.test(text)) return 'Asistan';
+  if(/^Güvenlik\b|^Security\b/i.test(text)) return 'Güvenlik';
+  return '';
+}
+function instructorCardOptions(d){
+  var result={},docs=recordDocuments(d);
+  docs.forEach(function(doc){
+    var level=String(doc.level||'').trim(),branch=cardBranchFromLevel(level);
+    if(!branch) return;
+    var sub=level.replace(new RegExp('^'+(branch==='Güvenlik'?'(?:Güvenlik|Security)':branch==='Instructor'?'(?:Instructor|Kids Instructor)':branch)+'\\s*','i'),'').trim();
+    if(branch==='Instructor' && /^Kids Instructor$/i.test(level)) sub='Kids Instructor';
+    if(!result[branch]) result[branch]=[];
+    if(result[branch].indexOf(sub)<0) result[branch].push(sub);
+  });
+  var roles=Array.isArray(d.publicRoles)?d.publicRoles:(d.publicRole?[d.publicRole]:[]);
+  roles.forEach(function(role){if(CARD_BRANCH_LABELS[role] && !result[role]) result[role]=[''];});
+  return result;
+}
+function updateInstructorCardSublevels(){
+  var branch=document.getElementById('card-branch').value;
+  var select=document.getElementById('card-sublevel');select.innerHTML='';
+  var levels=(instructorCardOptions(instructorCardRecord)[branch]||['']);
+  levels.forEach(function(level){var option=document.createElement('option');option.value=level;option.textContent=level||'Genel';select.appendChild(option);});
+  select.disabled=levels.length===1 && !levels[0];
+}
+function cardSelectedBranchText(){
+  var branch=document.getElementById('card-branch').value;
+  var sub=document.getElementById('card-sublevel').value;
+  return ((CARD_BRANCH_LABELS[branch]||branch)+(sub?' — '+sub:'')).toLocaleUpperCase('tr-TR');
 }
 function openInstructorCard(index){
   if(!currentAdminUser || !diplomaData[index]) return;
   var d=diplomaData[index]; instructorCardRecord=d;
   document.getElementById('card-error').textContent='';
+  var select=document.getElementById('card-branch');select.innerHTML='';
+  Object.keys(instructorCardOptions(d)).forEach(function(branch){var option=document.createElement('option');option.value=branch;option.textContent=CARD_BRANCH_LABELS[branch];select.appendChild(option);});
+  updateInstructorCardSublevels();
   document.getElementById('instructor-card-editor').classList.remove('hidden');
   renderInstructorCard().catch(function(){});
 }
@@ -995,6 +1029,10 @@ function cardFittedText(ctx,text,x,y,maxWidth,size,color){
 function renderInstructorCard(){
   if(!currentAdminUser || !instructorCardRecord) return Promise.reject(new Error('Yönetici oturumu gerekli.'));
   var d=instructorCardRecord,canvas=document.getElementById('instructor-card-preview'),ctx=canvas.getContext('2d');
+  if(!document.getElementById('card-branch').value){
+    document.getElementById('card-error').textContent='Bu kayıtta kimlik için uygun branş bulunamadı.';
+    return Promise.reject(new Error('BRANCH_REQUIRED'));
+  }
   var savedPhoto=d.webPortraitUrl||d.webPortrait||d.photo||'';
   if(!savedPhoto){
     var missingPhoto=new Error('Bu kayıtta fotoğraf bulunamadı. Önce kayda fotoğraf ekleyin.');
@@ -1006,7 +1044,7 @@ function renderInstructorCard(){
   return job.then(function(parts){
     ctx.clearRect(0,0,1536,1024);ctx.drawImage(parts[0],0,0,1536,1024);
     var name=String(d.studentName||'').trim();
-    var title=instructorCardCodes(d);
+    var title=cardSelectedBranchText();
     var number=String(d.registerNo||'').trim();
     var issue=new Date(),expiry=new Date(issue.getTime());expiry.setFullYear(expiry.getFullYear()+5);
     cardFittedText(ctx,name.toLocaleUpperCase('tr-TR'),425,402,395,40);
@@ -1022,17 +1060,69 @@ function renderInstructorCard(){
     return Promise.all([qrPromise,portraitPromise]);
   }).catch(function(err){document.getElementById('card-error').textContent='Önizleme oluşturulamadı: '+err.message;throw err;});
 }
+var cardFontPromise=null;
+function loadCardVectorFont(){
+  if(!cardFontPromise) cardFontPromise=fetch('assets/fonts/DejaVuSans-Bold.ttf').then(function(r){if(!r.ok) throw new Error('PDF yazı tipi yüklenemedi.');return r.arrayBuffer();}).then(function(buffer){
+    var bytes=new Uint8Array(buffer),binary='';
+    for(var i=0;i<bytes.length;i+=32768) binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));
+    return btoa(binary);
+  }).catch(function(err){cardFontPromise=null;throw err;});
+  return cardFontPromise;
+}
+function cardPdfX(px){return px*80/1536;}
+function cardPdfY(px){return (px-32)*50/960;}
+function cardPdfText(pdf,value,x,y,maxWidth,sourceFontPx,color){
+  var size=sourceFontPx*80/1536*72/25.4;
+  pdf.setFont('KMT','bold');pdf.setTextColor(color||'#101010');
+  do{pdf.setFontSize(size);if(pdf.getTextWidth(value)<=cardPdfX(maxWidth)) break;size-=0.2;}while(size>2.6);
+  pdf.text(value,cardPdfX(x),cardPdfY(y),{baseline:'middle'});
+}
+function cardPdfQr(pdf,url){
+  var holder=document.getElementById('pdf-qr-hidden');holder.innerHTML='';
+  var qr=new QRCode(holder,{text:url,width:360,height:360,correctLevel:QRCode.CorrectLevel.M});
+  var matrix=qr._oQRCode, count=matrix.getModuleCount(),quiet=4;
+  var unit=cardPdfX(222)/(count+quiet*2),x=cardPdfX(1243),y=cardPdfY(428);
+  pdf.setFillColor(255,255,255);pdf.rect(x,y,cardPdfX(222),cardPdfX(222),'F');
+  pdf.setFillColor(0,0,0);
+  for(var row=0;row<count;row++){
+    for(var col=0;col<count;){
+      if(!matrix.isDark(row,col)){col++;continue;}
+      var start=col;while(col<count && matrix.isDark(row,col)) col++;
+      pdf.rect(x+(start+quiet)*unit,y+(row+quiet)*unit,(col-start)*unit,unit,'F');
+    }
+  }
+}
+function cardPdfPortrait(photoData){
+  return cardImage(photoData).then(function(img){
+    var canvas=document.createElement('canvas');canvas.width=604;canvas.height=754;
+    var ctx=canvas.getContext('2d');ctx.beginPath();ctx.roundRect(0,0,604,754,36);ctx.clip();ctx.drawImage(img,0,0,604,754);
+    return canvas.toDataURL('image/png');
+  });
+}
 function saveInstructorCardPDF(){
   if(!currentAdminUser || !instructorCardRecord) return;
+  var d=instructorCardRecord,branch=cardSelectedBranchText(),issue=new Date(),expiry=new Date(issue.getTime());expiry.setFullYear(expiry.getFullYear()+5);
   renderInstructorCard().then(function(){
-    var c=document.getElementById('instructor-card-preview');
-    var printCanvas=document.createElement('canvas');
-    printCanvas.width=1536;printCanvas.height=960;
-    printCanvas.getContext('2d').drawImage(c,0,32,1536,960,0,0,1536,960);
+    return Promise.all([cardImage('instructor-id-template.png'),prepareRegistryPortrait(d.webPortraitUrl||d.webPortrait||d.photo),loadCardVectorFont()]);
+  }).then(function(parts){
+    if(!parts[1]) throw new Error('Kayıt fotoğrafı PDF için hazırlanamadı.');
+    return cardPdfPortrait(parts[1]).then(function(photo){return {template:parts[0],photo:photo,font:parts[2]};});
+  }).then(function(parts){
+    var bg=document.createElement('canvas');bg.width=1536;bg.height=960;
+    bg.getContext('2d').drawImage(parts.template,0,32,1536,960,0,0,1536,960);
     var pdf=new window.jspdf.jsPDF('l','mm',[80,50]);
-    pdf.addImage(printCanvas.toDataURL('image/png'),'PNG',0,0,80,50);
-    pdf.save('egitmen-karti-'+String(instructorCardRecord.registerNo||'onizleme').replace(/[^a-zA-Z0-9_-]/g,'')+'.pdf');
-  }).catch(function(){});
+    pdf.addImage(bg.toDataURL('image/png'),'PNG',0,0,80,50);
+    pdf.addFileToVFS('KMT-Bold.ttf',parts.font);pdf.addFont('KMT-Bold.ttf','KMT','bold');
+    pdf.addImage(parts.photo,'PNG',cardPdfX(61),cardPdfY(343),cardPdfX(302),cardPdfX(377));
+    cardPdfText(pdf,String(d.studentName||'').trim().toLocaleUpperCase('tr-TR'),425,402,395,40);
+    cardPdfText(pdf,branch,425,476,410,42,'#ffffff');
+    cardPdfText(pdf,String(d.registerNo||'').trim(),425,584,335,34);
+    cardPdfText(pdf,cardDisplayDate(issue),425,711,275,32);
+    cardPdfText(pdf,cardDisplayDate(expiry),785,711,255,32);
+    cardPdfQr(pdf,buildQrUrl(d.registerNo));
+    pdf.setDrawColor(255,255,255);pdf.setLineWidth(0.35);pdf.rect(0.18,0.18,79.64,49.64,'S');
+    pdf.save('egitmen-karti-'+String(d.registerNo||'onizleme').replace(/[^a-zA-Z0-9_-]/g,'')+'.pdf');
+  }).catch(function(err){document.getElementById('card-error').textContent='Kimlik PDF oluşturulamadı: '+(err&&err.message?err.message:err);});
 }
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
