@@ -1007,7 +1007,9 @@ function renderInstructorCard(){
     ctx.clearRect(0,0,1536,1024);ctx.drawImage(parts[0],0,0,1536,1024);
     ctx.fillStyle='#fff';
     // Şablondaki örnek yazılar yalnızca dinamik veri alanlarının içinde temizlenir.
-    [[60,350,300,366],[420,383,372,38],[431,457,374,42],[421,572,305,29],[408,696,260,28],[776,698,220,25],[1248,439,198,204]].forEach(function(r){ctx.fillRect(r[0],r[1],r[2],r[3]);});
+    [[60,350,300,366],[412,375,386,54],[424,449,390,56],[411,563,322,46],[401,690,273,40],[768,683,232,46],[1233,418,243,242]].forEach(function(r){ctx.fillRect(r[0],r[1],r[2],r[3]);});
+    ctx.strokeStyle='#090909';ctx.lineWidth=4;
+    [[412,375,386,54],[424,449,390,56],[411,563,322,46],[401,690,273,40],[768,683,232,46]].forEach(function(r){ctx.strokeRect(r[0]+2,r[1]+2,r[2]-4,r[3]-4);});
     ctx.fillStyle='#090909';ctx.fillRect(58,91,216,182);ctx.drawImage(parts[3],73,93,187,180);
     ctx.fillRect(1230,124,240,100);
     ctx.fillStyle='#e21b27';ctx.beginPath();ctx.arc(1350,174,46,0,Math.PI*2);ctx.fill();
@@ -1023,7 +1025,7 @@ function renderInstructorCard(){
     cardFittedText(ctx,number,430,586,288,25);
     cardFittedText(ctx,cardDisplayDate(issue),414,710,248,24);
     cardFittedText(ctx,cardDisplayDate(expiry),780,710,210,24);
-    var qrPromise=parts[1]?cardImage(parts[1]).then(function(img){ctx.drawImage(img,1250,443,194,194);}):Promise.resolve();
+    var qrPromise=parts[1]?cardImage(parts[1]).then(function(img){ctx.drawImage(img,1243,428,222,222);}):Promise.resolve();
     var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){ctx.drawImage(img,62,351,297,365);}):null;}):Promise.resolve();
     return Promise.all([qrPromise,portraitPromise]);
   }).catch(function(err){document.getElementById('card-error').textContent='Önizleme oluşturulamadı: '+err.message;throw err;});
