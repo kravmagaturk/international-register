@@ -378,7 +378,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 <div id="instructor-card-editor" class="hidden" role="dialog" aria-modal="true" aria-label="Eğitmen kartı" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);overflow:auto;padding:20px;box-sizing:border-box;">
   <div style="max-width:1000px;margin:auto;background:#18181b;color:#fff;padding:20px;border:1px solid #555;border-radius:8px;">
     <h3 style="margin-top:0;">Eğitmen Üyelik Kartı</h3>
-    <p style="font-size:13px;color:#bbb;">Ad, sicil, belge kodları ve fotoğraf kayıttan alınır. Düzenleme tarihi çıktının alındığı gündür; geçerlilik 5 yıldır.</p>
+    <p style="font-size:13px;color:#bbb;">Ad, sicil, belge kodları ve fotoğraf kayıttan alınır. Düzenleme tarihi çıktının alındığı gündür; geçerlilik 5 yıldır. PDF ölçüsü yatay 8 × 5 cm'dir.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
       <button type="button" class="btn" onclick="renderInstructorCard()">Önizlemeyi Güncelle</button>
       <button type="button" class="btn btn-pdf" onclick="saveInstructorCardPDF()">PDF İndir</button>
@@ -1026,8 +1026,11 @@ function saveInstructorCardPDF(){
   if(!currentAdminUser || !instructorCardRecord) return;
   renderInstructorCard().then(function(){
     var c=document.getElementById('instructor-card-preview');
-    var pdf=new window.jspdf.jsPDF('l','mm',[150,100]);
-    pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,150,100);
+    var printCanvas=document.createElement('canvas');
+    printCanvas.width=1536;printCanvas.height=960;
+    printCanvas.getContext('2d').drawImage(c,0,32,1536,960,0,0,1536,960);
+    var pdf=new window.jspdf.jsPDF('l','mm',[80,50]);
+    pdf.addImage(printCanvas.toDataURL('image/png'),'PNG',0,0,80,50);
     pdf.save('egitmen-karti-'+String(instructorCardRecord.registerNo||'onizleme').replace(/[^a-zA-Z0-9_-]/g,'')+'.pdf');
   }).catch(function(){});
 }
