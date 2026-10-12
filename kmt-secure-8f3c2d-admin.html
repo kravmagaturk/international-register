@@ -987,8 +987,8 @@ function openInstructorCard(index){
   renderInstructorCard().catch(function(){});
 }
 function closeInstructorCard(){document.getElementById('instructor-card-editor').classList.add('hidden');instructorCardRecord=null;}
-function cardFittedText(ctx,text,x,y,maxWidth,size){
-  ctx.fillStyle='#101010';ctx.textBaseline='middle';ctx.textAlign='left';
+function cardFittedText(ctx,text,x,y,maxWidth,size,color){
+  ctx.fillStyle=color||'#101010';ctx.textBaseline='middle';ctx.textAlign='left';
   do{ctx.font='bold '+size+'px Arial,sans-serif';size-=1;}while(size>18 && ctx.measureText(text).width>maxWidth);
   ctx.fillText(text,x,y,maxWidth);
 }
@@ -1009,13 +1009,13 @@ function renderInstructorCard(){
     var title=instructorCardCodes(d);
     var number=String(d.registerNo||'').trim();
     var issue=new Date(),expiry=new Date(issue.getTime());expiry.setFullYear(expiry.getFullYear()+5);
-    cardFittedText(ctx,name.toLocaleUpperCase('tr-TR'),430,404,352,32);
-    cardFittedText(ctx,title,460,478,335,25);
-    cardFittedText(ctx,number,430,586,288,25);
-    cardFittedText(ctx,cardDisplayDate(issue),414,710,248,24);
-    cardFittedText(ctx,cardDisplayDate(expiry),780,710,210,24);
+    cardFittedText(ctx,name.toLocaleUpperCase('tr-TR'),425,402,395,40);
+    cardFittedText(ctx,title,425,476,410,42,'#ffffff');
+    cardFittedText(ctx,number,425,584,335,34);
+    cardFittedText(ctx,cardDisplayDate(issue),425,711,275,32);
+    cardFittedText(ctx,cardDisplayDate(expiry),785,711,255,32);
     var qrPromise=parts[1]?cardImage(parts[1]).then(function(img){ctx.drawImage(img,1243,428,222,222);}):Promise.resolve();
-    var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){ctx.drawImage(img,62,351,297,365);}):null;}):Promise.resolve();
+    var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){ctx.drawImage(img,61,343,302,377);}):null;}):Promise.resolve();
     return Promise.all([qrPromise,portraitPromise]);
   }).catch(function(err){document.getElementById('card-error').textContent='Önizleme oluşturulamadı: '+err.message;throw err;});
 }
