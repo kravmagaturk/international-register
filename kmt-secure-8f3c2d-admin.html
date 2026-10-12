@@ -2806,7 +2806,6 @@ function renderDiplomaList(filtered, isFiltering){
           }
           return row;
          }).join('')+
-         '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin-top:10px;" onclick="openInstructorCard('+i+')">🪪 Kimlik ID — Mevcut Bilgilerle Oluştur</button>'+
       '</div>'+
     '</details>';
     var permissionDocs=[];
@@ -2870,6 +2869,7 @@ function renderDiplomaList(filtered, isFiltering){
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
           documentMenus +
           registryMenu +
+          '<button type="button" class="btn btn-id" style="width:100%;font-weight:800;" onclick="openInstructorCard('+i+')">🪪 Kimlik ID / PDF (8 × 5 cm)</button>' +
           '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
         '</div>' +
       '</div>';
