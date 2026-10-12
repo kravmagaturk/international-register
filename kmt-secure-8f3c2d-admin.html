@@ -969,7 +969,10 @@ function prepareLogoBase64(){
 }
 var instructorCardRecord=null;
 function cardImage(src){
-  return new Promise(function(resolve,reject){var img=new Image();img.onload=function(){resolve(img);};img.onerror=reject;img.src=src;});
+  var safeSource=String(src||'').indexOf('data:')===0 ? Promise.resolve(src) : loadImageAsDataURL(src);
+  return safeSource.then(function(dataUrl){
+    return new Promise(function(resolve,reject){var img=new Image();img.onload=function(){resolve(img);};img.onerror=reject;img.src=dataUrl;});
+  });
 }
 function cardDisplayDate(value){
   return String(value.getDate()).padStart(2,'0')+'.'+String(value.getMonth()+1).padStart(2,'0')+'.'+value.getFullYear();
