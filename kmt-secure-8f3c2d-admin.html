@@ -211,14 +211,17 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 
       <div id="admin-panel" class="hidden">
         <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
-        <div style="margin-bottom:20px;">
-          <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
-          <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
-          <button class="btn" id="btn-book-subscribers" onclick="toggleBookSubscribers()">📚 Kitap Aboneleri</button>
-          <button class="btn btn-secondary" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">🔐 Güvenli Paketleri Eşitle</button>
-          <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
-        </div>
-        <div id="secure-access-sync-status" style="margin:-8px 0 14px;color:#999;font-size:12px;"></div>
+        <details id="admin-actions-menu" style="margin-bottom:20px;max-width:560px;">
+          <summary style="cursor:pointer;list-style:none;padding:14px 18px;border-radius:6px;background:#ed0024;color:#fff;font-weight:800;font-size:18px;">☰ Yönetim Menüsü <span style="float:right;">▾</span></summary>
+          <div style="display:grid;gap:8px;padding:10px;background:#171719;border:1px solid #3b3b40;border-top:0;border-radius:0 0 6px 6px;">
+            <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
+            <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
+            <button class="btn" id="btn-book-subscribers" onclick="toggleBookSubscribers()">📚 Kitap Aboneleri</button>
+            <button class="btn btn-secondary" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">🔐 Güvenli Paketleri Eşitle</button>
+            <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
+            <div id="secure-access-sync-status" style="color:#999;font-size:12px;"></div>
+          </div>
+        </details>
 
         <div id="security-logs-section" class="hidden" style="margin-bottom:20px;">
           <h4 id="txt-securityLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 Güvenlik ve İndirme Kayıtları</h4>
