@@ -977,7 +977,7 @@ function instructorCardCodes(d){
   if(levels.some(function(x){return x.indexOf('instructor')>=0;})) codes.push('INSTR');
   if(levels.some(function(x){return x.indexOf('practitioner')>=0;})) codes.push('PRCT');
   if(levels.some(function(x){return x.indexOf('graduate')>=0;})) codes.push('GRD');
-  return codes.join('-');
+  return codes.length===1 && codes[0]==='INSTR' ? 'INSTRUCTOR' : codes.join('-');
 }
 function openInstructorCard(index){
   if(!currentAdminUser || !diplomaData[index]) return;
@@ -1015,7 +1015,10 @@ function renderInstructorCard(){
     cardFittedText(ctx,cardDisplayDate(issue),425,711,275,32);
     cardFittedText(ctx,cardDisplayDate(expiry),785,711,255,32);
     var qrPromise=parts[1]?cardImage(parts[1]).then(function(img){ctx.drawImage(img,1243,428,222,222);}):Promise.resolve();
-    var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){ctx.drawImage(img,61,343,302,377);}):null;}):Promise.resolve();
+    var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){
+      ctx.save();ctx.beginPath();ctx.moveTo(79,343);ctx.lineTo(345,343);ctx.quadraticCurveTo(363,343,363,361);ctx.lineTo(363,701);ctx.quadraticCurveTo(363,720,345,720);ctx.lineTo(79,720);ctx.quadraticCurveTo(61,720,61,701);ctx.lineTo(61,361);ctx.quadraticCurveTo(61,343,79,343);ctx.closePath();ctx.clip();
+      ctx.drawImage(img,61,343,302,377);ctx.restore();
+    }):null;}):Promise.resolve();
     return Promise.all([qrPromise,portraitPromise]);
   }).catch(function(err){document.getElementById('card-error').textContent='Önizleme oluşturulamadı: '+err.message;throw err;});
 }
