@@ -378,10 +378,9 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 <div id="instructor-card-editor" class="hidden" role="dialog" aria-modal="true" aria-label="Eğitmen kartı" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);overflow:auto;padding:20px;box-sizing:border-box;">
   <div style="max-width:1000px;margin:auto;background:#18181b;color:#fff;padding:20px;border:1px solid #555;border-radius:8px;">
     <h3 style="margin-top:0;">Eğitmen Üyelik Kartı</h3>
-    <p style="font-size:13px;color:#bbb;">Ad, sicil ve fotoğraf kayıttan alınır. Kayıttaki branşı ve varsa alt seviyesini seçin. Düzenleme tarihi çıktı günüdür; PDF ölçüsü yatay 8 × 5 cm'dir.</p>
+    <p style="font-size:13px;color:#bbb;">Ad, sicil ve fotoğraf kayıttan alınır. Kimlikte kullanılacak branşı seçin. Düzenleme tarihi çıktı günüdür; PDF ölçüsü yatay 8 × 5 cm'dir.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-      <label>Branş<select id="card-branch" onchange="updateInstructorCardSublevels();renderInstructorCard().catch(function(){})" style="display:block;min-width:200px;padding:8px;background:#09090a;color:#fff;"></select></label>
-      <label>Alt seviye<select id="card-sublevel" onchange="renderInstructorCard().catch(function(){})" style="display:block;min-width:200px;padding:8px;background:#09090a;color:#fff;"></select></label>
+      <label>Branş<select id="card-branch" onchange="renderInstructorCard().catch(function(){})" style="display:block;min-width:200px;padding:8px;background:#09090a;color:#fff;"></select></label>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
       <button type="button" class="btn" onclick="renderInstructorCard()">Önizlemeyi Güncelle</button>
@@ -977,49 +976,18 @@ function cardImage(src){
 function cardDisplayDate(value){
   return String(value.getDate()).padStart(2,'0')+'.'+String(value.getMonth()+1).padStart(2,'0')+'.'+value.getFullYear();
 }
-var CARD_BRANCH_LABELS={Instructor:'Instructor','Close Protection':'Yakın Koruma',Expert:'Expert',Asistan:'Asistan','Güvenlik':'Güvenlik'};
-function cardBranchFromLevel(level){
-  var text=String(level||'').trim();
-  if(/^Close Protection\b/i.test(text)) return 'Close Protection';
-  if(/^Instructor\b|\bInstructor$/i.test(text)) return 'Instructor';
-  if(/^Expert\b/i.test(text)) return 'Expert';
-  if(/^Asistan\b/i.test(text)) return 'Asistan';
-  if(/^Güvenlik\b|^Security\b/i.test(text)) return 'Güvenlik';
-  return '';
-}
-function instructorCardOptions(d){
-  var result={},docs=recordDocuments(d);
-  docs.forEach(function(doc){
-    var level=String(doc.level||'').trim(),branch=cardBranchFromLevel(level);
-    if(!branch) return;
-    var sub=level.replace(new RegExp('^'+(branch==='Güvenlik'?'(?:Güvenlik|Security)':branch==='Instructor'?'(?:Instructor|Kids Instructor)':branch)+'\\s*','i'),'').trim();
-    if(branch==='Instructor' && /^Kids Instructor$/i.test(level)) sub='Kids Instructor';
-    if(!result[branch]) result[branch]=[];
-    if(result[branch].indexOf(sub)<0) result[branch].push(sub);
-  });
-  var roles=Array.isArray(d.publicRoles)?d.publicRoles:(d.publicRole?[d.publicRole]:[]);
-  roles.forEach(function(role){if(CARD_BRANCH_LABELS[role] && !result[role]) result[role]=[''];});
-  return result;
-}
-function updateInstructorCardSublevels(){
-  var branch=document.getElementById('card-branch').value;
-  var select=document.getElementById('card-sublevel');select.innerHTML='';
-  var levels=(instructorCardOptions(instructorCardRecord)[branch]||['']);
-  levels.forEach(function(level){var option=document.createElement('option');option.value=level;option.textContent=level||'Genel';select.appendChild(option);});
-  select.disabled=levels.length===1 && !levels[0];
-}
+var CARD_BRANCH_LABELS={Instructor:'Instructor',Asistan:'Asistan','Close Protection':'Yakın Koruma','Güvenlik':'Güvenlik'};
+var CARD_BRANCH_ORDER=['Instructor','Asistan','Close Protection','Güvenlik'];
 function cardSelectedBranchText(){
   var branch=document.getElementById('card-branch').value;
-  var sub=document.getElementById('card-sublevel').value;
-  return ((CARD_BRANCH_LABELS[branch]||branch)+(sub?' — '+sub:'')).toLocaleUpperCase('tr-TR');
+  return (CARD_BRANCH_LABELS[branch]||branch).toLocaleUpperCase('tr-TR');
 }
 function openInstructorCard(index){
   if(!currentAdminUser || !diplomaData[index]) return;
   var d=diplomaData[index]; instructorCardRecord=d;
   document.getElementById('card-error').textContent='';
   var select=document.getElementById('card-branch');select.innerHTML='';
-  Object.keys(instructorCardOptions(d)).forEach(function(branch){var option=document.createElement('option');option.value=branch;option.textContent=CARD_BRANCH_LABELS[branch];select.appendChild(option);});
-  updateInstructorCardSublevels();
+  CARD_BRANCH_ORDER.forEach(function(branch){var option=document.createElement('option');option.value=branch;option.textContent=CARD_BRANCH_LABELS[branch];select.appendChild(option);});
   document.getElementById('instructor-card-editor').classList.remove('hidden');
   renderInstructorCard().catch(function(){});
 }
