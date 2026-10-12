@@ -1002,7 +1002,7 @@ function renderInstructorCard(){
     return Promise.reject(missingPhoto);
   }
   var photoPromise=Promise.resolve(savedPhoto);
-  var job=Promise.all([cardImage('instructor-id-blank.png'),makeQrDataUrl(buildQrUrl(d.registerNo)),photoPromise]);
+  var job=Promise.all([cardImage('instructor-id-template.png'),makeQrDataUrl(buildQrUrl(d.registerNo)),photoPromise]);
   return job.then(function(parts){
     ctx.clearRect(0,0,1536,1024);ctx.drawImage(parts[0],0,0,1536,1024);
     var name=String(d.studentName||'').trim();
@@ -1747,7 +1747,7 @@ var TEMPLATE_FILES = {
   diplomaEn: ['yeni_master_2.png'],
   honorTr: ['yeni_master_2.png'],
   honorEn: ['yeni_master_2.png'],
-  instructorId: ['instructor-id-blank.png']
+  instructorId: ['instructor-id-template.png']
 };
 var templateCache = {};
 function loadImageAsDataURL(url){
