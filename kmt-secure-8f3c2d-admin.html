@@ -375,6 +375,19 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
   <img id="lightbox-img" src="">
 </div>
 <div id="pdf-qr-hidden" style="position:absolute;left:-9999px;top:-9999px;"></div>
+<div id="instructor-card-editor" class="hidden" role="dialog" aria-modal="true" aria-label="Eğitmen kartı" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);overflow:auto;padding:20px;box-sizing:border-box;">
+  <div style="max-width:1000px;margin:auto;background:#18181b;color:#fff;padding:20px;border:1px solid #555;border-radius:8px;">
+    <h3 style="margin-top:0;">Eğitmen Üyelik Kartı</h3>
+    <p style="font-size:13px;color:#bbb;">Ad, sicil, belge kodları ve fotoğraf kayıttan alınır. Düzenleme tarihi çıktının alındığı gündür; geçerlilik 5 yıldır. PDF ölçüsü yatay 8 × 5 cm'dir.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" class="btn" onclick="renderInstructorCard()">Önizlemeyi Güncelle</button>
+      <button type="button" class="btn btn-pdf" onclick="saveInstructorCardPDF()">PDF İndir</button>
+      <button type="button" class="btn btn-secondary" onclick="closeInstructorCard()">Kapat</button>
+    </div>
+    <div id="card-error" style="color:#ff7777;min-height:20px;"></div>
+    <canvas id="instructor-card-preview" width="1536" height="1024" style="width:100%;height:auto;background:#fff;"></canvas>
+  </div>
+</div>
 
 <script>
 var FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
@@ -949,6 +962,77 @@ function prepareLogoBase64(){
       reader.readAsDataURL(blob);
     });
   }).then(function(dataUrl){ cachedLogoBase64 = dataUrl; return dataUrl; }).catch(function(){ cachedLogoBase64 = false; return false; });
+}
+var instructorCardRecord=null;
+function cardImage(src){
+  return new Promise(function(resolve,reject){var img=new Image();img.onload=function(){resolve(img);};img.onerror=reject;img.src=src;});
+}
+function cardDisplayDate(value){
+  return String(value.getDate()).padStart(2,'0')+'.'+String(value.getMonth()+1).padStart(2,'0')+'.'+value.getFullYear();
+}
+function instructorCardCodes(d){
+  var levels=recordDocuments(d).map(function(x){return String(x.level||'').toLowerCase();});
+  var codes=[];
+  if(levels.some(function(x){return x.indexOf('close protection')>=0;})) codes.push('CPO');
+  if(levels.some(function(x){return x.indexOf('instructor')>=0;})) codes.push('INSTR');
+  if(levels.some(function(x){return x.indexOf('practitioner')>=0;})) codes.push('PRCT');
+  if(levels.some(function(x){return x.indexOf('graduate')>=0;})) codes.push('GRD');
+  return codes.length===1 && codes[0]==='INSTR' ? 'INSTRUCTOR' : codes.join('-');
+}
+function openInstructorCard(index){
+  if(!currentAdminUser || !diplomaData[index]) return;
+  var d=diplomaData[index]; instructorCardRecord=d;
+  document.getElementById('card-error').textContent='';
+  document.getElementById('instructor-card-editor').classList.remove('hidden');
+  renderInstructorCard().catch(function(){});
+}
+function closeInstructorCard(){document.getElementById('instructor-card-editor').classList.add('hidden');instructorCardRecord=null;}
+function cardFittedText(ctx,text,x,y,maxWidth,size,color){
+  ctx.fillStyle=color||'#101010';ctx.textBaseline='middle';ctx.textAlign='left';
+  do{ctx.font='bold '+size+'px Arial,sans-serif';size-=1;}while(size>18 && ctx.measureText(text).width>maxWidth);
+  ctx.fillText(text,x,y,maxWidth);
+}
+function renderInstructorCard(){
+  if(!currentAdminUser || !instructorCardRecord) return Promise.reject(new Error('Yönetici oturumu gerekli.'));
+  var d=instructorCardRecord,canvas=document.getElementById('instructor-card-preview'),ctx=canvas.getContext('2d');
+  var savedPhoto=d.webPortraitUrl||d.webPortrait||d.photo||'';
+  if(!savedPhoto){
+    var missingPhoto=new Error('Bu kayıtta fotoğraf bulunamadı. Önce kayda fotoğraf ekleyin.');
+    document.getElementById('card-error').textContent=missingPhoto.message;
+    return Promise.reject(missingPhoto);
+  }
+  var photoPromise=Promise.resolve(savedPhoto);
+  var job=Promise.all([cardImage('instructor-id-template.png'),makeQrDataUrl(buildQrUrl(d.registerNo)),photoPromise]);
+  return job.then(function(parts){
+    ctx.clearRect(0,0,1536,1024);ctx.drawImage(parts[0],0,0,1536,1024);
+    var name=String(d.studentName||'').trim();
+    var title=instructorCardCodes(d);
+    var number=String(d.registerNo||'').trim();
+    var issue=new Date(),expiry=new Date(issue.getTime());expiry.setFullYear(expiry.getFullYear()+5);
+    cardFittedText(ctx,name.toLocaleUpperCase('tr-TR'),425,402,395,40);
+    cardFittedText(ctx,title,425,476,410,42,'#ffffff');
+    cardFittedText(ctx,number,425,584,335,34);
+    cardFittedText(ctx,cardDisplayDate(issue),425,711,275,32);
+    cardFittedText(ctx,cardDisplayDate(expiry),785,711,255,32);
+    var qrPromise=parts[1]?cardImage(parts[1]).then(function(img){ctx.drawImage(img,1243,428,222,222);}):Promise.resolve();
+    var portraitPromise=parts[2]?prepareRegistryPortrait(parts[2]).then(function(data){return data?cardImage(data).then(function(img){
+      ctx.save();ctx.beginPath();ctx.moveTo(79,343);ctx.lineTo(345,343);ctx.quadraticCurveTo(363,343,363,361);ctx.lineTo(363,701);ctx.quadraticCurveTo(363,720,345,720);ctx.lineTo(79,720);ctx.quadraticCurveTo(61,720,61,701);ctx.lineTo(61,361);ctx.quadraticCurveTo(61,343,79,343);ctx.closePath();ctx.clip();
+      ctx.drawImage(img,61,343,302,377);ctx.restore();
+    }):null;}):Promise.resolve();
+    return Promise.all([qrPromise,portraitPromise]);
+  }).catch(function(err){document.getElementById('card-error').textContent='Önizleme oluşturulamadı: '+err.message;throw err;});
+}
+function saveInstructorCardPDF(){
+  if(!currentAdminUser || !instructorCardRecord) return;
+  renderInstructorCard().then(function(){
+    var c=document.getElementById('instructor-card-preview');
+    var printCanvas=document.createElement('canvas');
+    printCanvas.width=1536;printCanvas.height=960;
+    printCanvas.getContext('2d').drawImage(c,0,32,1536,960,0,0,1536,960);
+    var pdf=new window.jspdf.jsPDF('l','mm',[80,50]);
+    pdf.addImage(printCanvas.toDataURL('image/png'),'PNG',0,0,80,50);
+    pdf.save('egitmen-karti-'+String(instructorCardRecord.registerNo||'onizleme').replace(/[^a-zA-Z0-9_-]/g,'')+'.pdf');
+  }).catch(function(){});
 }
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
@@ -2631,7 +2715,8 @@ function renderDiplomaList(filtered, isFiltering){
             '</select>';
           }
           return row;
-        }).join('')+
+         }).join('')+
+         '<button type="button" class="btn btn-secondary btn-small" style="width:100%;margin-top:10px;" onclick="openInstructorCard('+i+')">🪪 Kimlik ID — Mevcut Bilgilerle Oluştur</button>'+
       '</div>'+
     '</details>';
     var permissionDocs=[];
