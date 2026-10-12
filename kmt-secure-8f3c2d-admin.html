@@ -2839,12 +2839,17 @@ function renderDiplomaList(filtered, isFiltering){
           permissionHtml +
         '</div>' +
         '<div class="actions">' +
-          '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
-          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          documentMenus +
-          registryMenu +
-          '<button type="button" class="btn btn-id" style="width:100%;font-weight:800;" onclick="openInstructorCard('+i+')">🪪 Kimlik ID / PDF (8 × 5 cm)</button>' +
-          '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
+          '<details '+(panelState.actions?'open ':'')+'ontoggle="rememberAdminPanel(\''+d.registerNo+'\',\'actions\',this.open)" style="width:100%;min-width:240px;border:1px solid #38383d;background:#101012;border-radius:6px;">' +
+            '<summary style="cursor:pointer;padding:13px 15px;font-weight:800;color:#fff;list-style:none;background:#242428;border-radius:6px;">☰ Kayıt İşlemleri <span style="float:right;">▾</span></summary>' +
+            '<div style="display:grid;gap:8px;padding:10px;">' +
+              '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
+              documentMenus +
+              registryMenu +
+              '<button type="button" class="btn btn-id" style="width:100%;font-weight:800;" onclick="openInstructorCard('+i+')">🪪 Kimlik ID / PDF (8 × 5 cm)</button>' +
+              '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
+              '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
+            '</div>' +
+          '</details>' +
         '</div>' +
       '</div>';
   });
