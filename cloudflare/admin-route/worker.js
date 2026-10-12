@@ -1,4 +1,4 @@
-const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/f41674365bc17f8cdf6f1abc5d31892150cc9756/kmt-secure-8f3c2d-admin.html";
+const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/885b86d0bd620df6169c6735fd2873c8040cee5b/kmt-secure-8f3c2d-admin.html";
 
 function withSecurityHeaders(response) {
   const headers = new Headers(response.headers);
