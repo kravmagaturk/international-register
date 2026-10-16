@@ -175,6 +175,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
   .diploma-details .actions .btn{margin:0;padding:8px 10px;font-size:12px}.diploma-details .actions .pdf-output-select{min-width:0;width:100%;padding:8px;font-size:12px}
 }
 
+ .admin-main-menu{display:grid;gap:7px;padding:10px;background:#171719;border:1px solid #3b3b40;border-top:0;border-radius:0 0 6px 6px}.admin-main-group{border:1px solid #38383d;background:#101012}.admin-main-group>summary{cursor:pointer;padding:9px 12px;color:#fff;font-weight:800;list-style:none}.admin-main-group>div{padding:10px}.row-register{color:#fff!important;font-size:22px!important;font-weight:900;letter-spacing:.05em}@media(max-width:600px){.row-register{font-size:18px!important}}
 </style>
 </head>
 <body>
@@ -223,24 +224,32 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 
       <div id="admin-panel" class="hidden">
         <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
-        <details id="admin-actions-menu" open style="margin-bottom:20px;max-width:560px;">
-          <summary style="cursor:pointer;list-style:none;padding:14px 18px;border-radius:6px;background:#ed0024;color:#fff;font-weight:800;font-size:18px;">☰ Yönetici İşlem Menüsü <span style="float:right;">▾</span></summary>
-          <div style="display:grid;gap:8px;padding:10px;background:#171719;border:1px solid #3b3b40;border-top:0;border-radius:0 0 6px 6px;">
-            <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
-            <button class="btn" id="btn-security-logs" onclick="toggleSecurityLogs()">📋 Güvenlik Kayıtları</button>
-            <button class="btn btn-secondary" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">🔄 Eğitim Yetkilerini Eşitle</button>
-            <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
-            <div id="secure-access-sync-status" style="color:#999;font-size:12px;"></div>
-        <section id="education-approval-section" style="margin:16px 0 24px;padding:16px;border:2px solid #ed0024;border-radius:8px;background:#111;">
-          <h3 style="color:#fff;margin:0 0 8px;">Online Eğitim Onayları</h3>
-          <p style="color:#bbb;margin:0 0 10px;">Öğrencinin sicil numarasını yazın. Başvuru kodunu öğrenciyle karşılaştırıp cihaz erişimini onaylayın.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input id="education-approval-register" type="text" placeholder="Örn. KM2026026" style="flex:1;min-width:170px;text-transform:uppercase;">
-            <button type="button" class="btn" onclick="loadEducationApprovalByRegister()">Onay İsteklerini Göster</button>
-          </div>
-          <div id="education-approval-result" aria-live="polite" style="margin-top:10px;color:#fff;"></div>
-        </section>
-
+        <details id="admin-actions-menu" style="margin-bottom:16px;max-width:520px;">
+          <summary style="cursor:pointer;list-style:none;padding:10px 14px;border-radius:6px;background:#ed0024;color:#fff;font-weight:800;font-size:16px;">☰ Yönetici İşlem Menüsü <span style="float:right;">▾</span></summary>
+          <div class="admin-main-menu">
+            <label for="admin-action-student" style="font-weight:800;color:#fff;">İşlem yapılacak öğrenci</label>
+            <select id="admin-action-student" onchange="renderSelectedAdminActions()" style="width:100%;margin:6px 0 8px;"></select>
+            <details class="admin-main-group"><summary>Yetkilendirme</summary><div id="admin-authorization-controls"></div></details>
+            <details class="admin-main-group"><summary>Belgeler</summary><div id="admin-document-controls"></div></details>
+            <details class="admin-main-group"><summary>Kimlik</summary><div id="admin-identity-controls"></div></details>
+            <details class="admin-main-group"><summary>Kayıt Bilgisi</summary><div id="admin-registry-controls"></div></details>
+            <details class="admin-main-group"><summary>Online Eğitim Onayları</summary>
+              <div id="education-approval-section" style="padding:12px;">
+                <p style="color:#bbb;margin:0 0 10px;">Sicili yazın, başvuru kodunu öğrenciyle karşılaştırın.</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <input id="education-approval-register" type="text" placeholder="Örn. KM2026026" style="flex:1;min-width:170px;text-transform:uppercase;">
+                  <button type="button" class="btn btn-small" onclick="loadEducationApprovalByRegister()">İstekleri Göster</button>
+                </div>
+                <div id="education-approval-result" aria-live="polite" style="margin-top:10px;color:#fff;"></div>
+              </div>
+            </details>
+            <details class="admin-main-group"><summary>Diğer İşlemler</summary><div style="display:grid;gap:7px;padding:10px;">
+              <button class="btn btn-small" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
+              <button class="btn btn-small" id="btn-security-logs" onclick="toggleSecurityLogs()">Güvenlik Kayıtları</button>
+              <button class="btn btn-secondary btn-small" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">Eğitim Yetkilerini Eşitle</button>
+              <button class="btn btn-secondary btn-small" id="btn-logout" onclick="logout()">Çıkış</button>
+              <div id="secure-access-sync-status" style="color:#999;font-size:12px;"></div>
+            </div></details>
           </div>
         </details>
 
@@ -2551,6 +2560,83 @@ function setDownloadPermission(index,kind,docIndex,enabled){
       refreshDiplomaListPreservingView(index,kind.indexOf('registry')===0?'registry':'permissions');
     });
 }
+function refreshAdminStudentSelector(){
+  var select=document.getElementById('admin-action-student');
+  if(!select) return;
+  var previous=select.value;
+  select.replaceChildren();
+  var empty=document.createElement('option');empty.value='';empty.textContent='Öğrenci seçin';select.appendChild(empty);
+  diplomaData.forEach(function(d,i){
+    var option=document.createElement('option');
+    option.value=String(i);
+    option.textContent=(d.registerNo||'-')+' — '+(d.studentName||'-');
+    select.appendChild(option);
+  });
+  if(previous && diplomaData[Number(previous)]) select.value=previous;
+  var search=String(document.getElementById('adminSearch').value||'').trim().toUpperCase();
+  if(/^KM[0-9]{6,12}$/.test(search)){
+    var found=diplomaData.findIndex(function(d){return String(d.registerNo||'').toUpperCase()===search;});
+    if(found>=0) select.value=String(found);
+  }
+  renderSelectedAdminActions();
+}
+function renderSelectedAdminActions(){
+  var select=document.getElementById('admin-action-student');
+  if(!select) return;
+  var auth=document.getElementById('admin-authorization-controls');
+  var docsBox=document.getElementById('admin-document-controls');
+  var identity=document.getElementById('admin-identity-controls');
+  var registry=document.getElementById('admin-registry-controls');
+  var i=select.value===''?-1:Number(select.value);
+  var d=diplomaData[i];
+  [auth,docsBox,identity,registry].forEach(function(box){box.replaceChildren();});
+  if(!d){
+    [auth,docsBox,identity,registry].forEach(function(box){box.textContent='Önce yukarıdan öğrenci seçin.';});
+    return;
+  }
+  var approvalInput=document.getElementById('education-approval-register');
+  if(approvalInput && !approvalInput.value) approvalInput.value=d.registerNo;
+  var perms=getDownloadPermissions(d);
+  function toggle(box,label,checked,handler){
+    var row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:center;gap:9px;padding:7px 0;color:#fff;cursor:pointer;';
+    var input=document.createElement('input');input.type='checkbox';input.checked=checked;input.style.cssText='width:18px;height:18px;margin:0;';
+    input.onchange=function(){handler(input.checked,input);};
+    var span=document.createElement('span');span.textContent=label;
+    row.append(input,span);box.appendChild(row);
+  }
+  toggle(auth,'Online Eğitim Erişimi',perms.onlineEducation,function(v,input){setOnlineEducationAccess(i,v,input);});
+  toggle(auth,'Faal Öğrenci',!isInactiveStatus(d.status),function(v,input){setStudentActiveAccess(i,v,input);});
+  toggle(auth,'Web Eğitmen / Temsilci Profili',d.publicInstructor===true,function(v,input){setPublicInstructorAccess(i,v,input);});
+  recordDocuments(d).forEach(function(doc,di){
+    toggle(auth,'Belge: '+documentMenuLabel(doc),perms.documents.indexOf(di)>=0,function(v){setDownloadPermission(i,'document',di,v);});
+  });
+  var documentSelect=document.createElement('select');
+  documentSelect.className='pdf-output-select';
+  documentSelect.style.width='100%';
+  var placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Diploma / belge seçin';documentSelect.appendChild(placeholder);
+  var registryOption=document.createElement('option');registryOption.value='registry-info';registryOption.textContent='Sicil PDF (Yönetici)';documentSelect.appendChild(registryOption);
+  recordDocuments(d).forEach(function(doc,di){
+    var option=document.createElement('option');option.value=di+'|'+documentDefaultAction(doc);option.textContent=documentMenuLabel(doc);documentSelect.appendChild(option);
+  });
+  documentSelect.onchange=function(){handleAdminAllDocumentsMenu(documentSelect,i);};
+  docsBox.appendChild(documentSelect);
+  var add=document.createElement('button');add.type='button';add.className='btn btn-secondary btn-small';add.textContent='Belge / Seviye Ekle';add.onclick=function(){addDocumentToRecord(i);};docsBox.appendChild(add);
+  var card=document.createElement('button');card.type='button';card.className='btn btn-id btn-small';card.textContent='Kimlik ID / PDF';card.onclick=function(){openInstructorCard(i);};identity.appendChild(card);
+  var hint=document.createElement('p');hint.style.cssText='color:#bbb;font-size:12px;';hint.textContent='Sicil PDF içeriğini seçin; PDF oluşturma yetkisi yalnız yöneticidedir.';registry.appendChild(hint);
+  REGISTRY_INFO_SECTIONS.forEach(function(section){
+    toggle(registry,section,perms.registrySections.indexOf(section)>=0,function(v){setDownloadPermission(i,'registrySection',section,v);});
+    if(['Practitioner','Graduate','Expert'].indexOf(section)>=0){
+      var degree=document.createElement('select');degree.style.cssText='width:calc(100% - 25px);margin:0 0 7px 25px;';
+      ['','Level 1','Level 2','Level 3','Level 4','Level 5'].forEach(function(value){
+        var option=document.createElement('option');option.value=value;option.textContent=value||'Alt seviye seçin';degree.appendChild(option);
+      });
+      degree.value=perms.registryDegrees[section]||'';
+      degree.onchange=function(){setDownloadPermission(i,'registryDegree',section,degree.value);};
+      registry.appendChild(degree);
+    }
+  });
+}
 function filterDiplomas(){
   var searchText = document.getElementById('adminSearch').value.trim().toLowerCase();
   var levelFilter = document.getElementById('levelFilter').value;
@@ -2566,6 +2652,7 @@ function filterDiplomas(){
   });
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
+  refreshAdminStudentSelector();
 }
 function rememberAdminPanel(registerNo,panel,isOpen){
   if(!registerNo || !panel) return;
@@ -2705,21 +2792,9 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
         '</div>' +
-        '<div class="actions">' +
-          '<details '+(panelState.actions?'open ':'')+'ontoggle="rememberAdminPanel(\''+d.registerNo+'\',\'actions\',this.open)" style="width:100%;border:1px solid #38383d;background:#101012;border-radius:6px;">' +
-            '<summary style="cursor:pointer;padding:13px 15px;font-weight:800;color:#fff;list-style:none;background:#242428;border-radius:6px;">Yönetici İşlem Menüsü ▾</summary>' +
-            '<div style="padding:10px;">' +
-              '<section style="padding:10px 0;border-bottom:1px solid #333;"><h4 style="color:#fff;margin:0 0 8px;">Yetkilendirme</h4>'+permissionHtml+
-                '<button type="button" class="btn btn-secondary btn-small" onclick="loadEducationApprovalByRegister(\''+d.registerNo+'\')">Online Eğitim Onay İstekleri</button></section>'+
-              '<section style="padding:10px 0;border-bottom:1px solid #333;"><h4 style="color:#fff;margin:0 0 8px;">Belgeler</h4>'+documentMenus+
-                '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button></section>'+
-              '<section style="padding:10px 0;border-bottom:1px solid #333;"><h4 style="color:#fff;margin:0 0 8px;">Kimlik</h4>'+
-                '<button type="button" class="btn btn-id" onclick="openInstructorCard('+i+')">🪪 Kimlik ID / PDF (8 × 5 cm)</button></section>'+
-              '<section style="padding:10px 0;border-bottom:1px solid #333;"><h4 style="color:#fff;margin:0 0 8px;">Kayıt Bilgisi</h4>'+registryMenu+'</section>'+
-              '<section style="padding:10px 0;border-bottom:1px solid #333;"><h4 style="color:#fff;margin:0 0 8px;">Düzenleme</h4><button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button></section>'+
-              '<section style="padding:10px 0;"><h4 style="color:#fff;margin:0 0 8px;">Silme</h4><button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button></section>'+
-            '</div>' +
-          '</details>' +
+        '<div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;">' +
+          '<button class="btn btn-edit btn-small" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
+          '<button class="btn btn-danger btn-small" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
         '</div>' +
       '</div>';
   });
