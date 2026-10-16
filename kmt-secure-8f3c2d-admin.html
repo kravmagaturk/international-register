@@ -1314,6 +1314,7 @@ function renderSearchResult(d){
   resultDiv.innerHTML='<div class="result-card"><h3>Kayıt Bilgisi</h3>'+
     portraitHtml+
     '<div style="text-align:center;margin-bottom:14px;">'+statusBadge+'</div>'+
+    '<div class="result-item"><span class="result-label">Sicil No</span><strong style="color:#fff;font-size:20px;letter-spacing:.04em;">'+d.registerNo+'</strong></div>'+ 
     '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+d.studentName+'</span></div>'+
     '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
     '<div class="result-item"><span class="result-label">Seviyesi</span><span>'+publicLevelText(d)+'</span></div>'+
