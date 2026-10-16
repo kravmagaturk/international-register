@@ -1172,23 +1172,6 @@ function publicLevelText(d){
   }).map(function(x){ return documentLabel(x); });
   return allowed.length ? allowed.join(' • ') : (d.level||'-');
 }
-function generateAccessPin(){
-  var n;
-  if(window.crypto && window.crypto.getRandomValues){
-    var a=new Uint32Array(1); window.crypto.getRandomValues(a); n=a[0];
-  }else{
-    n=Math.floor(Math.random()*0xFFFFFFFF);
-  }
-  return String(10000+(n%90000));
-}
-function ensureAccessPin(record){
-  var pin=String((record&&record.accessPin)||'');
-  if(/^\d{5}$/.test(pin)) return pin;
-  do{ pin=generateAccessPin(); }
-  while(diplomaData.some(function(x){ return x!==record && String(x.accessPin||'')===pin; }));
-  record.accessPin=pin;
-  return pin;
-}
 function buildPublicDiplomaRecord(record){
   return {
     registerNo:record.registerNo||'',
@@ -1271,11 +1254,13 @@ function getDownloadPermissions(record){
 }
 function syncStudentAccess(record){
   if(!record || !record.registerNo) return Promise.resolve();
-  var pin=ensureAccessPin(record);
   var reg=encodeURIComponent(record.registerNo);
+  var publicRecord=buildPublicDiplomaRecord(record);
+  publicRecord.onlineEducation=getDownloadPermissions(record).onlineEducation===true;
   return Promise.all([
-    adminFetch('/publicDiplomaData/'+reg+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildPublicDiplomaRecord(record))}),
-    registerAccessAdminFetch('/v1/admin/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:record.registerNo,pin:pin,record:buildDownloadPackage(record)})})
+    adminFetch('/publicDiplomaData/'+reg+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)}),
+    adminFetch('/downloadPackages/'+reg+'.json',{method:'DELETE'}),
+    registerAccessAdminFetch('/v1/admin/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:record.registerNo})})
   ]);
 }
 function renderSearchResult(d){
@@ -1293,21 +1278,13 @@ function renderSearchResult(d){
   resultDiv.innerHTML='<div class="result-card"><h3>Kayıt Bilgisi</h3>'+
     portraitHtml+
     '<div style="text-align:center;margin-bottom:14px;">'+statusBadge+'</div>'+
+    '<div class="result-item"><span class="result-label">Sicil No</span><strong style="color:#fff;font-size:20px;letter-spacing:.04em;">'+d.registerNo+'</strong></div>'+
     '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+d.studentName+'</span></div>'+
     '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
     '<div class="result-item"><span class="result-label">Seviyesi</span><span>'+publicLevelText(d)+'</span></div>'+
     (d.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+d.joinDate+'</span></div>':'')+
     (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
     '<div class="result-item"><span class="result-label">Durum</span><span>'+statusText+'</span></div>'+
-    '<div style="margin-top:18px;padding-top:16px;border-top:1px solid #303034;">'+
-      '<div style="font-weight:800;margin-bottom:8px;">Belge / Diploma İndirme</div>'+
-      '<div style="font-size:12px;color:#999;margin-bottom:10px;">İndirme seçeneklerini açmak için size verilen 5 haneli öğrenci şifresini girin.</div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
-        '<input id="publicAccessPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 haneli şifre" style="flex:1;min-width:160px;padding:10px;background:#09090a;color:#fff;border:1px solid #38383d;border-radius:4px;">'+
-        '<button class="btn" type="button" onclick="unlockStudentDownloads()">Kilidi Aç</button>'+
-      '</div>'+
-      '<div id="publicDownloadAccess" style="margin-top:10px;"></div>'+
-    '</div>'+
     '</div>';
 }
 function requestRecordDeletion(){
@@ -1441,77 +1418,8 @@ function searchDiploma(){
 }
 
 
-function renderAuthorizedDownloads(record){
-  var box=document.getElementById('publicDownloadAccess');
-  if(!box || !record) return;
-  var perms=getDownloadPermissions(record);
-  var docs=recordDocuments(record);
-  var html='<div class="message success">✅ Şifre doğrulandı.</div>';
-  var options=[];
-  perms.documents.forEach(function(di){
-    if(!docs[di]) return;
-    options.push('<option value="'+di+'|'+documentDefaultAction(docs[di])+'">'+documentMenuLabel(docs[di])+'</option>');
-  });
-  if(options.length){
-    html+='<select class="pdf-output-select" onchange="handleUnlockedDocumentMenu(this)"><option value="">📄 Yetkili Diploma / Belgeler</option>'+options.join('')+'</select>';
-  }
-  if(!options.length){
-    html+='<div class="message error" style="margin-top:10px;">Bu kayıt için indirilebilir belge yetkisi tanımlanmamış.</div>';
-  }
-  box.innerHTML=html;
-}
-function handleUnlockedDocumentMenu(sel){
-  var raw=sel.value; sel.selectedIndex=0;
-  if(!raw || !lastUnlockedRecord) return;
-  var parts=raw.split('|');
-  var docIndex=parseInt(parts[0],10);
-  var action=parts[1]||'';
-  if(isNaN(docIndex)||!action) return;
-  runPdfAction(action,recordForDocument(lastUnlockedRecord,docIndex));
-}
-function unlockStudentDownloads(){
-  var reg=lastSearchedRecord&&lastSearchedRecord.registerNo;
-  var input=document.getElementById('publicAccessPin');
-  var box=document.getElementById('publicDownloadAccess');
-  var pin=input?String(input.value||'').trim():'';
-  if(!reg || !/^\d{5}$/.test(pin)){
-    if(box) box.innerHTML='<div class="message error">5 haneli öğrenci şifresini girin.</div>';
-    return;
-  }
-  fetch(REGISTER_ACCESS_API_URL+'/v1/unlock',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({registerNo:reg,pin:pin})
-  })
-    .then(function(res){
-      return res.json().catch(function(){return {};}).then(function(data){
-        if(!res.ok){
-          var err=new Error(res.status===429?'RATE_LIMITED':'BAD_PIN');
-          err.retryAfter=Number(data.retryAfter||0);
-          throw err;
-        }
-        return data.record;
-      });
-    })
-    .then(function(pkg){
-      if(!pkg || !pkg.registerNo) throw new Error('BAD_PIN');
-      lastUnlockedRecord=normalizePublicRecord(pkg,reg);
-      lastUnlockedRecord.downloadPermissions=pkg.downloadPermissions||{};
-      renderAuthorizedDownloads(lastUnlockedRecord);
-      logSecurityEvent('download_unlock',{studentName:pkg.studentName||'',registerNo:reg});
-    })
-    .catch(function(err){
-      if(box){
-        if(err&&err.message==='RATE_LIMITED'){
-          var mins=Math.max(1,Math.ceil((err.retryAfter||900)/60));
-          box.innerHTML='<div class="message error">Çok fazla hatalı deneme. '+mins+' dakika sonra tekrar deneyin.</div>';
-        }else if(err&&err.message==='BAD_PIN') box.innerHTML='<div class="message error">Şifre hatalı.</div>';
-        else box.innerHTML='<div class="message error">Şifre doğrulanamadı. Lütfen tekrar deneyin.</div>';
-      }
-    });
-}
 function runPdfAction(value, record){
-  if(!value || !record) return;
+  if(!currentAdminUser || !value || !record) return;
   if(value === 'diploma-tr') downloadPDF(record,'tr');
   else if(value === 'diploma-en') downloadPDF(record,'en');
   else if(value === 'diploma-he') downloadPDF(record,'he');
@@ -1523,27 +1431,6 @@ function runPdfAction(value, record){
   else if(value === 'cert-tr') downloadAppreciationCertificate(record,'tr');
   else if(value === 'cert-en') downloadAppreciationCertificate(record,'en');
 }
-function handlePublicPdfMenu(sel){
-  var value = sel.value; sel.selectedIndex = 0;
-  runPdfAction(value, lastUnlockedRecord);
-}
-function handlePublicDocumentPdfMenu(sel, docIndex){
-  var value = sel.value; sel.selectedIndex = 0;
-  if(!lastUnlockedRecord) return;
-  runPdfAction(value, recordForDocument(lastUnlockedRecord, docIndex));
-}
-function handlePublicAllDocumentsMenu(sel){
-  var raw = sel.value;
-  sel.selectedIndex = 0;
-  if(!raw) return;
-  var parts = raw.split('|');
-  var docIndex = parseInt(parts[0],10);
-  var action = parts[1] || '';
-  if(isNaN(docIndex) || !action) return;
-  if(!lastUnlockedRecord) return;
-  runPdfAction(action, recordForDocument(lastUnlockedRecord, docIndex));
-}
-
 function handleAdminPdfMenu(sel, index){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, diplomaData[index]);
@@ -1675,6 +1562,7 @@ function prepareDiplomaSquarePhoto(photoData){
 }
 
 function downloadRegistryInfoPDF(record){
+  if(!currentAdminUser) return;
   if(!record) return;
   if(!currentAdminUser){ alert('Sicil PDF yalnızca yönetici panelinden oluşturulabilir.'); return; }
   var d=record, jsPDF=window.jspdf.jsPDF;
@@ -1961,6 +1849,7 @@ function drawCertificateFrame(doc,W,H,logo){
 }
 
 function downloadPDF(record, lang){
+  if(!currentAdminUser) return;
   record=record||lastSearchedRecord; lang=lang||'tr'; if(!record)return;
   var d=record;
   var templatePromise=loadTemplate('diplomaGeneral').catch(function(){return null;});
@@ -1994,6 +1883,7 @@ function downloadPDF(record, lang){
 
 
 function downloadAppreciationCertificate(record, lang){
+  if(!currentAdminUser) return;
   lang=lang||'tr'; if(!record)return;
   var d=record,isTR=lang==='tr';
   var templatePromise=loadTemplate(isTR?'honorTr':'honorEn').catch(function(){return null;});
@@ -2070,44 +1960,24 @@ async function syncAllSecureAccessPackages(showAlert){
   var status=document.getElementById('secure-access-sync-status');
   var oldText=btn?btn.textContent:'';
   var succeeded=0,failed=[];
-  if(btn){btn.disabled=true;btn.textContent='⏳ Güvenli paketler eşitleniyor...';}
-  if(status){status.textContent='Öğrenci paketleri güvenli depoya aktarılıyor...';status.style.color='#999';}
+  if(btn){btn.disabled=true;btn.textContent='⏳ Eğitim yetkileri eşitleniyor...';}
+  if(status){status.textContent='Öğrenci eğitim yetkileri güncelleniyor...';status.style.color='#999';}
   try{
     for(var i=0;i<diplomaData.length;i++){
       var record=diplomaData[i];
       try{
-        var hadPin=/^\d{5}$/.test(String(record.accessPin||''));
-        ensureAccessPin(record);
-        if(!record.downloadPermissions || typeof record.downloadPermissions!=='object'){
-          record.downloadPermissions={registryInfo:false,documents:[]};
-        }
-        if(!hadPin){
-          await adminFetch('/diplomaData/'+encodeURIComponent(record.registerNo)+'.json',{
-            method:'PATCH',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({accessPin:record.accessPin,downloadPermissions:record.downloadPermissions})
-          });
-        }
         await syncStudentAccess(record);
         succeeded++;
       }catch(err){
         failed.push({registerNo:record&&record.registerNo?record.registerNo:'-',message:err&&err.message?err.message:String(err)});
-        console.warn('Güvenli öğrenci paketi eşitlenemedi:',record&&record.registerNo,err);
       }
     }
-    var packageCount=null;
-    try{
-      var response=await registerAccessAdminFetch('/v1/admin/status',{method:'GET'});
-      var statusData=await response.json();
-      packageCount=Number(statusData.packageCount);
-    }catch(statusError){
-      console.warn('Güvenli paket sayısı doğrulanamadı:',statusError);
-    }
-    var summary='Güvenli paket eşitleme: '+succeeded+' başarılı, '+failed.length+' başarısız'+(packageCount!==null?' · Depoda '+packageCount+' paket':'')+'.';
+    var summary='Eğitim yetkileri: '+succeeded+' başarılı, '+failed.length+' başarısız.';
     if(status){status.textContent=summary;status.style.color=failed.length?'#ffb74d':'#39d98a';}
     if(showAlert) alert(summary+(failed.length?'\n\nBaşarısız siciller: '+failed.map(function(x){return x.registerNo;}).join(', '):''));
-    return {succeeded:succeeded,failed:failed,packageCount:packageCount};
+    return {succeeded:succeeded,failed:failed};
   }finally{
-    if(btn){btn.disabled=false;btn.textContent=oldText||'🔐 Güvenli Paketleri Eşitle';}
+    if(btn){btn.disabled=false;btn.textContent=oldText||'🔄 Eğitim Yetkilerini Eşitle';}
   }
 }
 async function loadAllDiplomas() {
@@ -2497,13 +2367,11 @@ function addDiploma(){
       publicRole:publicRole,
       publicRoles:publicRoles,
       status:old.status || 'faal',
-      accessPin:old.accessPin || '',
       downloadPermissions:old.downloadPermissions || {onlineEducation:false,registryInfo:false,documents:[]},
       webPortraitUrl:old.webPortraitUrl || ''
     };
-    ensureAccessPin(record);
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
-    msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName+'<br>Öğrenci şifresi: <strong>'+record.accessPin+'</strong>';
+    msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
 
   } else {
     // Yeni kişi = yeni sicil. Aynı isim varsa yanlışlıkla ikinci sicil açmayı engelle.
@@ -2526,11 +2394,10 @@ function addDiploma(){
       registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
       country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal',
-      accessPin:'', downloadPermissions:{onlineEducation:false,registryInfo:false,registrySections:[],registryDegrees:{},documents:[]}
+      downloadPermissions:{onlineEducation:false,registryInfo:false,registrySections:[],registryDegrees:{},documents:[]}
     };
-    ensureAccessPin(record);
     diplomaData.push(record);
-    msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName+'<br>Öğrenci şifresi: <strong>'+record.accessPin+'</strong>';
+    msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
   }
 
   adminFetch('/diplomaData/' + registerNo + '.json', {
@@ -2664,18 +2531,6 @@ function setDownloadPermission(index,kind,docIndex,enabled){
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(perms)
   }).then(function(){return syncStudentAccess(d);})
     .then(function(){filterDiplomas();})
-    .catch(function(){alert(t('msgSaveError'));});
-}
-function regenerateAccessPin(index){
-  var d=diplomaData[index]; if(!d) return;
-  var next;
-  do{ next=generateAccessPin(); }while(diplomaData.some(function(x,j){return j!==index&&String(x.accessPin||'')===next;}));
-  d.accessPin=next;
-  var reg=encodeURIComponent(d.registerNo);
-  adminFetch('/diplomaData/'+reg+'/accessPin.json',{
-    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)
-  }).then(function(){return syncStudentAccess(d);})
-    .then(function(){filterDiplomas();alert('Yeni öğrenci şifresi: '+next);})
     .catch(function(){alert(t('msgSaveError'));});
 }
 function filterDiplomas(){
@@ -2817,15 +2672,20 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
-          '<p><strong>Öğrenci Şifresi:</strong> <span style="font-family:monospace;font-size:17px;color:#fff;">'+ensureAccessPin(d)+'</span> <button type="button" class="btn btn-secondary btn-small" onclick="regenerateAccessPin('+i+')">Yeni Şifre</button></p>' +
-          permissionHtml +
         '</div>' +
         '<div class="actions">' +
-          '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
-          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-          documentMenus +
-          registryMenu +
-          '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button>' +
+          '<details style="width:100%;border:1px solid #38383d;background:#101012;border-radius:6px;">' +
+            '<summary style="cursor:pointer;padding:13px 15px;font-weight:800;color:#fff;list-style:none;background:#242428;border-radius:6px;">Yönetici İşlem Menüsü ▾</summary>' +
+            '<div style="padding:10px;">' +
+              '<section><h4>Yetkilendirme</h4>'+permissionHtml+'</section>'+
+              '<section><h4>Belgeler</h4>'+documentMenus+
+                '<button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">➕ Belge / Seviye Ekle</button></section>'+
+              '<section><h4>Kimlik</h4><span>Kimlik bilgileri kayıt detayında görünür.</span></section>'+
+              '<section><h4>Kayıt Bilgisi</h4>'+registryMenu+'</section>'+
+              '<section><h4>Düzenleme</h4><button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button></section>'+
+              '<section><h4>Silme</h4><button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button></section>'+
+            '</div>' +
+          '</details>' +
         '</div>' +
       '</div>';
   });
