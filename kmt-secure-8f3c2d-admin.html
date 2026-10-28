@@ -176,6 +176,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 }
 
  .admin-main-menu{display:grid;gap:7px;padding:10px;background:#171719;border:1px solid #3b3b40;border-top:0;border-radius:0 0 6px 6px}.admin-main-group{border:1px solid #38383d;background:#101012}.admin-main-group>summary{cursor:pointer;padding:9px 12px;color:#fff;font-weight:800;list-style:none}.admin-main-group>div{padding:10px}.row-register{color:#fff!important;font-size:22px!important;font-weight:900;letter-spacing:.05em}@media(max-width:600px){.row-register{font-size:18px!important}}
+ .admin-top-actions{display:flex;align-items:flex-start;gap:9px;flex-wrap:wrap;margin:0 0 18px}.admin-top-actions>.btn{margin:0}.admin-top-menu{min-width:190px;max-width:min(100%,520px)}.admin-top-menu>summary{cursor:pointer;list-style:none;padding:11px 14px;border:1px solid #45454a;border-radius:6px;background:#222225;color:#fff;font-weight:800}.admin-top-menu[open]>summary{border-radius:6px 6px 0 0}.admin-top-menu#membership-actions-menu>summary{background:#253343}.admin-top-menu#membership-actions-menu>div{background:#171719;border:1px solid #3b3b40;border-top:0}.student-actions-toggle{margin:0 10px 0 0;padding:8px 12px;background:#222226;border:1px solid #555;border-radius:6px;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}.student-actions-toggle:hover,.student-actions-toggle:focus-visible{background:#36363a;border-color:#fff}.student-actions-panel{padding:14px;background:#101012;border:1px solid #38383d;border-top:0;margin-bottom:6px}.student-actions-panel.hidden{display:none}.student-actions-title{font-weight:800;color:#fff;margin-bottom:10px}.student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.student-actions-group{border:1px solid #38383d;background:#151517;min-width:0}.student-actions-group>summary{cursor:pointer;color:#fff;font-weight:800;padding:11px;list-style:none}.student-actions-group>div{padding:12px;display:grid;gap:8px}.student-actions-footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}@media(max-width:700px){.student-actions-grid{grid-template-columns:1fr}.student-actions-toggle{padding:7px 8px;font-size:12px}.admin-top-menu{width:100%}}
 </style>
 </head>
 <body>
@@ -224,34 +225,22 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 
       <div id="admin-panel" class="hidden">
         <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
-        <details id="admin-actions-menu" style="margin-bottom:16px;max-width:520px;">
-          <summary style="cursor:pointer;list-style:none;padding:10px 14px;border-radius:6px;background:#ed0024;color:#fff;font-weight:800;font-size:16px;">☰ Yönetici İşlem Menüsü <span style="float:right;">▾</span></summary>
-          <div class="admin-main-menu">
-            <label for="admin-action-student" style="font-weight:800;color:#fff;">İşlem yapılacak öğrenci</label>
-            <select id="admin-action-student" onchange="renderSelectedAdminActions()" style="width:100%;margin:6px 0 8px;"></select>
-            <details class="admin-main-group"><summary>Yetkilendirme</summary><div id="admin-authorization-controls"></div></details>
-            <details class="admin-main-group"><summary>Belgeler</summary><div id="admin-document-controls"></div></details>
-            <details class="admin-main-group"><summary>Kimlik</summary><div id="admin-identity-controls"></div></details>
-            <details class="admin-main-group"><summary>Kayıt Bilgisi</summary><div id="admin-registry-controls"></div></details>
-            <details class="admin-main-group"><summary>Online Eğitim Onayları</summary>
-              <div id="education-approval-section" style="padding:12px;">
-                <p style="color:#bbb;margin:0 0 10px;">Sicili yazın, başvuru kodunu öğrenciyle karşılaştırın.</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <input id="education-approval-register" type="text" placeholder="Örn. KM2026026" style="flex:1;min-width:170px;text-transform:uppercase;">
-                  <button type="button" class="btn btn-small" onclick="loadEducationApprovalByRegister()">İstekleri Göster</button>
-                </div>
-                <div id="education-approval-result" aria-live="polite" style="margin-top:10px;color:#fff;"></div>
-              </div>
-            </details>
-            <details class="admin-main-group"><summary>Diğer İşlemler</summary><div style="display:grid;gap:7px;padding:10px;">
-              <button class="btn btn-small" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
+        <div class="admin-top-actions">
+          <button class="btn btn-small" id="btn-new-record" onclick="showAddForm()">Yeni Öğrenci Kaydı</button>
+          <details id="admin-actions-menu" class="admin-top-menu">
+            <summary>⚙ Sistem İşlemleri</summary>
+            <div class="admin-main-menu">
               <button class="btn btn-small" id="btn-security-logs" onclick="toggleSecurityLogs()">Güvenlik Kayıtları</button>
               <button class="btn btn-secondary btn-small" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">Eğitim Yetkilerini Eşitle</button>
               <button class="btn btn-secondary btn-small" id="btn-logout" onclick="logout()">Çıkış</button>
               <div id="secure-access-sync-status" style="color:#999;font-size:12px;"></div>
-            </div></details>
-          </div>
-        </details>
+            </div>
+          </details>
+          <details id="membership-actions-menu" class="admin-top-menu">
+            <summary>Üye Yönetimi</summary>
+            <div id="education-approval-section" style="padding:12px;"></div>
+          </details>
+        </div>
 
         <div id="security-logs-section" class="hidden" style="margin-bottom:20px;">
           <h4 id="txt-securityLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 Güvenlik ve İndirme Kayıtları</h4>
@@ -1672,7 +1661,8 @@ function downloadRegistryInfoPDF(record){
     fitRegistry(d.joinDate,119.0,122.0,100,11.5,9);
     fitRegistry(activeDoc.examDate||d.examDate,119.0,133.0,100,11.5,9);
     fitRegistry(activeDoc.examLocation||d.examLocation,119.0,144.0,100,11.5,8.5);
-    fitRegistry(d.status==='pasif'?'PASİF / INACTIVE':'AKTİF / ACTIVE',119.0,155.0,100,11.5,9,{color:d.status==='pasif'?'#b9141c':'#159447'});
+    var inactiveForRegistry=isInactiveStatus(d.status);
+    fitRegistry(inactiveForRegistry?'PASİF / INACTIVE':'AKTİF / ACTIVE',119.0,155.0,100,11.5,9,{color:inactiveForRegistry?'#b9141c':'#159447'});
     fitRegistry(d.instructorName||'-',119.0,166.0,100,11.5,8.5);
     doc.save('kayit-bilgisi-'+String(d.registerNo||'kayit')+'.pdf');
     logSecurityEvent('download',{studentName:d.studentName,registerNo:d.registerNo,type:'registry_info_landscape_template'});
@@ -2559,42 +2549,16 @@ function setDownloadPermission(index,kind,docIndex,enabled){
       refreshDiplomaListPreservingView(index,kind.indexOf('registry')===0?'registry':'permissions');
     });
 }
-function refreshAdminStudentSelector(){
-  var select=document.getElementById('admin-action-student');
-  if(!select) return;
-  var previous=select.value;
-  select.replaceChildren();
-  var empty=document.createElement('option');empty.value='';empty.textContent='Öğrenci seçin';select.appendChild(empty);
-  diplomaData.forEach(function(d,i){
-    var option=document.createElement('option');
-    option.value=String(i);
-    option.textContent=(d.registerNo||'-')+' — '+(d.studentName||'-');
-    select.appendChild(option);
-  });
-  if(previous && diplomaData[Number(previous)]) select.value=previous;
-  var search=String(document.getElementById('adminSearch').value||'').trim().toUpperCase();
-  if(/^KM[0-9]{6,12}$/.test(search)){
-    var found=diplomaData.findIndex(function(d){return String(d.registerNo||'').toUpperCase()===search;});
-    if(found>=0) select.value=String(found);
-  }
-  renderSelectedAdminActions();
-}
-function renderSelectedAdminActions(){
-  var select=document.getElementById('admin-action-student');
-  if(!select) return;
-  var auth=document.getElementById('admin-authorization-controls');
-  var docsBox=document.getElementById('admin-document-controls');
-  var identity=document.getElementById('admin-identity-controls');
-  var registry=document.getElementById('admin-registry-controls');
-  var i=select.value===''?-1:Number(select.value);
+function renderSelectedAdminActions(i){
+  var root=document.getElementById('student-actions-'+i);
+  if(!root) return;
+  var auth=root.querySelector('[data-action="authorization"]');
+  var docsBox=root.querySelector('[data-action="documents"]');
+  var identity=root.querySelector('[data-action="identity"]');
+  var registry=root.querySelector('[data-action="registry"]');
   var d=diplomaData[i];
   [auth,docsBox,identity,registry].forEach(function(box){box.replaceChildren();});
-  if(!d){
-    [auth,docsBox,identity,registry].forEach(function(box){box.textContent='Önce yukarıdan öğrenci seçin.';});
-    return;
-  }
-  var approvalInput=document.getElementById('education-approval-register');
-  if(approvalInput && !approvalInput.value) approvalInput.value=d.registerNo;
+  if(!d) return;
   var perms=getDownloadPermissions(d);
   function toggle(box,label,checked,handler){
     var row=document.createElement('label');
@@ -2613,7 +2577,7 @@ function renderSelectedAdminActions(){
   var documentSelect=document.createElement('select');
   documentSelect.className='pdf-output-select';
   documentSelect.style.width='100%';
-  var placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Diploma / belge seçin';documentSelect.appendChild(placeholder);
+  var placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Diploma / belge PDF oluştur';documentSelect.appendChild(placeholder);
   var registryOption=document.createElement('option');registryOption.value='registry-info';registryOption.textContent='Sicil PDF (Yönetici)';documentSelect.appendChild(registryOption);
   recordDocuments(d).forEach(function(doc,di){
     var option=document.createElement('option');option.value=di+'|'+documentDefaultAction(doc);option.textContent=documentMenuLabel(doc);documentSelect.appendChild(option);
@@ -2651,22 +2615,35 @@ function filterDiplomas(){
   });
   renderStats();
   renderDiplomaList(filtered, !!(searchText || levelFilter));
-  refreshAdminStudentSelector();
 }
 function rememberAdminPanel(registerNo,panel,isOpen){
   if(!registerNo || !panel) return;
   if(!expandedAdminPanels[registerNo]) expandedAdminPanels[registerNo]={};
   expandedAdminPanels[registerNo][panel]=isOpen===true;
 }
+function rememberStudentGroup(index,group,isOpen){
+  var d=diplomaData[index];
+  if(d) rememberAdminPanel(d.registerNo,group,isOpen);
+}
 function refreshDiplomaListPreservingView(index,panel){
   var d=diplomaData[index];
   if(d){
-    expandedRows[index]=true;
+    rememberAdminPanel(d.registerNo,'actions',true);
     if(panel) rememberAdminPanel(d.registerNo,panel,true);
   }
   var scrollTop=window.pageYOffset || document.documentElement.scrollTop || 0;
   filterDiplomas();
   window.requestAnimationFrame(function(){ window.scrollTo(0,scrollTop); });
+}
+function toggleStudentActions(index){
+  var d=diplomaData[index],panel=document.getElementById('student-actions-'+index);
+  if(!d||!panel) return;
+  var open=panel.classList.contains('hidden');
+  document.querySelectorAll('.student-actions-panel').forEach(function(other){other.classList.add('hidden');});
+  Object.keys(expandedAdminPanels).forEach(function(reg){expandedAdminPanels[reg].actions=false;});
+  panel.classList.toggle('hidden',!open);
+  rememberAdminPanel(d.registerNo,'actions',open);
+  if(open) renderSelectedAdminActions(index);
 }
 function renderStats(){
   var statsBox = document.getElementById('stats-display');
@@ -2780,7 +2757,19 @@ function renderDiplomaList(filtered, isFiltering){
           '<span class="row-name">'+d.studentName+'</span>' +
           '<span class="row-register">'+d.registerNo+'</span>' +
         '</div>' +
+        '<button type="button" class="student-actions-toggle" onclick="toggleStudentActions('+i+')" aria-label="Öğrenci işlemleri">İşlemler ▾</button>' +
         '<button type="button" class="expand-btn'+(isOpen?' open':'')+'" id="icon-'+i+'" onclick="toggleDetails('+i+')">▼</button>' +
+      '</div>' +
+      '<div class="student-actions-panel'+(panelState.actions?'':' hidden')+'" id="student-actions-'+i+'">' +
+        '<div class="student-actions-title">'+d.studentName+' · '+d.registerNo+'</div>' +
+        '<div class="student-actions-grid">' +
+          '<details class="student-actions-group" data-group="documents" '+(panelState.documents?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Diplomalar ve Belgeler</summary><div data-action="documents"></div></details>' +
+          '<details class="student-actions-group" data-group="permissions" '+(panelState.permissions?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Yetkiler ve Web Görünürlüğü</summary><div data-action="authorization"></div></details>' +
+          '<details class="student-actions-group" data-group="education" '+(panelState.education?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Online Eğitim Onayı</summary><div><p style="color:#bbb;margin:0;">Başvuru kodunu öğrenciyle karşılaştırın.</p><button type="button" class="btn btn-small" onclick="loadEducationApprovalByRegister(diplomaData['+i+'].registerNo,'+i+')">Onay İsteklerini Göster</button><div id="student-approval-result-'+i+'" aria-live="polite"></div></div></details>' +
+          '<details class="student-actions-group" data-group="registry" '+(panelState.registry?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Sicil PDF İçeriği</summary><div data-action="registry"></div></details>' +
+          '<details class="student-actions-group" data-group="identity" '+(panelState.identity?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Kimlik Kartı</summary><div data-action="identity"></div></details>' +
+        '</div>' +
+        '<div class="student-actions-footer"><button class="btn btn-edit btn-small" onclick="editDiploma('+i+')">Kaydı Düzenle</button><button class="btn btn-danger btn-small" onclick="deleteDiploma('+i+')">Kaydı Sil</button></div>' +
       '</div>' +
       '<div class="diploma-details'+(isOpen?'':' hidden')+'" id="details-'+i+'">' +
         photoHtml +
@@ -2791,13 +2780,13 @@ function renderDiplomaList(filtered, isFiltering){
           '<p><strong>Belgeler / Seviyeler:</strong> '+recordDocuments(d).map(function(x){return documentLabel(x);}).join(' • ')+'</p>' +
           ((d.country||d.city||d.district) ? '<p><strong>Konum:</strong> '+[d.country,d.city,d.district].filter(Boolean).join(' / ')+'</p>' : '') +
         '</div>' +
-        '<div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;">' +
-          '<button class="btn btn-edit btn-small" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
-          '<button class="btn btn-danger btn-small" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
-        '</div>' +
       '</div>';
   });
   box.innerHTML = html;
+  filtered.forEach(function(item){
+    var state=expandedAdminPanels[item.d.registerNo]||{};
+    if(state.actions) renderSelectedAdminActions(item.i);
+  });
 }
 function toggleDetails(i){
   expandedRows[i] = !expandedRows[i];
@@ -2820,11 +2809,10 @@ async function educationAdminRequest(path,options){
   if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
   return data;
 }
-async function loadEducationApprovalByRegister(registerNo){
-  var input=document.getElementById('education-approval-register');
-  var box=document.getElementById('education-approval-result');
-  var reg=String(registerNo||input.value||'').trim().toUpperCase();
-  input.value=reg;
+async function loadEducationApprovalByRegister(registerNo,index){
+  var box=document.getElementById('student-approval-result-'+index);
+  if(!box) return;
+  var reg=String(registerNo||'').trim().toUpperCase();
   box.scrollIntoView({behavior:'smooth',block:'center'});
   if(!/^KM[0-9]{6,12}$/.test(reg)){box.textContent='Geçerli sicil numarası yazın.';return;}
   var record=diplomaData.find(function(d){return String(d.registerNo||'').toUpperCase()===reg;});
@@ -2861,7 +2849,7 @@ async function loadEducationApprovalByRegister(registerNo){
         button.disabled=true;
         try{
           await educationAdminRequest('/api/admin/student-access',{method:'POST',body:JSON.stringify({registerNo:reg,id:item.id})});
-          await loadEducationApprovalByRegister(reg);
+          await loadEducationApprovalByRegister(reg,index);
         }catch(e){alert('Onay verilemedi: '+e.message);button.disabled=false;}
       };
       row.append(label,button);box.appendChild(row);
