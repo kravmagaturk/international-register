@@ -2918,7 +2918,10 @@ async function changeStudentRegisterNo(i){
     if(check[3]) changes['publicInstructors/'+newNo]=Object.assign({},check[3],{registerNo:newNo});
     await adminFetch('/.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(changes)});
     logSecurityEvent('register_no_change',{studentName:updated.studentName,oldRegisterNo:oldNo,newRegisterNo:newNo}).catch(function(error){console.warn('Sicil değişikliği günlüğe yazılamadı:',error);});
-    await loadAllDiplomas();
+    diplomaData[i]=Object.assign({},updated,{_firebaseKey:newNo});
+    expandedAdminPanels[newNo]=expandedAdminPanels[oldNo]||{};
+    delete expandedAdminPanels[oldNo];
+    filterDiplomas();
     try{await Promise.all([syncPublicInstructor(updated),syncStudentAccess(updated)]);}
     catch(syncError){alert('Sicil numarası kaydedildi; bağlı erişimlerin eşitlemesi tamamlanamadı: '+syncError.message+' Yeni kayıt açmadan önce yetkileri kontrol edin.');return;}
     alert('Sicil numarası '+newNo+' olarak değiştirildi. Eski QR bağlantısı da aynı öğrenciyi gösterir.');
