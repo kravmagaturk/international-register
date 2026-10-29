@@ -1301,11 +1301,17 @@ function syncStudentAccess(record){
   var reg=encodeURIComponent(record.registerNo);
   var publicRecord=buildPublicDiplomaRecord(record);
   publicRecord.onlineEducation=getDownloadPermissions(record).onlineEducation===true;
-  return Promise.all([
+  var writes=[
     adminFetch('/publicDiplomaData/'+reg+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)}),
     adminFetch('/downloadPackages/'+reg+'.json',{method:'DELETE'}),
     registerAccessAdminFetch('/v1/admin/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:record.registerNo})})
-  ]);
+  ];
+  (Array.isArray(record.previousRegisterNos)?record.previousRegisterNos:[]).forEach(function(alias){
+    if(/^KM[0-9]{6,12}$/.test(alias) && alias!==record.registerNo){
+      writes.push(adminFetch('/publicDiplomaData/'+encodeURIComponent(alias)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(publicRecord)}));
+    }
+  });
+  return Promise.all(writes);
 }
 function renderSearchResult(d){
   var resultDiv=document.getElementById('searchResult');
@@ -2404,7 +2410,8 @@ function addDiploma(){
       publicRoles:publicRoles,
       status:old.status || 'faal',
       downloadPermissions:old.downloadPermissions || {onlineEducation:false,registryInfo:false,documents:[]},
-      webPortraitUrl:old.webPortraitUrl || ''
+      webPortraitUrl:old.webPortraitUrl || '',
+      previousRegisterNos:Array.isArray(old.previousRegisterNos)?old.previousRegisterNos.slice():[]
     };
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
     msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -2423,7 +2430,7 @@ function addDiploma(){
     var year = new Date().getFullYear();
     var counter = diplomaData.length + 1;
     registerNo = 'KM'+year+String(counter).padStart(3,'0');
-    while(diplomaData.some(function(x){ return x.registerNo === registerNo; })){
+    while(diplomaData.some(function(x){ return x.registerNo === registerNo || (Array.isArray(x.previousRegisterNos) && x.previousRegisterNos.indexOf(registerNo)>=0); })){
       counter++; registerNo = 'KM'+year+String(counter).padStart(3,'0');
     }
     record = {
@@ -2598,6 +2605,8 @@ function renderSelectedAdminActions(i){
   var add=document.createElement('button');add.type='button';add.className='btn btn-secondary btn-small';add.textContent='Belge / Seviye Ekle';add.onclick=function(){addDocumentToRecord(i);};docsBox.appendChild(add);
   var card=document.createElement('button');card.type='button';card.className='btn btn-id btn-small';card.textContent='Kimlik ID / PDF';card.onclick=function(){openInstructorCard(i);};identity.appendChild(card);
   var hint=document.createElement('p');hint.style.cssText='color:#bbb;font-size:12px;';hint.textContent='Sicil PDF içeriğini seçin; PDF oluşturma yetkisi yalnız yöneticidedir.';registry.appendChild(hint);
+  var changeNumber=document.createElement('button');changeNumber.type='button';changeNumber.className='btn btn-secondary btn-small';changeNumber.textContent='Sicil Numarasını Değiştir';changeNumber.onclick=function(){changeStudentRegisterNo(i);};registry.appendChild(changeNumber);
+  var numberHint=document.createElement('p');numberHint.style.cssText='color:#bbb;font-size:12px;';numberHint.textContent='Yeni numara KM ve 6–12 rakam biçiminde olmalıdır. Eski QR kodu aynı öğrenciye yönlenmeye devam eder.';registry.appendChild(numberHint);
   REGISTRY_INFO_SECTIONS.forEach(function(section){
     toggle(registry,section,perms.registrySections.indexOf(section)>=0,function(v){setDownloadPermission(i,'registrySection',section,v);});
     if(['Practitioner','Graduate','Expert'].indexOf(section)>=0){
@@ -2869,17 +2878,71 @@ async function loadEducationApprovalByRegister(registerNo,index){
     });
   }catch(e){box.textContent='İstekler yüklenemedi: '+e.message;}
 }
+async function changeStudentRegisterNo(i){
+  var current=diplomaData[i];
+  if(!current || !current.registerNo) return;
+  var oldNo=String(current.registerNo).trim().toUpperCase();
+  var entered=prompt(current.studentName+' için yeni KM sicil numarası:',oldNo);
+  if(entered===null) return;
+  var newNo=entered.trim().toUpperCase();
+  if(newNo===oldNo) return;
+  if(!/^KM[0-9]{6,12}$/.test(newNo)){alert('Sicil numarası KM ile başlamalı ve ardından 6–12 rakam gelmelidir. Örnek: KM2026012');return;}
+  if(diplomaData.some(function(item){return item!==current && (item.registerNo===newNo || (Array.isArray(item.previousRegisterNos)&&item.previousRegisterNos.indexOf(newNo)>=0));})){
+    alert('Bu sicil numarası veya eski QR bağlantısı başka bir öğrenciye ait. İşlem yapılmadı.');return;
+  }
+  if(!confirm(current.studentName+' öğrencisinin sicili '+oldNo+' → '+newNo+' olarak değiştirilecek. Eski QR kodu aynı öğrenciye açılmaya devam edecek. Devam edilsin mi?')) return;
+  try{
+    async function read(path){var response=await adminFetch(path+'.json');return response.json();}
+    var check=await Promise.all([
+      read('/diplomaData/'+encodeURIComponent(oldNo)),
+      read('/diplomaData/'+encodeURIComponent(newNo)),
+      read('/publicDiplomaData/'+encodeURIComponent(newNo)),
+      read('/publicInstructors/'+encodeURIComponent(oldNo)),
+      read('/publicInstructors/'+encodeURIComponent(newNo)),
+      read('/downloadPackages/'+encodeURIComponent(newNo))
+    ]);
+    if(!check[0] || check[0].registerNo!==oldNo || check[0].studentName!==current.studentName) throw new Error('Öğrenci kaydı değişmiş. Listeyi yenileyip tekrar kontrol edin.');
+    if(check[1] || check[2] || check[4] || check[5]) throw new Error('Yeni numarada kayıt veya erişim verisi bulundu. Farklı bir numara seçin.');
+    var updated=Object.assign({},check[0],{registerNo:newNo});
+    var aliases=Array.isArray(updated.previousRegisterNos)?updated.previousRegisterNos.slice():[];
+    if(aliases.indexOf(oldNo)<0) aliases.push(oldNo);
+    updated.previousRegisterNos=aliases;
+    var publicRecord=buildPublicDiplomaRecord(updated);
+    publicRecord.onlineEducation=getDownloadPermissions(updated).onlineEducation===true;
+    var changes={};
+    changes['diplomaData/'+oldNo]=null;
+    changes['diplomaData/'+newNo]=updated;
+    changes['publicDiplomaData/'+newNo]=publicRecord;
+    aliases.forEach(function(alias){changes['publicDiplomaData/'+alias]=publicRecord;});
+    changes['publicInstructors/'+oldNo]=null;
+    if(check[3]) changes['publicInstructors/'+newNo]=Object.assign({},check[3],{registerNo:newNo});
+    await adminFetch('/.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(changes)});
+    logSecurityEvent('register_no_change',{studentName:updated.studentName,oldRegisterNo:oldNo,newRegisterNo:newNo}).catch(function(error){console.warn('Sicil değişikliği günlüğe yazılamadı:',error);});
+    await loadAllDiplomas();
+    try{await Promise.all([syncPublicInstructor(updated),syncStudentAccess(updated)]);}
+    catch(syncError){alert('Sicil numarası kaydedildi; bağlı erişimlerin eşitlemesi tamamlanamadı: '+syncError.message+' Yeni kayıt açmadan önce yetkileri kontrol edin.');return;}
+    alert('Sicil numarası '+newNo+' olarak değiştirildi. Eski QR bağlantısı da aynı öğrenciyi gösterir.');
+  }catch(error){alert('Sicil numarası değiştirilemedi: '+error.message);}
+}
 function deleteDiploma(i){
   var d = diplomaData[i];
   if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
     var reg=encodeURIComponent(d.registerNo);
-    Promise.all([
+    var deletes=[
       adminFetch('/diplomaData/'+reg+'.json',{method:'DELETE'}),
       adminFetch('/publicDiplomaData/'+reg+'.json',{method:'DELETE'}),
       adminFetch('/downloadPackages/'+reg+'.json',{method:'DELETE'}),
       adminFetch('/publicInstructors/'+reg+'.json',{method:'DELETE'}),
       registerAccessAdminFetch('/v1/admin/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:d.registerNo})})
-    ]).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
+    ];
+    (Array.isArray(d.previousRegisterNos)?d.previousRegisterNos:[]).forEach(function(alias){
+      if(/^KM[0-9]{6,12}$/.test(alias)){
+        deletes.push(adminFetch('/publicDiplomaData/'+encodeURIComponent(alias)+'.json',{method:'DELETE'}));
+        deletes.push(adminFetch('/downloadPackages/'+encodeURIComponent(alias)+'.json',{method:'DELETE'}));
+        deletes.push(registerAccessAdminFetch('/v1/admin/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({registerNo:alias})}));
+      }
+    });
+    Promise.all(deletes).then(function(){ return loadAllDiplomas(); }).catch(function(){ alert(t('msgDeleteError')); });
   }
 }
 var securityLogsVisible = false;
