@@ -177,6 +177,17 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
 
  .admin-main-menu{display:grid;gap:7px;padding:10px;background:#171719;border:1px solid #3b3b40;border-top:0;border-radius:0 0 6px 6px}.admin-main-group{border:1px solid #38383d;background:#101012}.admin-main-group>summary{cursor:pointer;padding:9px 12px;color:#fff;font-weight:800;list-style:none}.admin-main-group>div{padding:10px}.row-register{color:#fff!important;font-size:22px!important;font-weight:900;letter-spacing:.05em}@media(max-width:600px){.row-register{font-size:18px!important}}
  .admin-top-actions{display:flex;align-items:flex-start;gap:9px;flex-wrap:wrap;margin:0 0 18px}.admin-top-actions>.btn{margin:0}.admin-top-menu{min-width:190px;max-width:min(100%,520px)}.admin-top-menu>summary{cursor:pointer;list-style:none;padding:11px 14px;border:1px solid #45454a;border-radius:6px;background:#222225;color:#fff;font-weight:800}.admin-top-menu[open]>summary{border-radius:6px 6px 0 0}.admin-top-menu#membership-actions-menu>summary{background:#253343}.admin-top-menu#membership-actions-menu>div{background:#171719;border:1px solid #3b3b40;border-top:0}.student-actions-toggle{margin:0 10px 0 0;padding:8px 12px;background:#222226;border:1px solid #555;border-radius:6px;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}.student-actions-toggle:hover,.student-actions-toggle:focus-visible{background:#36363a;border-color:#fff}.student-actions-panel{padding:14px;background:#101012;border:1px solid #38383d;border-top:0;margin-bottom:6px}.student-actions-panel.hidden{display:none}.student-actions-title{font-weight:800;color:#fff;margin-bottom:10px}.student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.student-actions-group{border:1px solid #38383d;background:#151517;min-width:0}.student-actions-group>summary{cursor:pointer;color:#fff;font-weight:800;padding:11px;list-style:none}.student-actions-group>div{padding:12px;display:grid;gap:8px}.student-actions-footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}@media(max-width:700px){.student-actions-grid{grid-template-columns:1fr}.student-actions-toggle{padding:7px 8px;font-size:12px}.admin-top-menu{width:100%}}
+.student-status-dot{display:inline-block;width:15px;height:15px;flex:none;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+.student-status-dot.active{background:#27d878}.student-status-dot.inactive{background:#ef3347}
+@media(max-width:600px){
+  .diploma-row{gap:4px;padding:8px 7px}
+  .row-left{min-width:0;gap:5px}
+  .student-status-dot{width:13px;height:13px}
+  .row-name{min-width:0;max-width:none;flex:1;font-size:13px;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .row-register{flex:none;margin-left:0;font-size:11px!important;letter-spacing:0!important;white-space:nowrap}
+  .student-actions-toggle{flex:none;margin:0;padding:7px 5px;font-size:11px}
+  .expand-btn{flex:none;padding:3px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -2670,7 +2681,9 @@ function renderDiplomaList(filtered, isFiltering){
     var d = item.d, i = item.i;
     var isOpen = !!expandedRows[i];
     var panelState = expandedAdminPanels[d.registerNo] || {};
-    var statusDot = isInactiveStatus(d.status) ? '🔴' : '🟢';
+    var statusDot = isInactiveStatus(d.status) ?
+      '<span class="student-status-dot inactive" role="img" aria-label="Faal değil" title="Faal değil"></span>' :
+      '<span class="student-status-dot active" role="img" aria-label="Faal" title="Faal"></span>';
     var statusBadge = isInactiveStatus(d.status) ?
       '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusInactive')+'</span>' :
       '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusActive')+'</span>';
@@ -2753,7 +2766,7 @@ function renderDiplomaList(filtered, isFiltering){
     var certButtons = '';
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
-          '<span>'+statusDot+'</span>' +
+          statusDot +
           '<span class="row-name">'+d.studentName+'</span>' +
           '<span class="row-register">'+d.registerNo+'</span>' +
         '</div>' +
