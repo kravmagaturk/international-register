@@ -293,6 +293,10 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <input type="text" id="joinDate" inputmode="numeric" autocomplete="off" placeholder="GG.AA.YYYY veya YYYY-AA-GG">
           </div>
           <div class="form-group">
+            <label for="exitDate">Akademiden Çıkış Tarihi:</label>
+            <input type="text" id="exitDate" inputmode="numeric" autocomplete="off" placeholder="GG.AA.YYYY veya YYYY-AA-GG (devam ediyorsa boş bırakın)">
+          </div>
+          <div class="form-group">
             <label id="txt-lblExamDateForm">Sınav Tarihi:</label>
             <input type="text" id="examDate" inputmode="numeric" autocomplete="off" placeholder="GG.AA.YYYY veya YYYY-AA-GG">
           </div>
@@ -1185,24 +1189,23 @@ function infoRow(doc, label, value, y, valueColor){
   doc.text(safeValue, 90, y);
 }
 
-function calculateTrainingDuration(joinDate){
-  if(!joinDate) return '';
-  var p=String(joinDate).split('.');
-  var startDate;
-  if(p.length===3) startDate=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
-  else startDate=new Date(joinDate);
-  if(isNaN(startDate.getTime())) return '';
-  var now=new Date();
-  var years=now.getFullYear()-startDate.getFullYear();
-  var months=now.getMonth()-startDate.getMonth();
-  var days=now.getDate()-startDate.getDate();
-  if(days<0){
-    months--;
-    var prevMonth=new Date(now.getFullYear(),now.getMonth(),0);
-    days+=prevMonth.getDate();
+function calculateTrainingDuration(joinDate,exitDate,status){
+  var start=formatDateForDisplay(joinDate),end=exitDate?formatDateForDisplay(exitDate):'';
+  if(!start) return '';
+  if(!end && isInactiveStatus(status)) return 'Çıkış tarihi girilmedi';
+  var a=normalizeDateParts(start),b=end?normalizeDateParts(end):null;
+  var from=Date.UTC(a.year,a.month-1,a.day);
+  var to=b?Date.UTC(b.year,b.month-1,b.day):Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  if(to<from) return '';
+  function anchor(months){
+    var first=new Date(Date.UTC(a.year,a.month-1+months,1));
+    var last=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
+    return Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(a.day,last));
   }
-  if(months<0){ years--; months+=12; }
-  return years+' Yıl '+months+' Ay '+days+' Gün';
+  var total=((b?b.year:new Date().getFullYear())-a.year)*12+((b?b.month:new Date().getMonth()+1)-a.month);
+  while(total>0 && anchor(total)>to) total--;
+  while(anchor(total+1)<=to) total++;
+  return Math.floor(total/12)+' Yıl '+(total%12)+' Ay '+Math.floor((to-anchor(total))/86400000)+' Gün';
 }
 function isInactiveStatus(status){
   var s=String(status||'').toLocaleLowerCase('tr-TR');
@@ -1221,6 +1224,7 @@ function buildPublicDiplomaRecord(record){
     registerNo:record.registerNo||'',
     studentName:record.studentName||'',
     joinDate:record.joinDate||'',
+    exitDate:record.exitDate||'',
     status:record.status||'faal',
     country:record.country||'',
     city:record.city||'',
@@ -1243,6 +1247,7 @@ function buildDownloadPackage(record){
     registerNo:record.registerNo||'',
     studentName:record.studentName||'',
     joinDate:record.joinDate||'',
+    exitDate:record.exitDate||'',
     examDate:record.examDate||'',
     examLocation:record.examLocation||'',
     instructorName:record.instructorName||'',
@@ -1320,7 +1325,7 @@ function renderSearchResult(d){
     ? '<span class="badge-passive">Faal Olmayan</span>'
     : '<span class="badge-active">Faal</span>';
   var location=[d.country,d.city,d.district].filter(Boolean).join(' / ') || '-';
-  var duration=calculateTrainingDuration(d.joinDate);
+  var duration=calculateTrainingDuration(d.joinDate,d.exitDate,d.status);
   var portrait=d.webPortrait || d.photo || '';
   var portraitHtml=portrait
     ? '<div style="text-align:center;margin:0 auto 14px;"><div class="photo-frame-large" style="margin:0 auto 8px;"><img src="'+portrait+'" alt="'+d.studentName+'"></div><strong>'+d.studentName+'</strong></div>'
@@ -1333,6 +1338,7 @@ function renderSearchResult(d){
     '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
     '<div class="result-item"><span class="result-label">Seviyesi</span><span>'+publicLevelText(d)+'</span></div>'+
     (d.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+d.joinDate+'</span></div>':'')+
+    (d.exitDate?'<div class="result-item"><span class="result-label">Akademiden Çıkış Tarihi</span><span>'+d.exitDate+'</span></div>':'')+
     (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
     '<div class="result-item"><span class="result-label">Durum</span><span>'+statusText+'</span></div>'+
     '</div>';
@@ -1380,6 +1386,7 @@ function normalizePublicRecord(raw, registerNo){
   normalized.photo = d.photo || d.studentPhoto || d.photoData || d.image || '';
   normalized.webPortrait = d.webPortrait || d.webProfilePortrait || d.portrait || '';
   normalized.joinDate = d.joinDate || d.academyJoinDate || d.registerDate || '';
+  normalized.exitDate = d.exitDate || d.academyExitDate || d.akademidenCikisTarihi || '';
   normalized.status = d.status || 'faal';
 
   if(!Array.isArray(normalized.documents) || !normalized.documents.length){
@@ -1425,7 +1432,7 @@ function searchPublicArchive(){
       var photo=x.webPortrait||x.photo||'';
       var photoHtml=photo?'<div class="photo-frame-large"><img src="'+photo+'" alt="'+(x.name||'')+'"></div>':'';
       var location=[x.country,x.city,x.district].filter(Boolean).join(' / ')||'-';
-      var duration=calculateTrainingDuration(x.joinDate);
+      var duration=calculateTrainingDuration(x.joinDate,x.exitDate,x.status);
       return '<div class="result-card">'+photoHtml+
         '<div class="result-item"><span class="result-label">Ad Soyad</span><span>'+(x.name||'-')+'</span></div>'+
         '<div class="result-item"><span class="result-label">Sicil No</span><span>'+row.reg+'</span></div>'+
@@ -1434,6 +1441,7 @@ function searchPublicArchive(){
         '<div class="result-item"><span class="result-label">Lokasyon</span><span>'+location+'</span></div>'+
         '<div class="result-item"><span class="result-label">Durum</span><span>'+(row.st==='faal'?'Faal':'Faal Olmayan')+'</span></div>'+
         (x.joinDate?'<div class="result-item"><span class="result-label">Akademiye Giriş Tarihi</span><span>'+x.joinDate+'</span></div>':'')+
+        (x.exitDate?'<div class="result-item"><span class="result-label">Akademiden Çıkış Tarihi</span><span>'+x.exitDate+'</span></div>':'')+
         (duration?'<div class="result-item"><span class="result-label">Eğitim Süresi</span><span>'+duration+'</span></div>':'')+
         '</div>';
     }).join('');
@@ -2166,6 +2174,7 @@ function addDocumentToRecord(index){
   document.getElementById('studentName').value = d.studentName || '';
   document.getElementById('studentName').readOnly = true;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
+  document.getElementById('exitDate').value = formatDateForInput(d.exitDate);
   document.getElementById('instructorName').value = d.instructorName || '';
   document.getElementById('country').value = d.country || (d.city || d.district ? 'Türkiye' : '');
   updateLocationOptions();
@@ -2206,6 +2215,7 @@ function clearAddForm(){
   document.getElementById('studentName').readOnly = false;
   document.getElementById('studentName').value='';
   document.getElementById('joinDate').value='';
+  document.getElementById('exitDate').value='';
   document.getElementById('examDate').value='';
   document.getElementById('examLocation').value='';
   document.getElementById('instructorName').value='';
@@ -2246,6 +2256,7 @@ function editDiploma(index){
   document.getElementById('district').value = d.district || '';
   setPublicRoles(d.publicRoles || (d.publicRole ? [d.publicRole] : (d.publicInstructor === true ? [inferPublicRole(d)] : [])));
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
+  document.getElementById('exitDate').value = formatDateForInput(d.exitDate);
   document.getElementById('examDate').value = formatDateForInput(d.examDate);
   var levelParts = d.level.split(' Level ');
   document.getElementById('mainLevel').value = levelParts[0];
@@ -2305,6 +2316,7 @@ function syncPublicInstructor(record){
     webPortrait:record.webPortraitUrl || record.webPortrait || '',
     webPortraitUrl:record.webPortraitUrl || '',
     joinDate:record.joinDate || '',
+    exitDate:record.exitDate || '',
     country:record.country || '',
     city:record.city || '',
     district:record.district || '',
@@ -2322,6 +2334,7 @@ function syncPublicInstructor(record){
 function addDiploma(){
   var studentName = document.getElementById('studentName').value.trim();
   var joinDateRaw = document.getElementById('joinDate').value;
+  var exitDateRaw = document.getElementById('exitDate').value;
   var examDate = document.getElementById('examDate').value;
   var examLocation = document.getElementById('examLocation').value.trim();
   var instructorName = document.getElementById('instructorName').value.trim();
@@ -2336,8 +2349,20 @@ function addDiploma(){
   if(!studentName || !examDate || !examLocation || !mainLevel){ alert(t('errFillAll')); return; }
   var formattedExamDate = formatDateForDisplay(examDate);
   var formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
+  var formattedExitDate = exitDateRaw ? formatDateForDisplay(exitDateRaw) : '';
   if(!formattedExamDate){ alert('Sınav tarihini GG.AA.YYYY veya YYYY-AA-GG formatında girin.'); return; }
   if(joinDateRaw && !formattedJoinDate){ alert('Akademiye giriş tarihini GG.AA.YYYY veya YYYY-AA-GG formatında girin.'); return; }
+  if(exitDateRaw && !formattedExitDate){ alert('Akademiden çıkış tarihini GG.AA.YYYY veya YYYY-AA-GG formatında girin.'); return; }
+  if(formattedExitDate && !formattedJoinDate && (addingDocumentIndex<0 || !diplomaData[addingDocumentIndex].joinDate)){
+    alert('Çıkış tarihi için önce akademiye giriş tarihini girin.'); return;
+  }
+  var effectiveJoinDate=formattedJoinDate || (addingDocumentIndex>=0 ? diplomaData[addingDocumentIndex].joinDate : '');
+  if(formattedExitDate && effectiveJoinDate){
+    var joined=normalizeDateParts(effectiveJoinDate),exited=normalizeDateParts(formattedExitDate);
+    if(Date.UTC(exited.year,exited.month-1,exited.day)<Date.UTC(joined.year,joined.month-1,joined.day)){
+      alert('Çıkış tarihi giriş tarihinden önce olamaz.'); return;
+    }
+  }
   // Web profil çizimi kayıt için zorunlu değildir. AI servisi geçici olarak çalışmasa da sicil kaydı yapılabilmelidir.
 
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
@@ -2371,6 +2396,7 @@ function addDiploma(){
       examDate:docs[0].examDate,
       examLocation:docs[0].examLocation,
       joinDate:formattedJoinDate || base.joinDate || '',
+      exitDate:formattedExitDate || base.exitDate || '',
       instructorName:instructorName || base.instructorName || '',
       country:country || base.country || '',
       city:city || base.city || '',
@@ -2397,7 +2423,7 @@ function addDiploma(){
     }
     record = {
       registerNo:registerNo, studentName:studentName,
-      joinDate:formattedJoinDate, examDate:oldDocs[0].examDate,
+      joinDate:formattedJoinDate, exitDate:formattedExitDate, examDate:oldDocs[0].examDate,
       examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
       documents:oldDocs, photo:currentPhotoData,
       webPortrait:currentWebPortraitData,
@@ -2434,7 +2460,7 @@ function addDiploma(){
       counter++; registerNo = 'KM'+year+String(counter).padStart(3,'0');
     }
     record = {
-      registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
+      registerNo:registerNo, studentName:studentName, joinDate:formattedJoinDate, exitDate:formattedExitDate, examDate:formattedExamDate, examLocation:examLocation, level:levelText,
       documents:[newDoc], photo:currentPhotoData, webPortrait:currentWebPortraitData, instructorName:instructorName,
       country:country, city:city, district:district, publicInstructor:publicInstructor, publicRole:publicRole, publicRoles:publicRoles, status:'faal',
       downloadPermissions:{onlineEducation:false,registryInfo:false,registrySections:[],registryDegrees:{},documents:[]}
@@ -3021,3 +3047,4 @@ applyStaticLanguage();
 </html>
 
 <!-- KMT MASTER BACKUP BUILD 20261002-0047 -->
+
