@@ -242,9 +242,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <summary>⚙ Sistem İşlemleri</summary>
             <div class="admin-main-menu">
               <button class="btn btn-small" id="btn-security-logs" onclick="toggleSecurityLogs()">Güvenlik Kayıtları</button>
-              <button class="btn btn-secondary btn-small" id="btn-sync-secure-access" onclick="syncAllSecureAccessPackages(true)">Eğitim Yetkilerini Eşitle</button>
               <button class="btn btn-secondary btn-small" id="btn-logout" onclick="logout()">Çıkış</button>
-              <div id="secure-access-sync-status" style="color:#999;font-size:12px;"></div>
             </div>
           </details>
           <details id="membership-actions-menu" class="admin-top-menu">
@@ -2015,32 +2013,6 @@ function adminLogin(){
     if(btn){btn.disabled=false;btn.textContent='🔐 Google ile Giriş Yap';}
   });
 }
-async function syncAllSecureAccessPackages(showAlert){
-  if(!currentAdminUser) throw new Error('ADMIN_AUTH_REQUIRED');
-  var btn=document.getElementById('btn-sync-secure-access');
-  var status=document.getElementById('secure-access-sync-status');
-  var oldText=btn?btn.textContent:'';
-  var succeeded=0,failed=[];
-  if(btn){btn.disabled=true;btn.textContent='⏳ Eğitim yetkileri eşitleniyor...';}
-  if(status){status.textContent='Öğrenci eğitim yetkileri güncelleniyor...';status.style.color='#999';}
-  try{
-    for(var i=0;i<diplomaData.length;i++){
-      var record=diplomaData[i];
-      try{
-        await syncStudentAccess(record);
-        succeeded++;
-      }catch(err){
-        failed.push({registerNo:record&&record.registerNo?record.registerNo:'-',message:err&&err.message?err.message:String(err)});
-      }
-    }
-    var summary='Eğitim yetkileri: '+succeeded+' başarılı, '+failed.length+' başarısız.';
-    if(status){status.textContent=summary;status.style.color=failed.length?'#ffb74d':'#39d98a';}
-    if(showAlert) alert(summary+(failed.length?'\n\nBaşarısız siciller: '+failed.map(function(x){return x.registerNo;}).join(', '):''));
-    return {succeeded:succeeded,failed:failed};
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent=oldText||'🔄 Eğitim Yetkilerini Eşitle';}
-  }
-}
 async function loadAllDiplomas() {
         try {
             if (!currentAdminUser) {
@@ -2064,13 +2036,7 @@ async function loadAllDiplomas() {
                     }
                 });
             }
-            // Listeyi önce hemen göster; arka plan eşitlemesi listeyi bekletmesin.
             filterDiplomas();
-
-            // Eski kayıtları yeni güvenli öğrenci erişim modeline arka planda eşitle.
-            syncAllSecureAccessPackages(false).catch(function(err){
-                console.warn('Arka plan öğrenci erişim eşitlemesi tamamlanamadı:', err);
-            });
         } catch (error) {
             console.error('Kayıtlar yüklenemedi:', error);
             diplomaData = [];
