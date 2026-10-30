@@ -147,7 +147,9 @@ async function handleAdminDelete(request, env, origin) {
   const body = await readJson(request, 4096);
   const registerNo = normalizeRegisterNo(body.registerNo);
   if (!registerNo) return json({ ok: false, error: "Invalid register number." }, 400, origin);
-  await env.PACKAGES.delete("pkg:" + registerNo);
+  const key = "pkg:" + registerNo;
+  // A missing package must not spend the daily KV delete quota.
+  if (await env.PACKAGES.get(key) !== null) await env.PACKAGES.delete(key);
   return json({ ok: true, registerNo }, 200, origin);
 }
 
