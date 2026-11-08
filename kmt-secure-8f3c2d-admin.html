@@ -247,7 +247,14 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
           </details>
           <details id="membership-actions-menu" class="admin-top-menu">
             <summary>Üye Yönetimi</summary>
-            <div id="education-approval-section" style="padding:12px;"></div>
+            <div id="education-approval-section" style="padding:12px;min-width:min(82vw,400px);">
+  <div style="color:#eee;font-size:13px;line-height:1.45;margin-bottom:10px;">Öğrencilerin bekleyen online eğitim cihaz onayları. Sicil ya da ad ile arayın; isterseniz kayıtları gruplar hâlinde tarayın.</div>
+  <input id="member-approval-search" type="search" placeholder="İsim veya sicil numarası" autocomplete="off" aria-label="Onay bekleyen öğrenci ara" oninput="filterMemberApprovals()" style="width:100%;min-width:0;margin-bottom:10px;">
+  <div id="member-approval-candidates"></div>
+  <button type="button" class="btn btn-small" id="member-approval-scan" onclick="scanMemberApprovals()">Bekleyenleri Tara</button>
+  <p id="member-approval-status" style="color:#ccc;font-size:12px;margin:7px 0;" role="status" aria-live="polite">Taramayı başlatabilir veya öğrenci arayabilirsiniz.</p>
+  <div id="member-approval-results"></div>
+</div>
           </details>
         </div>
 
@@ -1978,6 +1985,7 @@ function showAdminPanel(user){
   document.getElementById('admin-panel').classList.remove('hidden');
   document.getElementById('loginMessage').innerHTML = '';
   logSecurityEvent('login_success',{});
+  memberScanOffset=0;memberScanResults=[];
   loadAllDiplomas();
 }
 function showLoginForm(message){
@@ -2046,6 +2054,7 @@ async function loadAllDiplomas() {
     }
 
 function logout(){
+  memberScanOffset=0;memberScanResults=[];
   auth.signOut().finally(function(){
     diplomaData=[]; hideAllForms(); showLoginForm('');
   });
@@ -2869,6 +2878,109 @@ async function loadEducationApprovalByRegister(registerNo,index){
       row.append(label,button);box.appendChild(row);
     });
   }catch(e){box.textContent='İstekler yüklenemedi: '+e.message;}
+}
+
+// KMT üye yönetimi: mevcut eğitim izinlerini ve API onay akışını değiştirmeden,
+// boş bırakılmış üst menüyü bekleyen başvurulara yeniden bağlar.
+var memberScanOffset=0;
+var memberScanResults=[];
+function memberApprovalEl(id){return document.getElementById(id);}
+function filterMemberApprovals(){
+  var host=memberApprovalEl('member-approval-candidates');
+  if(!host)return;
+  host.replaceChildren();
+  if(!currentAdminUser){return;}
+  var query=String(memberApprovalEl('member-approval-search').value||'').trim().toLocaleLowerCase('tr');
+  if(query.length<2)return;
+  var rows=diplomaData.map(function(d,i){return {d:d,i:i};}).filter(function(x){
+    return String(x.d.studentName||'').toLocaleLowerCase('tr').includes(query)
+      ||String(x.d.registerNo||'').toLowerCase().includes(query);
+  }).slice(0,12);
+  if(!rows.length){host.textContent='Aramaya uygun sicil kaydı bulunamadı.';return;}
+  rows.forEach(function(x){
+    var line=document.createElement('div');
+    line.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:7px;padding:7px 0;border-top:1px solid #404044;flex-wrap:wrap;';
+    var name=document.createElement('span');name.style.cssText='color:#ddd;font-size:12px;';name.textContent=(x.d.studentName||'Öğrenci')+' · '+(x.d.registerNo||'');
+    var button=document.createElement('button');button.type='button';button.className='btn btn-small';
+    button.textContent='Onay isteği';
+    button.onclick=function(){loadMemberApprovalRequests(x.d);};
+    line.append(name,button);host.appendChild(line);
+  });
+}
+function addMemberApprovalGroup(container,record,requests){
+  var title=document.createElement('div');title.style.cssText='font-weight:800;border-top:1px solid #555;margin-top:8px;padding-top:8px;color:#fff;';
+  title.textContent=(record.studentName||'Öğrenci')+' · '+record.registerNo;
+  container.appendChild(title);
+  if(!getDownloadPermissions(record).onlineEducation){
+    var notice=document.createElement('p');notice.style.cssText='color:#ffbd70;font-size:12px;margin:5px 0;';
+    notice.textContent='Eğitim erişimi kapalı. Onaydan önce öğrenci sicil kartından eğitim yetkisini açın.';
+    container.appendChild(notice);
+  }
+  requests.forEach(function(item){
+    var line=document.createElement('div');line.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 0;border-top:1px solid #3e3e42;';
+    var code=document.createElement('span');code.style.cssText='color:#eee;font-size:12px;';
+    code.textContent='Başvuru kodu: '+String(item.requestCode||'-');
+    var approve=document.createElement('button');approve.type='button';approve.className='btn btn-small';approve.textContent='Onayla';
+    approve.disabled=!getDownloadPermissions(record).onlineEducation;
+    approve.onclick=async function(){
+      if(!currentAdminUser)return;
+      var reg=String(record.registerNo||'').trim().toUpperCase();
+      if(!confirm(reg+' için '+String(item.requestCode||'')+' kodlu cihaz isteğini onaylıyor musunuz? Önce kodu öğrenciyle karşılaştırın.'))return;
+      approve.disabled=true;
+      try{
+        await educationAdminRequest('/api/admin/student-access',{method:'POST',body:JSON.stringify({registerNo:reg,id:item.id})});
+        await loadMemberApprovalRequests(record);
+      }catch(e){alert('Onay işlemi başarısız: '+e.message);approve.disabled=false;}
+    };
+    line.append(code,approve);container.appendChild(line);
+  });
+}
+async function loadMemberApprovalRequests(record){
+  if(!currentAdminUser||!record)return;
+  var box=memberApprovalEl('member-approval-results'),status=memberApprovalEl('member-approval-status');
+  if(!box||!status)return;
+  box.replaceChildren();status.textContent=(record.registerNo||'')+' için bekleyen başvurular yükleniyor...';
+  var reg=String(record.registerNo||'').trim().toUpperCase();
+  if(!/^KM[0-9]{6,12}$/.test(reg)){status.textContent='Geçerli sicil numarası bulunamadı.';return;}
+  try{
+    var result=await educationAdminRequest('/api/admin/student-access?registerNo='+encodeURIComponent(reg));
+    if(!currentAdminUser)return;
+    var requests=Array.isArray(result.requests)?result.requests:[];
+    status.textContent=requests.length?requests.length+' bekleyen cihaz başvurusu bulundu.':'Bu sicilde bekleyen cihaz onayı bulunamadı.';
+    if(requests.length)addMemberApprovalGroup(box,record,requests);
+  }catch(e){status.textContent='Başvurular yüklenemedi: '+e.message;}
+}
+async function scanMemberApprovals(){
+  if(!currentAdminUser)return;
+  var button=memberApprovalEl('member-approval-scan'),status=memberApprovalEl('member-approval-status'),box=memberApprovalEl('member-approval-results');
+  if(!button||!status||!box)return;
+  if(memberScanOffset>=diplomaData.length){memberScanOffset=0;memberScanResults=[];}
+  button.disabled=true;
+  var start=memberScanOffset,end=Math.min(start+40,diplomaData.length);
+  var candidates=diplomaData.slice(start,end);
+  var failures=0;
+  try{
+    for(var i=0;i<candidates.length;i+=4){
+      var batch=candidates.slice(i,i+4);
+      await Promise.all(batch.map(async function(record){
+        var reg=String(record.registerNo||'').trim().toUpperCase();
+        if(!/^KM[0-9]{6,12}$/.test(reg))return;
+        try{
+          var data=await educationAdminRequest('/api/admin/student-access?registerNo='+encodeURIComponent(reg));
+          var requests=Array.isArray(data.requests)?data.requests:[];
+          if(requests.length)memberScanResults.push({record:record,requests:requests});
+        }catch(_){failures++;}
+      }));
+      status.textContent='Onay talepleri denetleniyor: '+Math.min(start+i+4,end)+' / '+diplomaData.length;
+    }
+    memberScanOffset=end;
+    box.replaceChildren();
+    memberScanResults.forEach(function(group){addMemberApprovalGroup(box,group.record,group.requests);});
+    status.textContent=memberScanOffset+' / '+diplomaData.length+' sicil kontrol edildi. '+memberScanResults.reduce(function(n,x){return n+x.requests.length;},0)+' bekleyen başvuru görüldü.'+(failures?' '+failures+' sicil sorgulanamadı.':'');
+    if(memberScanOffset<diplomaData.length)button.textContent='Sonraki 40 sicili tara';
+    else button.textContent='Taramayı yeniden başlat';
+  }catch(e){status.textContent='Tarama durdu: '+e.message;}
+  finally{button.disabled=false;}
 }
 async function changeStudentRegisterNo(i){
   var current=diplomaData[i];
