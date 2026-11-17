@@ -188,6 +188,17 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
   .student-actions-toggle{flex:none;margin:0;padding:7px 5px;font-size:11px}
   .expand-btn{flex:none;padding:3px;font-size:12px}
 }
+
+/* 18 Kasım 2026: Kaydı Düzenle öğrenci kartının altında, fotoğraf ve alanlar birlikte. */
+#add-form.kmt-inline-edit{background:#171719;border:1px solid #515157;padding:18px;margin:8px 0 20px;box-shadow:0 10px 26px rgba(0,0,0,.25);max-width:100%;box-sizing:border-box}
+#add-form.kmt-inline-edit .form-group{max-width:100%}
+#add-form.kmt-inline-edit .photo-frame-large{margin-left:0}
+.kmt-document-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 0;border-top:1px solid #37373d;flex-wrap:wrap;font-size:13px;color:#e6e6e9}
+.kmt-document-row .btn{margin:0}
+.kmt-doc-select-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.kmt-doc-select-row select{flex:1;min-width:190px}
+.kmt-panel-hint{font-size:12px;color:#bcbcc4;margin:10px 0 6px;line-height:1.5}
+@media(max-width:600px){#add-form.kmt-inline-edit{padding:12px}.kmt-doc-select-row{align-items:stretch}.kmt-doc-select-row select,.kmt-doc-select-row button{width:100%}}
 </style>
 </head>
 <body>
@@ -332,7 +343,7 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
             <label>İlçe / Şehir:</label>
             <input type="text" id="district" autocomplete="address-level3" autocorrect="off" spellcheck="false" placeholder="Örn. Kadıköy / Köln">
           </div>
-          <div class="form-group" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
+          <div class="form-group" id="publicRolesFormGroup" style="background:#fff7f7;border:1px solid #ffcdd2;padding:12px;border-radius:7px;">
             <label>Web sitesi / bilgi arama ekranında göster (birden fazla seçilebilir):</label>
             <div id="publicRoles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;">
               <label><input type="checkbox" value="Instructor" style="width:auto;"> Instructor</label>
@@ -451,6 +462,7 @@ var diplomaData = [];
 var currentPhotoData = '';
 var editingIndex = -1;
 var addingDocumentIndex = -1;
+var editingDocumentIndex = -1;
 var expandedRows = {};
 var expandedAdminPanels = {};
 var lastSearchedRecord = null;
@@ -1279,30 +1291,28 @@ function registryInfoSectionForLevel(level){
   return '';
 }
 function inferRegistryDegree(record,section){
-  var docs=recordDocuments(record);
-  for(var i=0;i<docs.length;i++){
-    var level=normalizeLevelText(docs[i]&&docs[i].level);
-    var m=level.match(new RegExp('^'+section+'\\s+Level\\s+([1-5])$','i'));
-    if(m) return 'Level '+m[1];
-  }
-  var raw=normalizeLevelText((record&&record.level)||'');
-  var m2=raw.match(new RegExp('^'+section+'\\s+Level\\s+([1-5])$','i'));
-  return m2 ? 'Level '+m2[1] : '';
+  var current=latestDocument(record,section);
+  var source=normalizeLevelText((current&&current.level)||((record&&record.level)||''));
+  var m=source.match(new RegExp('^'+section+'\\s+Level\\s+([1-5])$','i'));
+  return m?'Level '+m[1]:'';
 }
 function getDownloadPermissions(record){
   var p=(record&&record.downloadPermissions)||{};
   var hasRegistrySections=Array.isArray(p.registrySections);
   var savedDegrees=(p.registryDegrees&&typeof p.registryDegrees==='object')?p.registryDegrees:{};
+  var degreeOverrides=(p.registryDegreeOverrides&&typeof p.registryDegreeOverrides==='object')?p.registryDegreeOverrides:{};
   var degrees={};
   ['Practitioner','Graduate','Expert'].forEach(function(section){
     var v=String(savedDegrees[section]||'').trim();
-    degrees[section]=/^Level [1-5]$/.test(v)?v:inferRegistryDegree(record,section);
+    var inferred=inferRegistryDegree(record,section);
+    degrees[section]=(degreeOverrides[section]===true&&/^Level [1-5]$/.test(v))?v:(inferred||(/^Level [1-5]$/.test(v)?v:''));
   });
   return {
     onlineEducation:p.onlineEducation===true || (p.onlineEducation===undefined && record&&record.onlineEducationAccess===true),
     registryInfo:p.registryInfo===true,
     registrySections:hasRegistrySections?p.registrySections.filter(function(x){return REGISTRY_INFO_SECTIONS.indexOf(x)>=0;}):[],
     registryDegrees:degrees,
+    registryDegreeOverrides:degreeOverrides,
     documents:Array.isArray(p.documents)?p.documents.map(function(x){return Number(x);}).filter(function(x){return !isNaN(x);}):[]
   };
 }
@@ -1502,6 +1512,35 @@ function handleAdminDocumentPdfMenu(sel, index, docIndex){
   var value = sel.value; sel.selectedIndex = 0;
   runPdfAction(value, recordForDocument(diplomaData[index], docIndex));
 }
+function applyAdminDocumentSelection(index){
+  var record=diplomaData[index],select=document.getElementById('admin-document-action-'+index);
+  if(!record||!select||!select.value){alert('Önce belge işlemini seçin.');return;}
+  if(select.value==='registry-info'){runPdfAction('registry-info',record);return;}
+  if(select.value==='latest-diploma'){
+    var i=latestDocumentIndex(record),doc=i<0?null:recordDocuments(record)[i];
+    if(!doc){alert('Önce belge veya seviye ekleyin.');return;}
+    runPdfAction(documentDefaultAction(doc),recordForDocument(record,i));
+  }
+}
+function setStudentPublicRole(index,role,enabled){
+  var d=diplomaData[index];if(!d)return;
+  var allowed=['Instructor','Asistan','Representative','Expert'];
+  if(allowed.indexOf(role)<0)return;
+  var oldRoles=Array.isArray(d.publicRoles)?d.publicRoles.slice():[];
+  var oldPublic=d.publicInstructor===true;
+  var updated=oldRoles.filter(function(x){return x!==role;});
+  if(enabled)updated.push(role);
+  d.publicRoles=allowed.filter(function(x){return updated.indexOf(x)>=0;});
+  d.publicRole=d.publicRoles[0]||'';
+  d.publicInstructor=d.publicRoles.length>0;
+  if(editingIndex===index)setPublicRoles(d.publicRoles);
+  adminFetch('/diplomaData/'+encodeURIComponent(d.registerNo)+'.json',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)
+  }).then(function(){return Promise.all([syncPublicInstructor(d),syncStudentAccess(d)]);})
+    .then(function(){refreshDiplomaListPreservingView(index,'registry');})
+    .catch(function(){d.publicRoles=oldRoles;d.publicRole=oldRoles[0]||'';d.publicInstructor=oldPublic;
+      alert('Web görünürlüğü kaydedilemedi.');refreshDiplomaListPreservingView(index,'registry');});
+}
 function handleAdminAllDocumentsMenu(sel, index){
   var raw = sel.value;
   sel.selectedIndex = 0;
@@ -1682,7 +1721,7 @@ function downloadRegistryInfoPDF(record){
     });
     var registryDiploma=registryMainLevels.join(' • ') || '-';
     var registrySubLevel=registrySubLevels.join(' • ') || '-';
-    var activeDoc=docs.length ? docs[0] : {examDate:d.examDate||'',examLocation:d.examLocation||''};
+    var activeDoc=latestDocument(d)||{examDate:d.examDate||'',examLocation:d.examLocation||''};
     // Yeni şablondaki çizgilerin merkezlerine hizalı veri koordinatları.
     fitRegistry(d.studentName,119.0,78.5,100,13.5,9.5);
     fitRegistry(d.registerNo,119.0,89.5,100,12.5,9);
@@ -2080,6 +2119,40 @@ function recordDocuments(d){
   }
   return [];
 }
+function documentDateKey(doc){
+  var t=String((doc&&doc.examDate)||'').trim();
+  var m=t.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if(m)return Number(m[3]+m[2]+m[1]);
+  m=t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?Number(m[1]+m[2]+m[3]):0;
+}
+function latestDocumentIndex(d,section){
+  var docs=recordDocuments(d),best=-1;
+  docs.forEach(function(doc,i){
+    if(section&&registryInfoSectionForLevel(doc&&doc.level)!==section)return;
+    if(best<0){best=i;return;}
+    var a=documentDateKey(doc),b=documentDateKey(docs[best]);
+    var ta=Date.parse(doc.updatedAt||'')||0,tb=Date.parse(docs[best].updatedAt||'')||0;
+    var la=Number((String(doc.level||'').match(/Level\s+(\d+)/i)||[])[1]||0);
+    var lb=Number((String(docs[best].level||'').match(/Level\s+(\d+)/i)||[])[1]||0);
+    if(a>b||(a===b&&(ta>tb||(ta===tb&&(la>lb||(la===lb&&i>best))))))best=i;
+  });
+  return best;
+}
+function latestDocument(d,section){
+  var i=latestDocumentIndex(d,section);
+  return i<0?null:recordDocuments(d)[i];
+}
+function syncCurrentRegistryDegree(record){
+  var p=Object.assign({},record.downloadPermissions||{});
+  p.registryDegrees=Object.assign({},p.registryDegrees||{});
+  p.registryDegreeOverrides=Object.assign({},p.registryDegreeOverrides||{});
+  ['Practitioner','Graduate','Expert'].forEach(function(section){
+    var degree=inferRegistryDegree(record,section);
+    if(degree){p.registryDegrees[section]=degree;p.registryDegreeOverrides[section]=false;}
+  });
+  record.downloadPermissions=p;
+}
 function docTypeForLevel(level){
   return isCertEligibleLevel(level) ? 'honor' : 'diploma';
 }
@@ -2138,11 +2211,27 @@ function documentMenuLabel(x){
 function documentDefaultAction(x){
   return (x && (x.type==='honor' || isCertEligibleLevel(x.level))) ? 'cert-en' : 'diploma-en';
 }
+function restoreRecordFormPosition(){
+  var form=document.getElementById('add-form'),list=document.getElementById('diploma-list');
+  if(form&&list&&form.parentElement!==list.parentElement)list.parentNode.insertBefore(form,list);
+  if(form)form.classList.remove('kmt-inline-edit');
+}
+function placeRecordFormInline(index){
+  var form=document.getElementById('add-form'),panel=document.getElementById('student-actions-'+index);
+  if(form&&panel&&panel.parentNode){
+    panel.insertAdjacentElement('afterend',form);
+    form.classList.add('kmt-inline-edit');
+    form.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+}
 function addDocumentToRecord(index){
   var d = diplomaData[index];
   if(!d) return;
   addingDocumentIndex = index;
   editingIndex = -1;
+  editingDocumentIndex = -1;
+  restoreRecordFormPosition();
+  document.getElementById('publicRolesFormGroup').classList.add('hidden');
   clearAddForm();
   document.getElementById('form-title').textContent = 'Belge / Seviye Ekle — ' + d.registerNo;
   document.getElementById('save-btn').textContent = 'Belgeyi Ekle';
@@ -2163,12 +2252,16 @@ function addDocumentToRecord(index){
   }
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
+  placeRecordFormInline(index);
 }
 
 function showAddForm(){
+  restoreRecordFormPosition();
+  document.getElementById('publicRolesFormGroup').classList.remove('hidden');
   clearWebPortraitPreview();
   editingIndex = -1;
   addingDocumentIndex = -1;
+  editingDocumentIndex = -1;
   document.getElementById('studentName').readOnly = false;
   document.getElementById('form-title').textContent = t('formTitleNew');
   document.getElementById('save-btn').textContent = t('btnSave');
@@ -2182,7 +2275,8 @@ function showAddForm(){
 }
 function hideAddForm(){
   document.getElementById('add-form').classList.add('hidden');
-  clearAddForm(); editingIndex = -1; addingDocumentIndex = -1;
+  restoreRecordFormPosition();
+  clearAddForm(); editingIndex = -1; addingDocumentIndex = -1; editingDocumentIndex = -1;
   document.getElementById('studentName').readOnly = false;
 }
 function hideAllForms(){ document.getElementById('add-form').classList.add('hidden'); }
@@ -2215,45 +2309,48 @@ function updateSubLevels(){
     sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
   }
 }
-function editDiploma(index){
-  var d = diplomaData[index];
-  addingDocumentIndex = -1;
-  editingIndex = index;
-  document.getElementById('studentName').readOnly = false;
-  document.getElementById('form-title').textContent = t('formTitleEdit');
-  document.getElementById('save-btn').textContent = t('btnUpdate');
-  document.getElementById('studentName').value = d.studentName;
-  document.getElementById('examLocation').value = d.examLocation;
-  document.getElementById('instructorName').value = d.instructorName || '';
-  document.getElementById('country').value = d.country || (d.city || d.district ? 'Türkiye' : '');
+function editDiploma(index,docIndex){
+  var d=diplomaData[index];if(!d)return;
+  restoreRecordFormPosition();
+  addingDocumentIndex=-1;
+  editingIndex=index;
+  editingDocumentIndex=(typeof docIndex==='number'&&docIndex>=0)?docIndex:latestDocumentIndex(d);
+  var source=editingDocumentIndex>=0?recordForDocument(d,editingDocumentIndex):d;
+  document.getElementById('publicRolesFormGroup').classList.add('hidden');
+  document.getElementById('studentName').readOnly=false;
+  document.getElementById('form-title').textContent='Kaydı Düzenle — '+d.registerNo+(source.level?' • '+source.level:'');
+  document.getElementById('save-btn').textContent=t('btnUpdate');
+  document.getElementById('studentName').value=d.studentName||'';
+  document.getElementById('examLocation').value=source.examLocation||'';
+  document.getElementById('instructorName').value=source.instructorName||d.instructorName||'';
+  document.getElementById('country').value=d.country||(d.city||d.district?'Türkiye':'');
   updateLocationOptions();
-  document.getElementById('city').value = d.city || '';
-  document.getElementById('district').value = d.district || '';
-  setPublicRoles(d.publicRoles || (d.publicRole ? [d.publicRole] : (d.publicInstructor === true ? [inferPublicRole(d)] : [])));
-  document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
-  document.getElementById('exitDate').value = formatDateForInput(d.exitDate);
-  document.getElementById('examDate').value = formatDateForInput(d.examDate);
-  var levelParts = d.level.split(' Level ');
-  document.getElementById('mainLevel').value = levelParts[0];
+  document.getElementById('city').value=d.city||'';
+  document.getElementById('district').value=d.district||'';
+  setPublicRoles(d.publicRoles||(d.publicRole?[d.publicRole]:(d.publicInstructor===true?[inferPublicRole(d)]:[])));
+  document.getElementById('joinDate').value=formatDateForInput(d.joinDate);
+  document.getElementById('exitDate').value=formatDateForInput(d.exitDate);
+  document.getElementById('examDate').value=formatDateForInput(source.examDate);
+  var parts=String(source.level||'').split(' Level ');
+  document.getElementById('mainLevel').value=parts[0];
   updateSubLevels();
-  if(levelParts[1]){ setTimeout(function(){ document.getElementById('subLevel').value = 'Level ' + levelParts[1]; }, 50); }
+  if(parts[1])document.getElementById('subLevel').value='Level '+parts[1];
   if(d.photo){
-    currentPhotoData = d.photo;
-    document.getElementById('photoPreviewImg').src = d.photo;
+    currentPhotoData=d.photo;
+    document.getElementById('photoPreviewImg').src=d.photo;
     document.getElementById('photoPreviewBox').classList.remove('hidden');
-    var studentPhotoStatus = document.getElementById('studentPhotoUploadStatus');
-    if(studentPhotoStatus){
-      studentPhotoStatus.textContent = 'Mevcut öğrenci fotoğrafı yüklendi. Yeni bir dosya seçerseniz sicile otomatik kaydedilir.';
-      studentPhotoStatus.style.color = '#777';
-    }
-  } else { clearPhotoPreview(); }
-  currentWebPortraitData = d.webPortraitUrl || d.webPortrait || '';
+    var status=document.getElementById('studentPhotoUploadStatus');
+    if(status){status.textContent='Kayıtlı öğrenci fotoğrafı. Yenisini seçmediğiniz sürece korunur.';status.style.color='#777';}
+  }else{clearPhotoPreview();}
+  currentWebPortraitData=d.webPortraitUrl||d.webPortrait||'';
   if(currentWebPortraitData){
-    document.getElementById('webPortraitPreviewImg').src = currentWebPortraitData;
+    document.getElementById('webPortraitPreviewImg').src=currentWebPortraitData;
     document.getElementById('webPortraitPreviewBox').classList.remove('hidden');
-  } else { clearWebPortraitPreview(); }
+  }else{clearWebPortraitPreview();}
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
+  rememberAdminPanel(d.registerNo,'actions',true);
+  placeRecordFormInline(index);
 }
 function getPublicRoles(){
   return Array.from(document.querySelectorAll('#publicRoles input[type="checkbox"]:checked')).map(function(x){ return x.value; });
@@ -2341,7 +2438,7 @@ function addDiploma(){
   // Web profil çizimi kayıt için zorunlu değildir. AI servisi geçici olarak çalışmasa da sicil kaydı yapılabilmelidir.
 
   var levelText = mainLevel + (subLevel ? ' '+subLevel : '');
-  var newDoc = { level:levelText, examDate:formattedExamDate, examLocation:examLocation, instructorName:instructorName, type:docTypeForLevel(levelText) };
+  var newDoc = { level:levelText, examDate:formattedExamDate, examLocation:examLocation, instructorName:instructorName, type:docTypeForLevel(levelText),updatedAt:new Date().toISOString() };
 
   var saveBtn = document.getElementById('save-btn');
   saveBtn.disabled = true; saveBtn.textContent = t('saving');
@@ -2364,12 +2461,13 @@ function addDiploma(){
     }
 
     docs.push(newDoc);
+    var recentDoc=docs[latestDocumentIndex({documents:docs})];
     record = Object.assign({}, base, {
       documents:docs,
-      // Geriye uyumluluk: ilk belge eski alanlarda kalır.
-      level:docs[0].level,
-      examDate:docs[0].examDate,
-      examLocation:docs[0].examLocation,
+      // Üst seviye alanları son geçerli belgeyle eşitlenir.
+      level:recentDoc.level,
+      examDate:recentDoc.examDate,
+      examLocation:recentDoc.examLocation,
       joinDate:formattedJoinDate || base.joinDate || '',
       exitDate:formattedExitDate || base.exitDate || '',
       instructorName:instructorName || base.instructorName || '',
@@ -2391,15 +2489,18 @@ function addDiploma(){
     var old = diplomaData[targetIndex];
     registerNo = old.registerNo;
     var oldDocs = recordDocuments(old).slice();
-    if(oldDocs.length){
-      oldDocs[0] = newDoc;
-    } else {
-      oldDocs = [newDoc];
-    }
-    record = {
+    var docIndex=editingDocumentIndex>=0&&editingDocumentIndex<oldDocs.length?editingDocumentIndex:latestDocumentIndex(old);
+    if(docIndex>=0){
+      if(oldDocs.some(function(x,k){return k!==docIndex&&x.level===levelText;})){
+        alert('Bu sicilde aynı seviyeye ait başka bir belge zaten var.');saveBtn.disabled=false;saveBtn.textContent=t('btnUpdate');return;
+      }
+      oldDocs[docIndex]=newDoc;
+    }else{oldDocs=[newDoc];}
+    var recentEditedDoc=oldDocs[latestDocumentIndex({documents:oldDocs})];
+    record = Object.assign({},old,{
       registerNo:registerNo, studentName:studentName,
-      joinDate:formattedJoinDate, exitDate:formattedExitDate, examDate:oldDocs[0].examDate,
-      examLocation:oldDocs[0].examLocation, level:oldDocs[0].level,
+      joinDate:formattedJoinDate, exitDate:formattedExitDate, examDate:recentEditedDoc.examDate,
+      examLocation:recentEditedDoc.examLocation, level:recentEditedDoc.level,
       documents:oldDocs, photo:currentPhotoData,
       webPortrait:currentWebPortraitData,
       instructorName:instructorName,
@@ -2413,7 +2514,8 @@ function addDiploma(){
       downloadPermissions:old.downloadPermissions || {onlineEducation:false,registryInfo:false,documents:[]},
       webPortraitUrl:old.webPortraitUrl || '',
       previousRegisterNos:Array.isArray(old.previousRegisterNos)?old.previousRegisterNos.slice():[]
-    };
+    });
+    delete record._firebaseKey;
     diplomaData[targetIndex] = Object.assign({}, record, {_firebaseKey:old._firebaseKey});
     msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
 
@@ -2444,6 +2546,10 @@ function addDiploma(){
     msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
   }
 
+  if(targetIndex>=0){
+    syncCurrentRegistryDegree(record);
+    diplomaData[targetIndex]=Object.assign({},record,{_firebaseKey:diplomaData[targetIndex]._firebaseKey});
+  }
   adminFetch('/diplomaData/' + registerNo + '.json', {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
   }).then(function(){
@@ -2546,6 +2652,8 @@ function setDownloadPermission(index,kind,docIndex,enabled){
     if(['Practitioner','Graduate','Expert'].indexOf(degreeSection)>=0){
       perms.registryDegrees=perms.registryDegrees||{};
       perms.registryDegrees[degreeSection]=/^Level [1-5]$/.test(degreeValue)?degreeValue:'';
+      perms.registryDegreeOverrides=perms.registryDegreeOverrides||{};
+      perms.registryDegreeOverrides[degreeSection]=!!perms.registryDegrees[degreeSection];
       if(perms.registryDegrees[degreeSection] && perms.registrySections.indexOf(degreeSection)<0){
         perms.registrySections.push(degreeSection);
         perms.registrySections=REGISTRY_INFO_SECTIONS.filter(function(x){return perms.registrySections.indexOf(x)>=0;});
@@ -2595,21 +2703,28 @@ function renderSelectedAdminActions(i){
   });
   var documentSelect=document.createElement('select');
   documentSelect.className='pdf-output-select';
-  documentSelect.style.width='100%';
-  var placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Diploma / belge PDF oluştur';documentSelect.appendChild(placeholder);
-  var registryOption=document.createElement('option');registryOption.value='registry-info';registryOption.textContent='Sicil PDF (Yönetici)';documentSelect.appendChild(registryOption);
-  recordDocuments(d).forEach(function(doc,di){
-    var option=document.createElement('option');option.value=di+'|'+documentDefaultAction(doc);option.textContent=documentMenuLabel(doc);documentSelect.appendChild(option);
+  documentSelect.id='admin-document-action-'+i;
+  [{v:'',t:'Belge işlemi seçin'},{v:'registry-info',t:'Sicil bilgisi oluştur'},{v:'latest-diploma',t:'Diploma oluştur'}].forEach(function(o){
+    var option=document.createElement('option');option.value=o.v;option.textContent=o.t;documentSelect.appendChild(option);
   });
-  documentSelect.onchange=function(){handleAdminAllDocumentsMenu(documentSelect,i);};
-  docsBox.appendChild(documentSelect);
-  var add=document.createElement('button');add.type='button';add.className='btn btn-secondary btn-small';add.textContent='Belge / Seviye Ekle';add.onclick=function(){addDocumentToRecord(i);};docsBox.appendChild(add);
+  var actionRow=document.createElement('div');actionRow.className='kmt-doc-select-row';
+  var apply=document.createElement('button');apply.type='button';apply.className='btn btn-pdf btn-small';apply.textContent='Uygula';
+  apply.onclick=function(){applyAdminDocumentSelection(i);};
+  actionRow.append(documentSelect,apply);docsBox.appendChild(actionRow);
+  recordDocuments(d).forEach(function(doc,di){
+    var row=document.createElement('div');row.className='kmt-document-row';
+    var desc=document.createElement('span');desc.textContent=documentMenuLabel(doc)+(doc.examDate?' • '+doc.examDate:'')+(di===latestDocumentIndex(d)?' • GÜNCEL':'');
+    var edit=document.createElement('button');edit.type='button';edit.className='btn btn-edit btn-small';edit.textContent='Düzenle';
+    edit.onclick=function(){editDiploma(i,di);};
+    row.append(desc,edit);docsBox.appendChild(row);
+  });
+  var docHint=document.createElement('p');docHint.className='kmt-panel-hint';
+  docHint.textContent='PDF güncel belgeyi kullanır; eski bir belgeyi değiştirmek için satırındaki Düzenle düğmesini seçin.';
+  docsBox.appendChild(docHint);
   var card=document.createElement('button');card.type='button';card.className='btn btn-id btn-small';card.textContent='Kimlik ID / PDF';card.onclick=function(){openInstructorCard(i);};identity.appendChild(card);
-  var hint=document.createElement('p');hint.style.cssText='color:#bbb;font-size:12px;';hint.textContent='Sicil PDF içeriğini seçin; PDF oluşturma yetkisi yalnız yöneticidedir.';registry.appendChild(hint);
-  var changeNumber=document.createElement('button');changeNumber.type='button';changeNumber.className='btn btn-secondary btn-small';changeNumber.textContent='Sicil Numarasını Değiştir';changeNumber.onclick=function(){changeStudentRegisterNo(i);};registry.appendChild(changeNumber);
-  var numberHint=document.createElement('p');numberHint.style.cssText='color:#bbb;font-size:12px;';numberHint.textContent='Yeni numara KM ve 6–12 rakam biçiminde olmalıdır. Eski QR kodu aynı öğrenciye yönlenmeye devam eder.';registry.appendChild(numberHint);
+  var pdfHint=document.createElement('p');pdfHint.className='kmt-panel-hint';pdfHint.textContent='Sicil PDF içerik ve seviye seçimleri:';auth.appendChild(pdfHint);
   REGISTRY_INFO_SECTIONS.forEach(function(section){
-    toggle(registry,section,perms.registrySections.indexOf(section)>=0,function(v){setDownloadPermission(i,'registrySection',section,v);});
+    toggle(auth,section,perms.registrySections.indexOf(section)>=0,function(v){setDownloadPermission(i,'registrySection',section,v);});
     if(['Practitioner','Graduate','Expert'].indexOf(section)>=0){
       var degree=document.createElement('select');degree.style.cssText='width:calc(100% - 25px);margin:0 0 7px 25px;';
       ['','Level 1','Level 2','Level 3','Level 4','Level 5'].forEach(function(value){
@@ -2617,8 +2732,17 @@ function renderSelectedAdminActions(i){
       });
       degree.value=perms.registryDegrees[section]||'';
       degree.onchange=function(){setDownloadPermission(i,'registryDegree',section,degree.value);};
-      registry.appendChild(degree);
+      auth.appendChild(degree);
     }
+  });
+  var numberHint=document.createElement('p');numberHint.className='kmt-panel-hint';
+  numberHint.textContent='Sicil numarasını değiştirebilirsiniz; önceki QR yönlendirmeleri korunur.';
+  registry.appendChild(numberHint);
+  var changeNumber=document.createElement('button');changeNumber.type='button';changeNumber.className='btn btn-secondary btn-small';changeNumber.textContent='Sicil Numarasını Değiştir';changeNumber.onclick=function(){changeStudentRegisterNo(i);};registry.appendChild(changeNumber);
+  var webTitle=document.createElement('p');webTitle.className='kmt-panel-hint';webTitle.textContent='Web sitesi / bilgi arama ekranında göster (birden fazla seçilebilir):';registry.appendChild(webTitle);
+  var roles=Array.isArray(d.publicRoles)?d.publicRoles:(d.publicRole?[d.publicRole]:[]);
+  [['Instructor','Instructor'],['Asistan','Asistan'],['Representative','Temsilci'],['Expert','Expert']].forEach(function(pair){
+    toggle(registry,pair[1],roles.indexOf(pair[0])>=0,function(v){setStudentPublicRole(i,pair[0],v);});
   });
 }
 function filterDiplomas(){
@@ -2681,6 +2805,7 @@ function renderDiplomaList(filtered, isFiltering){
     filtered = diplomaData.map(function(d,i){ return {d:d, i:i}; });
     isFiltering = false;
   }
+  restoreRecordFormPosition();
   var box = document.getElementById('diploma-items');
   var countBox = document.getElementById('result-count');
   if(diplomaData.length === 0){ box.innerHTML = '<p>'+t('noRecordsYet')+'</p>'; countBox.textContent = ''; return; }
@@ -2789,10 +2914,10 @@ function renderDiplomaList(filtered, isFiltering){
           '<details class="student-actions-group" data-group="documents" '+(panelState.documents?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Diplomalar ve Belgeler</summary><div data-action="documents"></div></details>' +
           '<details class="student-actions-group" data-group="permissions" '+(panelState.permissions?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Yetkiler ve Web Görünürlüğü</summary><div data-action="authorization"></div></details>' +
           '<details class="student-actions-group" data-group="education" '+(panelState.education?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Online Eğitim Onayı</summary><div><p style="color:#bbb;margin:0;">Başvuru kodunu öğrenciyle karşılaştırın.</p><button type="button" class="btn btn-small" onclick="loadEducationApprovalByRegister(diplomaData['+i+'].registerNo,'+i+')">Onay İsteklerini Göster</button><div id="student-approval-result-'+i+'" aria-live="polite"></div></div></details>' +
-          '<details class="student-actions-group" data-group="registry" '+(panelState.registry?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Sicil PDF İçeriği</summary><div data-action="registry"></div></details>' +
+          '<details class="student-actions-group" data-group="registry" '+(panelState.registry?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Sicil Numarası Değiştir</summary><div data-action="registry"></div></details>' +
           '<details class="student-actions-group" data-group="identity" '+(panelState.identity?'open':'')+' ontoggle="rememberStudentGroup('+i+',this.dataset.group,this.open)"><summary>Kimlik Kartı</summary><div data-action="identity"></div></details>' +
         '</div>' +
-        '<div class="student-actions-footer"><button class="btn btn-edit btn-small" onclick="editDiploma('+i+')">Kaydı Düzenle</button><button class="btn btn-danger btn-small" onclick="deleteDiploma('+i+')">Kaydı Sil</button></div>' +
+        '<div class="student-actions-footer"><button class="btn btn-secondary btn-small" onclick="addDocumentToRecord('+i+')">Belge / Seviye Ekle</button><button class="btn btn-edit btn-small" onclick="editDiploma('+i+')">Kaydı Düzenle</button><button class="btn btn-danger btn-small" onclick="deleteDiploma('+i+')">Kaydı Sil</button></div>' +
       '</div>' +
       '<div class="diploma-details'+(isOpen?'':' hidden')+'" id="details-'+i+'">' +
         photoHtml +
@@ -3126,3 +3251,7 @@ applyStaticLanguage();
 
 <!-- KMT MASTER BACKUP BUILD 20261002-0047 -->
 
+
+[executed on device: Bulicet (5c4ad261-b010-44bd-bec2-8a024ee59ce3)]
+
+[executed on device: Bulicet (5c4ad261-b010-44bd-bec2-8a024ee59ce3)]
