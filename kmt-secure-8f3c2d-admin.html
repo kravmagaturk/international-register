@@ -243,10 +243,22 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
         <div style="text-align:center;"><button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔐 Google ile Giriş Yap</button></div>
         <div id="loginMessage"></div>
         <div class="security-notice" id="txt-securityNotice">Yönetici erişimi Firebase Authentication ile korunmaktadır.</div>
+        <details class="public-kvkk" id="admin-login-kvkk" style="margin-top:18px;">
+          <summary>KVKK / Aydınlatma Metni</summary>
+          <div class="public-kvkk-text">
+            Bu yönetici girişinde Google/Firebase hesabı kimlik doğrulaması kullanılır. Doğrulanmış girişlerin sonucu, hesap e-posta adresi, kullanıcı kimliği, tarih-saat, IP adresi ve ülke bilgisi yetkisiz erişimleri tespit etmek ve güvenlik denetimi yapmak amacıyla kaydedilebilir. Yeni doğrulanmış giriş kayıtları en fazla 90 gün tutulur. Kimlik doğrulanamayan bir denemenin hangi kişiye ait olduğu belirlenemez. <a href="https://kravmaga.com.tr/kvkk-aydinlatma" target="_blank" rel="noopener noreferrer">Genel KVKK aydınlatması</a> ve <a href="https://kravmaga.com.tr/iletisim" target="_blank" rel="noopener noreferrer">başvuru/iletişim</a>.
+          </div>
+        </details>
       </div>
 
       <div id="admin-panel" class="hidden">
         <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
+        <details class="public-kvkk" id="admin-panel-kvkk" style="margin:0 0 18px;">
+          <summary>KVKK / Yönetici Paneli Aydınlatması</summary>
+          <div class="public-kvkk-text">
+            Öğrenci adı-soyadı, sicil ve seviye bilgileri, sınav tarihleri, fotoğraflar ve belge yetkileri; akademi kayıtlarının yönetilmesi, belge hazırlanması ve doğrulanması amacıyla işlenir. Yönetici giriş ve belge indirme kayıtları güvenlik denetimi amacıyla yetkili yöneticiler tarafından incelenir. Yeni giriş denetim kayıtlarında doğrulanmış hesap kimliği, sonuç, zaman, IP adresi ve ülke bilgisi 90 güne kadar saklanır; önceki kayıtların saklama süresi farklı olabilir. Bu denetim kayıtları kamuya açık sorgulama bölümünde gösterilmez. <a href="https://kravmaga.com.tr/kvkk-aydinlatma" target="_blank" rel="noopener noreferrer">KVKK aydınlatma metni</a> ve <a href="https://kravmaga.com.tr/iletisim" target="_blank" rel="noopener noreferrer">ilgili kişi başvurusu</a>.
+          </div>
+        </details>
         <div class="admin-top-actions">
           <button class="btn btn-small" id="btn-new-record" onclick="showAddForm()">Yeni Öğrenci Kaydı</button>
           <details id="admin-actions-menu" class="admin-top-menu">
@@ -272,9 +284,11 @@ body:after{content:"KRAV MAGA TÜRK";position:fixed;right:3vw;top:66%;font-size:
         <div id="security-logs-section" class="hidden" style="margin-bottom:20px;">
           <h4 id="txt-securityLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 Güvenlik ve İndirme Kayıtları</h4>
           <div class="log-actions">
-            <button class="btn btn-secondary btn-small" id="btn-clear-logs" onclick="clearSecurityLogs()">🗑️ Logları Temizle</button>
+            <button class="btn btn-secondary btn-small" id="btn-clear-logs" onclick="loadSecurityLogs()">Kayıtları Yenile</button>
             <button class="btn btn-pdf btn-small" id="btn-export-logs-pdf" onclick="exportLogsAsPDF()">📄 Logları PDF Olarak İndir</button>
+              <select id="security-log-filter" aria-label="Güvenlik kaydı türü" onchange="renderSecurityLogEntries()" style="width:auto;max-width:100%;padding:7px;background:#111;color:#fff;border:1px solid #555;"><option value="all">Tüm İşlemler</option><option value="login_success">Başarılı Giriş</option><option value="login_denied">Reddedilen Giriş</option><option value="download">Belge İndirme</option></select>
           </div>
+          <div id="security-logs-status" role="status" aria-live="polite" class="kmt-panel-hint">Kayıtları görüntülemek için Güvenlik Kayıtları düğmesini kullanın.</div>
           <div id="security-logs-list" class="log-list"><div class="spinner"></div></div>
         </div>
 
@@ -686,7 +700,22 @@ function logSecurityEvent(type, details){
     var payload = {type:type, uid:currentAdminUser.uid, email:currentAdminUser.email||'', ip:client.ip, city:client.city, country:client.country, timestamp:new Date().toISOString()};
     if(details){ for(var k in details){ payload[k]=details[k]; } }
     return adminFetch('/securityLogs.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  }).catch(function(){});
+  }).catch(function(err){console.warn('Firebase güvenlik logu kaydedilemedi:',err&&err.message);});
+}
+// Browser never supplies a claimed identity: the Worker verifies the Firebase ID token.
+function writeVerifiedLoginAudit(user){
+  if(!user || typeof user.getIdToken!=='function') return Promise.resolve(false);
+  return user.getIdToken(true).then(function(token){
+    return fetch('/kmt-admin/audit',{method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:'{}',cache:'no-store'});
+  }).then(function(res){
+    if(!res.ok) throw new Error('Giriş denetimi kaydı HTTP '+res.status);
+    return true;
+  }).catch(function(err){
+    console.warn('Güvenlik denetim kaydı oluşturulamadı:',err&&err.message);
+    return false;
+  });
 }
 function normalizeDateParts(value){
   var s=String(value||'').trim();
@@ -2023,7 +2052,7 @@ function showAdminPanel(user){
   document.getElementById('login-form').classList.add('hidden');
   document.getElementById('admin-panel').classList.remove('hidden');
   document.getElementById('loginMessage').innerHTML = '';
-  logSecurityEvent('login_success',{});
+  writeVerifiedLoginAudit(user);
   memberScanOffset=0;memberScanResults=[];
   loadAllDiplomas();
 }
@@ -2042,7 +2071,7 @@ function adminLogin(){
   }).then(function(result){
     var user=result&&result.user?result.user:null;
     if(!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-      return auth.signOut().then(function(){
+      return writeVerifiedLoginAudit(user).then(function(){return auth.signOut();}).then(function(){
         throw new Error('UNAUTHORIZED_EMAIL');
       });
     }
@@ -3185,53 +3214,107 @@ function toggleSecurityLogs(){
   if(securityLogsVisible){ section.classList.remove('hidden'); loadSecurityLogs(); }
   else { section.classList.add('hidden'); }
 }
-function loadSecurityLogs(){
-  var listEl = document.getElementById('security-logs-list');
-  listEl.innerHTML = '<div class="spinner"></div>';
-  adminFetch('/securityLogs.json').then(function(res){ return res.json(); }).then(function(data){
-    if(!data){ cachedSecurityLogEntries = []; listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>'; return; }
-    var entries = Object.values(data).sort(function(a,b){ return new Date(b.timestamp) - new Date(a.timestamp); });
-    cachedSecurityLogEntries = entries;
-    var html = '';
-    entries.slice(0, 300).forEach(function(entry){
-      var dt = new Date(entry.timestamp);
-      var dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
-      var detail = '';
-      if(entry.type === 'download'){ detail = '<strong>'+(entry.studentName||'')+'</strong> — '+(entry.registerNo||'')+' — '+(entry.lang||'tr').toUpperCase(); }
-      var location = [entry.city, entry.country].filter(Boolean).join(', ');
-      html += '<div class="log-item">'+logTypeBadge(entry.type)+detail+'<div class="log-ip">IP: '+(entry.ip||'-')+(location?(' — '+location):'')+' — '+dateStr+'</div></div>';
-    });
-    listEl.innerHTML = html || '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
-  }).catch(function(){ listEl.innerHTML = '<p style="text-align:center;color:#c62828;">'+t('logsLoadError')+'</p>'; });
+function escapeLogHtml(value){
+  return String(value===undefined||value===null?'':value).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function logTypeBadge(type){
+  var map={
+    login_success:['Başarılı Giriş','log-badge-success'],
+    login_denied:['Reddedilen Giriş','log-badge-failed'],
+    login_failed:['Başarısız Giriş','log-badge-failed'],
+    download:['Belge İndirildi','log-badge-download'],
+    register_no_change:['Sicil Değişikliği','log-badge-download']
+  };
+  var b=map[type]||['Diğer İşlem','log-badge-download'];
+  return '<span class="log-badge '+b[1]+'">'+b[0]+'</span>';
+}
+function logTime(text){
+  var dt=new Date(text);
+  if(isNaN(dt.getTime()))return 'Tarih yok';
+  return dt.toLocaleString('tr-TR',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function renderSecurityLogEntries(){
+  var listEl=document.getElementById('security-logs-list');
+  if(!listEl)return;
+  var select=document.getElementById('security-log-filter');
+  var filter=select?select.value:'all';
+  var entries=(cachedSecurityLogEntries||[]).filter(function(e){
+    return filter==='all'||(filter==='login_denied'&&(e.type==='login_failed'||e.type==='login_denied'))||e.type===filter;
+  });
+  if(!entries.length){listEl.innerHTML='<p style="text-align:center;color:#aaa;">Bu filtrede kayıt bulunamadı.</p>';return;}
+  listEl.innerHTML=entries.slice(0,500).map(function(e){
+    var email=e.email||e.attemptedEmail||'Doğrulanmış kimlik bilgisi yok';
+    var identity=e.uid?'UID: '+e.uid:'';
+    var student=e.type==='download'?' • '+(e.studentName||'-')+' • '+(e.registerNo||'-'):'';
+    var where=[e.ip||'Bilinmiyor',e.country||e.city||''].filter(Boolean).join(' • ');
+    return '<div class="log-item">'+logTypeBadge(e.type)+
+     '<div style="margin-top:4px;color:#f3f3f3;font-size:12px;">'+escapeLogHtml(email)+escapeLogHtml(student)+'</div>'+
+     (identity?'<div style="color:#aaa;font-size:11px;">'+escapeLogHtml(identity)+'</div>':'')+
+     '<div class="log-ip">'+escapeLogHtml(logTime(e.timestamp))+' • IP: '+escapeLogHtml(where)+'</div></div>';
+  }).join('');
+}
+async function loadSecurityLogs(){
+  var listEl=document.getElementById('security-logs-list');
+  var statusEl=document.getElementById('security-logs-status');
+  if(!listEl)return;
+  listEl.innerHTML='<div class="spinner"></div>';
+  if(statusEl)statusEl.textContent='Güvenlik kayıtları yetkili kaynaklardan okunuyor...';
+  if(!currentAdminUser){listEl.textContent='Yönetici oturumu gerekli.';return;}
+  try{
+    var token=await currentAdminUser.getIdToken(true);
+    var responses=await Promise.allSettled([
+      adminFetch('/securityLogs.json').then(function(res){return res.json();}),
+      fetch('/kmt-admin/audit',{headers:{'Authorization':'Bearer '+token},cache:'no-store'})
+        .then(function(res){if(!res.ok)throw new Error('Giriş denetimi HTTP '+res.status);return res.json();})
+    ]);
+    var found=[],errors=[];
+    if(responses[0].status==='fulfilled'){
+      var legacy=responses[0].value;
+      if(legacy&&typeof legacy==='object')found=found.concat(Object.values(legacy).filter(function(x){return x&&typeof x==='object';}));
+    }else errors.push('Eski Firebase güvenlik kayıtları okunamadı.');
+    if(responses[1].status==='fulfilled'){
+      var audit=responses[1].value;
+      if(audit&&Array.isArray(audit.entries))found=found.concat(audit.entries);
+    }else errors.push('Yeni doğrulanmış giriş kayıtları okunamadı.');
+    found.sort(function(a,b){return (Date.parse(b.timestamp)||0)-(Date.parse(a.timestamp)||0);});
+    cachedSecurityLogEntries=found;
+    var ok=found.filter(function(e){return e.type==='login_success';}).length;
+    var denied=found.filter(function(e){return e.type==='login_denied'||e.type==='login_failed';}).length;
+    var downloads=found.filter(function(e){return e.type==='download';}).length;
+    if(statusEl)statusEl.textContent='Toplam '+found.length+' kayıt • Başarılı giriş: '+ok+' • Reddedilen giriş: '+denied+' • İndirme: '+downloads+
+       (errors.length?' | UYARI: '+errors.join(' '):'');
+    renderSecurityLogEntries();
+  }catch(err){
+    if(statusEl)statusEl.textContent='Güvenlik kayıtları yüklenemedi: '+String(err&&err.message||err);
+    listEl.textContent='Kayıt okuma sırasında hata oluştu.';
+  }
 }
 function clearSecurityLogs(){
-  if(!confirm(t('confirmClearLogs'))) return;
-  adminFetch('/securityLogs.json', {method:'DELETE'}).then(function(){ cachedSecurityLogEntries = []; loadSecurityLogs(); }).catch(function(){ alert(t('msgDeleteError')); });
+  alert('Güvenlik kayıtlarının topluca silinmesi, denetim kaybını önlemek için bu panelde kapatıldı.');
 }
 function exportLogsAsPDF(){
-  if(!cachedSecurityLogEntries || cachedSecurityLogEntries.length === 0){ alert(t('noLogsYet')); return; }
-  var jsPDF = window.jspdf.jsPDF;
-  var doc = new jsPDF('p','mm','a4');
-  var pageW = 210, y = 20;
-  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(211,47,47);
-  doc.text(turkishSafe(t('securityLogsHeading')), pageW/2, y, {align:'center'}); y += 8;
-  doc.setDrawColor(211,47,47); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 8;
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,60,60);
-  cachedSecurityLogEntries.forEach(function(entry){
-    if(y > 280){ doc.addPage(); y = 20; }
-    var dt = new Date(entry.timestamp);
-    var dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
-    var typeLabel = entry.type === 'download' ? 'DOWNLOAD' : (entry.type === 'login_success' ? 'LOGIN OK' : 'LOGIN FAIL');
-    var line1 = '['+typeLabel+'] '+dateStr;
-    var line2 = 'IP: '+(entry.ip||'-')+'  Location: '+[entry.city, entry.country].filter(Boolean).join(', ');
-    if(entry.type === 'download'){ line2 += '  Student: '+(entry.studentName||'-')+'  Reg: '+(entry.registerNo||'-')+'  Lang: '+(entry.lang||'-').toUpperCase(); }
-    doc.setFont('helvetica','bold'); doc.text(turkishSafe(line1), 15, y);
-    doc.setFont('helvetica','normal'); doc.text(turkishSafe(line2), 15, y+5);
-    doc.setDrawColor(230,230,230); doc.setLineWidth(0.2); doc.line(15, y+8, 195, y+8);
-    y += 13;
+  if(!cachedSecurityLogEntries||!cachedSecurityLogEntries.length){alert('İndirilecek güvenlik kaydı yok.');return;}
+  var doc=new window.jspdf.jsPDF('p','mm','a4');
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('KMT GUVENLIK KAYITLARI',105,20,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  var y=32;
+  cachedSecurityLogEntries.slice(0,500).forEach(function(e){
+    var type=e.type==='login_success'?'LOGIN OK':(e.type==='login_denied'||e.type==='login_failed'?'LOGIN DENIED':e.type==='download'?'DOWNLOAD':'ACTION');
+    var str='['+type+'] '+logTime(e.timestamp)+' | '+String(e.email||e.attemptedEmail||'Kimlik yok');
+    var info='UID: '+String(e.uid||'-')+' | IP: '+String(e.ip||'-')+' | '+String(e.country||e.city||'-');
+    if(e.type==='download')info+=' | '+String(e.registerNo||'-');
+    if(y>278){doc.addPage();y=18;}
+    doc.setFont('helvetica','bold');
+    doc.text(doc.splitTextToSize(turkishSafe(str),180).slice(0,2),15,y);
+    doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(turkishSafe(info),180).slice(0,2),15,y+7);
+    y+=17;
   });
-  doc.save('security-logs-' + new Date().toISOString().slice(0,10) + '.pdf');
+  doc.save('kmt-guvenlik-kayitlari-'+new Date().toISOString().slice(0,10)+'.pdf');
 }
+
 document.addEventListener('DOMContentLoaded', function(){
   auth.signOut().catch(function(){}).finally(function(){
     currentAdminUser=null;
