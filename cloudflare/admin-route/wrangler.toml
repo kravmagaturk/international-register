@@ -7,3 +7,7 @@ preview_urls = false
 routes = [
   { pattern = "kravmaga.com.tr/kmt-admin*", zone_name = "kravmaga.com.tr" }
 ]
+
+[[kv_namespaces]]
+binding = "ADMIN_SECURITY_AUDIT"
+id = "bf769afaccfb474dbb237a0de0d3e2a9"
