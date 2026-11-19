@@ -1688,7 +1688,11 @@ function prepareDiplomaSquarePhoto(photoData){
 var registry1948LogoPromise = null;
 function loadRegistry1948CircularLogo(){
   if(registry1948LogoPromise) return registry1948LogoPromise;
-  registry1948LogoPromise = loadImageAsDataURL('logo.png').then(function(source){
+  // /register altında bağıl "logo.png" yolu doğru çalışmaz; burada ana sitenin özgün dosyasını kullan.
+  // GitHub Pages'de ise depo içindeki birebir aynı 1948 logosu kullanılır.
+  var badgeSource = /(^|\.)kravmaga\.com\.tr$/i.test(window.location.hostname)
+    ? '/assets/brand/logo-1948.png' : 'logo.png';
+  registry1948LogoPromise = loadImageAsDataURL(badgeSource).then(function(source){
     return new Promise(function(resolve,reject){
       var image=new Image();
       image.onload=function(){
