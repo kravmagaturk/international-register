@@ -1683,15 +1683,46 @@ function prepareDiplomaSquarePhoto(photoData){
   });
 }
 
+// Kayıt Bilgisi PDF: mevcut şablonu ve tüm baskı kalibrasyonunu korur.
+// Sadece sol üst köşedeki eski arma, özgün 1948 logosu ile değiştirilir.
+var registry1948LogoPromise = null;
+function loadRegistry1948CircularLogo(){
+  if(registry1948LogoPromise) return registry1948LogoPromise;
+  registry1948LogoPromise = loadImageAsDataURL('logo.png').then(function(source){
+    return new Promise(function(resolve,reject){
+      var image=new Image();
+      image.onload=function(){
+        try{
+          var canvas=document.createElement('canvas');
+          canvas.width=600; canvas.height=600;
+          var ctx=canvas.getContext('2d');
+          ctx.beginPath(); ctx.arc(300,300,292,0,Math.PI*2); ctx.closePath(); ctx.clip();
+          ctx.drawImage(image,0,0,600,600);
+          resolve(canvas.toDataURL('image/png'));
+        }catch(err){reject(err);}
+      };
+      image.onerror=function(){reject(new Error('1948 logo görseli açılamadı'))};
+      image.src=source;
+    });
+  }).catch(function(error){registry1948LogoPromise=null; throw error;});
+  return registry1948LogoPromise;
+}
+
 function downloadRegistryInfoPDF(record){
   if(!currentAdminUser) return;
   if(!record) return;
   if(!currentAdminUser){ alert('Sicil PDF yalnızca yönetici panelinden oluşturulabilir.'); return; }
   var d=record, jsPDF=window.jspdf.jsPDF;
-  Promise.all([loadTemplate('registryInfo'),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareRegistryPortrait(d.webPortrait || d.photo)]).then(function(parts){
-    var template=parts[0],qr=parts[1],portrait=parts[2],W=297,H=210,doc=new jsPDF('l','mm','a4');
+  Promise.all([loadTemplate('registryInfo'),makeQrDataUrl(buildQrUrl(d.registerNo)),prepareRegistryPortrait(d.webPortrait || d.photo),loadRegistry1948CircularLogo()]).then(function(parts){
+    var template=parts[0],qr=parts[1],portrait=parts[2],badge1948=parts[3],W=297,H=210,doc=new jsPDF('l','mm','a4');
     if(!template) throw new Error('sicil-pdf.png bulunamadı');
     doc.addImage(template,'PNG',0,0,W,H);
+    // Eski arma sabit şablona gömülüdür; aynı yerde kapatılıp logo bindirilir.
+    // PDF ölçüsü mm: 1948 logosu 29 x 29 mm (3 cm sınırını aşmaz).
+    // Başlık, yazı, fotoğraf, QR ve veri koordinatlarına dokunulmaz.
+    doc.setFillColor(252,253,248);
+    doc.ellipse(41.6,30.2,20.5,21.6,'F');
+    doc.addImage(badge1948,'PNG',27.1,15.7,29.0,29.0);
 
     function fitRegistry(text,x,y,maxWidth,startSize,minSize,opts){
       text=String(text||'-'); opts=opts||{}; var size=startSize;
