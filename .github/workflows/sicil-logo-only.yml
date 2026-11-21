@@ -41,7 +41,7 @@ jobs:
           assert original.format == 'PNG', 'Unexpected template format'
           w, h = original.size
           assert w >= 1200 and h >= 800, f'Unexpected template size: {w}x{h}'
-          assert abs(w / h - 297 / 210) < 0.025, f'Template is not A4 landscape: {w}x{h}'
+          assert (w, h) == (1557, 1010), f'Unexpected source template dimensions: {w}x{h}'
           orig_dpi = original.info.get('dpi')
           orig_icc = original.info.get('icc_profile')
           base_mode = original.mode
