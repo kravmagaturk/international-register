@@ -1,0 +1,92 @@
+name: Replace only diploma top-left emblem
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diploma-logo-only.yml']
+permissions:
+  contents: write
+concurrency:
+  group: kmt-diploma-logo-only
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - run: python -m pip install Pillow
+      - name: Patch only circular emblem in existing diploma PNG
+        run: |
+          python - <<'PY'
+          from PIL import Image,ImageDraw,ImageChops,ImageFilter,PngImagePlugin
+          import urllib.request,io,base64,hashlib
+          from pathlib import Path
+          img_url="https://media.canva.com/v2/image-resize/format:JPG/height:200/quality:75/uri:ifs%3A%2F%2FM%2F48c67e8e-c26b-4908-bf8d-da0932a192f3/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAALUq5S2JisbTi2RlyawqekTmOFqML7hb_DvU7llnoy6I&exp=1795284507&osig=AAAAAAAAAAAAAAAAAAAAANjxozBdEbp9O_UwDcEk_lLz0AH2sCkirN9JIzSHjls6&signer=media-rpc&token=AAIAAU0AJDQ4YzY3ZThlLWMyNmItNDkwOC1iZjhkLWRhMDkzMmExOTJmMwAAAAABof9LmXhIFfK3LaQYD7wJ6AKkRXQVdTOECmXXdF56S-paoNdoUg&x-canva-quality=thumbnail"
+          req=urllib.request.Request(img_url,headers={'User-Agent':'Mozilla/5.0'})
+          with urllib.request.urlopen(req,timeout=30) as r:
+            source=r.read()
+          emblem=Image.open(io.BytesIO(source)).convert('RGB')
+          assert emblem.size == (200,200),f'Unexpected logo transfer: {emblem.size}'
+          # Crop outside the source circle. Never stretch the full square black background.
+          emblem=emblem.crop((17,12,180,175)).resize((316,316),Image.Resampling.LANCZOS)
+          emblem=emblem.filter(ImageFilter.UnsharpMask(radius=1.0,percent=65,threshold=3))
+          path=Path('diploma-genel.png')
+          original=Image.open(path)
+          assert original.format == 'PNG'
+          assert original.size == (1525,1031),f'Unexpected diploma template geometry {original.size}'
+          assert original.mode in ('RGB','RGBA')
+          dpi=original.info.get('dpi')
+          icc=original.info.get('icc_profile')
+          base=original.copy()
+          before=original.copy()
+          # Original badge lies at approx 78..392 / 44..360 pixels.
+          # Keep original center and diameter. Other diploma fields are not modified.
+          cx,cy=234,202
+          diameter=316
+          x,y=cx-diameter//2,cy-diameter//2
+          antialias=4
+          r=diameter*antialias
+          mask=Image.new('L',(r,r),0)
+          ImageDraw.Draw(mask).ellipse((0,0,r-1,r-1),fill=255)
+          mask=mask.resize((diameter,diameter),Image.Resampling.LANCZOS)
+          if base.mode=='RGBA':
+            emblem=emblem.convert('RGBA')
+          base.paste(emblem,(x,y),mask)
+          difference=ImageChops.difference(before.convert('RGB'),base.convert('RGB'))
+          change_bbox=difference.getbbox()
+          assert change_bbox is not None,'No logo pixels changed'
+          allowed=(x,y,x+diameter,y+diameter)
+          assert (change_bbox[0]>=allowed[0] and change_bbox[1]>=allowed[1] and change_bbox[2]<=allowed[2] and change_bbox[3]<=allowed[3]),(change_bbox,allowed)
+          assert base.size==before.size and base.mode==before.mode
+          extras={}
+          if dpi:extras['dpi']=dpi
+          if icc:extras['icc_profile']=icc
+          metadata=PngImagePlugin.PngInfo()
+          for k,v in original.info.items():
+            if isinstance(v,str): metadata.add_text(k,v)
+          extras['pnginfo']=metadata
+          base.save(path,format='PNG',optimize=True,**extras)
+          validated=Image.open(path)
+          assert validated.size == before.size and validated.mode == before.mode
+          assert ImageChops.difference(validated.convert('RGB'),base.convert('RGB')).getbbox() is None
+          print('DIPLOMA_PRESERVED',original.size,original.mode,dpi,'logo_only_change',change_bbox,flush=True)
+          print('ORIGINAL_SHA256',hashlib.sha256(before.tobytes()).hexdigest(),flush=True)
+          print('UPDATED_SHA256',hashlib.sha256(base.tobytes()).hexdigest(),flush=True)
+          thumbnail=base.convert('RGB')
+          thumbnail.thumbnail((850,560))
+          out=io.BytesIO()
+          thumbnail.save(out,format='JPEG',quality=62,optimize=True)
+          print('BEGIN_NEW_DIPLOMA_IMAGE',flush=True)
+          print(base64.b64encode(out.getvalue()).decode(),flush=True)
+          print('END_NEW_DIPLOMA_IMAGE',flush=True)
+          PY
+      - name: Commit only updated diploma template
+        run: |
+          set -e
+          git add -- diploma-genel.png
+          if git diff --cached --quiet; then echo 'No change'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Replace diploma upper-left emblem only; preserve PDF calibration and records'
+          git push origin HEAD:main
