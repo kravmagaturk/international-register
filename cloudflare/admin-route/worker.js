@@ -1,6 +1,6 @@
 // KMT Admin route | security audit | 2026-11-18
 // Only Google/Firebase signed ID tokens are accepted; no client-provided identity is trusted.
-const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/9cc5f07b99eee23b656986dc4a263d398d3b4f2f/kmt-secure-8f3c2d-admin.html";
+const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/08e58e7cb28c02d63e3771e0a0302e239aeb77f0/kmt-secure-8f3c2d-admin.html";
 const PROJECT_ID = "kravmaga-diploma";
 const ADMIN_EMAIL = "bulicet@gmail.com";
 const AUDIT_RETENTION_SECONDS = 90 * 24 * 60 * 60;
