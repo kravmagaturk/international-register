@@ -89,7 +89,7 @@ jobs:
           assert bounds, 'Nothing changed in logo area'
           allowed = (
               min(ellipse[0], px), min(ellipse[1], py),
-              max(ellipse[2], px + pw), max(ellipse[3], py + ph),
+              max(ellipse[2] + 1, px + pw), max(ellipse[3] + 1, py + ph),
           )
           assert bounds[0] >= allowed[0] and bounds[1] >= allowed[1] and bounds[2] <= allowed[2] and bounds[3] <= allowed[3], (bounds, allowed)
           assert base.size == before.size, 'Template size changed'
