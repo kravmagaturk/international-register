@@ -1,0 +1,85 @@
+name: Replace diploma PDF top-left logo ONLY (1996)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diploma-logo-1996-only.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: diploma-logo-1996-one-time
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Pillow
+        run: python -m pip install Pillow
+      - name: Replace only emblem pixels and verify unchanged calibration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from PIL import Image,ImageDraw,ImageChops,PngImagePlugin
+          import hashlib,base64,io
+          from pathlib import Path
+
+          template_path=Path('diploma-genel.png')
+          logo_path=Path('diploma-logo-since-1996.png')
+          assert template_path.is_file() and logo_path.is_file()
+          original=Image.open(template_path)
+          assert original.format=='PNG' and original.size==(1525,1031) and original.mode in ('RGB','RGBA'), (original.format,original.size,original.mode)
+          before=original.convert('RGB')
+          expected='6d3db844e24b35483ff367853fef8ff081d114ba45d119a9a771703ff513b8cd'
+          checksum=hashlib.sha256(before.tobytes()).hexdigest()
+          assert checksum==expected, 'Original diploma pixels changed; refuse to edit: '+checksum
+          logo=Image.open(logo_path)
+          assert logo.size==(400,400) and logo.format=='PNG', (logo.size,logo.format)
+          logo=logo.convert('RGB')
+          x,y,d=76,44,316
+          logo=logo.resize((d,d),Image.Resampling.LANCZOS)
+          mask=Image.new('L',(d*4,d*4),0)
+          ImageDraw.Draw(mask).ellipse((0,0,d*4-1,d*4-1),fill=255)
+          mask=mask.resize((d,d),Image.Resampling.LANCZOS)
+          result=original.copy()
+          result.paste(logo,(x,y),mask)
+          diff=ImageChops.difference(before,result.convert('RGB'))
+          bbox=diff.getbbox()
+          assert bbox is not None, 'Logo not changed'
+          assert x<=bbox[0] and y<=bbox[1] and bbox[2]<=x+d and bbox[3]<=y+d, ('Other pixels changed',bbox)
+          assert result.size==original.size and result.mode==original.mode
+          opts={}
+          if original.info.get('dpi'): opts['dpi']=original.info['dpi']
+          if original.info.get('icc_profile'): opts['icc_profile']=original.info['icc_profile']
+          meta=PngImagePlugin.PngInfo()
+          for key,value in original.info.items():
+            if isinstance(value,str): meta.add_text(key,value)
+          opts['pnginfo']=meta
+          result.save(template_path,format='PNG',optimize=True,**opts)
+          saved=Image.open(template_path)
+          assert saved.size==original.size and saved.mode==original.mode
+          assert ImageChops.difference(saved.convert('RGB'),result.convert('RGB')).getbbox() is None
+          print('DIPLOMA_LOGO_ONLY_SUCCESS',bbox,'template',original.size,'mode',original.mode,flush=True)
+          print('BEFORE_PIXELS_SHA256',checksum,flush=True)
+          print('AFTER_PIXELS_SHA256',hashlib.sha256(result.convert('RGB').tobytes()).hexdigest(),flush=True)
+          preview=result.convert('RGB')
+          preview.thumbnail((850,560))
+          output=io.BytesIO()
+          preview.save(output,format='JPEG',quality=66,optimize=True)
+          print('BEGIN_DIPLOMA_1996_PREVIEW',flush=True)
+          print(base64.b64encode(output.getvalue()).decode('ascii'),flush=True)
+          print('END_DIPLOMA_1996_PREVIEW',flush=True)
+          PY
+      - name: Commit ONLY diploma-genel.png
+        shell: bash
+        run: |
+          set -eu
+          git add -- diploma-genel.png
+          if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Change only diploma PDF top-left logo to approved SINCE 1996 emblem'
+          git push origin HEAD:main
