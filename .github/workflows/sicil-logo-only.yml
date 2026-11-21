@@ -1,0 +1,126 @@
+name: Update sicil PDF logo in existing template
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sicil-logo-only.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kmt-sicil-logo-only
+  cancel-in-progress: false
+
+jobs:
+  update-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the existing template
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install image processing dependency
+        run: python -m pip install Pillow
+
+      - name: Change only the existing upper-left logo pixels
+        shell: bash
+        run: |
+          python - <<'PY'
+          from PIL import Image, ImageDraw, ImageChops, PngImagePlugin
+          from pathlib import Path
+          import hashlib
+
+          src = Path('sicil-pdf.png')
+          logo_path = Path('sicil-logo-20261121.jpg')
+          assert src.is_file() and logo_path.is_file(), 'Required image asset is missing'
+          original = Image.open(src)
+          assert original.format == 'PNG', 'Unexpected template format'
+          w, h = original.size
+          assert w >= 1200 and h >= 800, f'Unexpected template size: {w}x{h}'
+          assert abs(w / h - 297 / 210) < 0.025, f'Template is not A4 landscape: {w}x{h}'
+          orig_dpi = original.info.get('dpi')
+          orig_icc = original.info.get('icc_profile')
+          base_mode = original.mode
+          base = original.convert('RGBA' if base_mode == 'RGBA' else 'RGB')
+          before = base.copy()
+
+          # These values are the EXISTING registry logo coordinates in the PDF renderer (mm).
+          # No text, portrait, QR, document area or page dimensions are edited.
+          xscale = w / 297.0
+          yscale = h / 210.0
+          ellipse = [round(v) for v in (
+              (41.6 - 20.5) * xscale,
+              (30.2 - 21.6) * yscale,
+              (41.6 + 20.5) * xscale,
+              (30.2 + 21.6) * yscale,
+          )]
+          image_fill = (252, 253, 248, 255) if base.mode == 'RGBA' else (252, 253, 248)
+          ImageDraw.Draw(base).ellipse(ellipse, fill=image_fill)
+
+          placement = (
+              round(27.1 * xscale),
+              round(15.7 * yscale),
+              round(29.0 * xscale),
+              round(29.0 * yscale),
+          )
+          px, py, pw, ph = placement
+          assert px > 0 and py > 0 and pw > 20 and ph > 20
+          logo = Image.open(logo_path).convert('RGB').resize((pw, ph), Image.Resampling.LANCZOS)
+
+          # Same circular clipping as the approved browser overlay: r = 292 / 300.
+          scale = 4
+          mask = Image.new('L', (pw * scale, ph * scale), 0)
+          margin_x = round((1.0 - 292/300) * pw * scale / 2)
+          margin_y = round((1.0 - 292/300) * ph * scale / 2)
+          ImageDraw.Draw(mask).ellipse(
+              (margin_x, margin_y, pw * scale - 1 - margin_x, ph * scale - 1 - margin_y),
+              fill=255,
+          )
+          mask = mask.resize((pw, ph), Image.Resampling.LANCZOS)
+          base.paste(logo, (px, py), mask)
+
+          # Fail closed if any changed pixel extends outside the original logo region.
+          diff = ImageChops.difference(before.convert('RGB'), base.convert('RGB'))
+          bounds = diff.getbbox()
+          assert bounds, 'Nothing changed in logo area'
+          allowed = (
+              min(ellipse[0], px), min(ellipse[1], py),
+              max(ellipse[2], px + pw), max(ellipse[3], py + ph),
+          )
+          assert bounds[0] >= allowed[0] and bounds[1] >= allowed[1] and bounds[2] <= allowed[2] and bounds[3] <= allowed[3], (bounds, allowed)
+          assert base.size == before.size, 'Template size changed'
+          assert base.mode == before.mode, 'Template color mode changed'
+          extras = {}
+          if orig_dpi: extras['dpi'] = orig_dpi
+          if orig_icc: extras['icc_profile'] = orig_icc
+          text_info = PngImagePlugin.PngInfo()
+          for key, value in original.info.items():
+              if isinstance(value, str):
+                  text_info.add_text(key, value)
+          extras['pnginfo'] = text_info
+          base.save(src, format='PNG', optimize=True, **extras)
+          verify = Image.open(src)
+          assert verify.size == original.size, 'Saved dimensions changed'
+          assert ImageChops.difference(verify.convert('RGB'), base.convert('RGB')).getbbox() is None, 'Saved pixels differ'
+          print(f'Sicil template: {w}x{h}, original mode={base_mode}; logo change bbox={bounds}; preserved dpi={orig_dpi}')
+          print('OLD', hashlib.sha256(before.tobytes()).hexdigest())
+          print('NEW', hashlib.sha256(base.tobytes()).hexdigest())
+          PY
+
+      - name: Commit only updated PNG template
+        shell: bash
+        run: |
+          set -e
+          git add -- sicil-pdf.png
+          if git diff --cached --quiet; then
+            echo "No image change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update sicil PDF upper-left logo only; retain calibrated layout"
+          git push origin HEAD:main
