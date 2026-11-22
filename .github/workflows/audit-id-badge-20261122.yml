@@ -1,0 +1,39 @@
+name: Inspect ID card badge without modifying template
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-id-badge-20261122.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare template and asset previews
+        run: |
+          python -m pip -q install Pillow==11.3.0
+          python - <<'PY'
+          from PIL import Image,ImageOps,ImageDraw
+          from io import BytesIO
+          import base64,hashlib
+          card=Image.open('instructor-id-template.png').convert('RGB')
+          logo=Image.open('sicil-logo-20261121.jpg').convert('RGB')
+          print('CARD_DIMENSIONS',card.size,'CARD_SHA256',hashlib.sha256(card.tobytes()).hexdigest(),flush=True)
+          print('LOGO_DIMENSIONS',logo.size,'LOGO_SHA256',hashlib.sha256(logo.tobytes()).hexdigest(),flush=True)
+          w=1000; h=650
+          output=Image.new('RGB',(w,h),(245,245,245))
+          card.thumbnail((730,615))
+          output.paste(card,(12,20))
+          logo.thumbnail((240,240))
+          output.paste(logo,(748,50))
+          draw=ImageDraw.Draw(output)
+          draw.text((748,305),'Existing sicil logo source',fill=(0,0,0))
+          buf=BytesIO();output.save(buf,format='JPEG',quality=62,optimize=True)
+          print('BEGIN_ID_AND_LOGO_PREVIEW',flush=True)
+          print(base64.b64encode(buf.getvalue()).decode('ascii'),flush=True)
+          print('END_ID_AND_LOGO_PREVIEW',flush=True)
+          PY
