@@ -61,8 +61,11 @@ jobs:
           for c in components[:6]:
             print('YELLOW_COMPONENT',len(c),(min(x for x,y in c),min(y for x,y in c),max(x for x,y in c),max(y for x,y in c)),flush=True)
           assert components and len(components[0])>2000, 'Badge gold shape not located'
-          biggest=components[0]
-          left,top,right,bottom=min(x for x,y in biggest),min(y for x,y in biggest),max(x for x,y in biggest)+1,max(y for x,y in biggest)+1
+          # The old serrated gold badge has two concentric connected parts;
+          # include BOTH the inner disk and the outer serrated ring.
+          assert len(components)>1 and len(components[1])>1000, 'Outer gold ring absent'
+          gold_badge=components[0]+components[1]
+          left,top,right,bottom=min(x for x,y in gold_badge),min(y for x,y in gold_badge),max(x for x,y in gold_badge)+1,max(y for x,y in gold_badge)+1
           cx,cy=(left+right)/2,(top+bottom)/2
           d=max(right-left,bottom-top)
           print('DETECTED_BADGE',cx,cy,d,flush=True)
