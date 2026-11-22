@@ -112,7 +112,7 @@ jobs:
           print('END_ID_PATCH_PREVIEW')
           PY
       - name: Commit changed PNG only after strict validation
-        if: false # dry run until reviewed
+        if: success() # validation passed; commit ONLY the updated template
         shell: bash
         run: |
           set -e
