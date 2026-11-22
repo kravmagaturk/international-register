@@ -1,0 +1,121 @@
+name: Replace ID card TOP LEFT badge only (safe and pixel bounded)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/instructor-id-logo-only-20261122.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: kmt-instructor-id-logo-only
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Pillow
+        run: python -m pip -q install Pillow==11.3.0
+      - name: Edit ONLY old yellow badge pixels and verify every other pixel
+        shell: bash
+        run: |
+          python - <<'PY'
+          from PIL import Image, ImageDraw, ImageChops, ImageFilter, PngImagePlugin
+          from pathlib import Path
+          from collections import deque
+          from io import BytesIO
+          import hashlib, base64
+          src=Path('instructor-id-template.png')
+          logo_src=Path('instructor-id-logo-20261122.webp')
+          assert src.is_file() and logo_src.is_file()
+          actual_sha=hashlib.sha256(logo_src.read_bytes()).hexdigest()
+          assert actual_sha=='100289f2972c467114e95998392d4266cd9f4e2729bf5917b98872cc2f32a7e1', 'Replacement badge is not the approved upload'
+          original=Image.open(src)
+          assert original.format=='PNG' and original.size==(1536,1024), (original.format,original.size)
+          base=original.convert('RGB')
+          assert hashlib.sha256(base.tobytes()).hexdigest()=='96735bcc42365336af4754854f4c8dd7beb295d62d9ba13bcb8198af5df554d8', 'Template changed since approved version; refuse to edit'
+          result=base.copy()
+          x0,y0,x1,y1=55,103,315,339
+          pix=base.load()
+          yellow=set()
+          for yy in range(y0,y1):
+            for xx in range(x0,x1):
+              r,g,b=pix[xx,yy]
+              if r>150 and g>82 and b<105 and r>g*1.13 and g>b*1.35:
+                yellow.add((xx,yy))
+          seen=set();components=[]
+          for start in yellow:
+            if start in seen: continue
+            comp=[];todo=deque([start]);seen.add(start)
+            while todo:
+              x,y=todo.popleft();comp.append((x,y))
+              for n in ((x+1,y),(x-1,y),(x,y+1),(x,y-1)):
+                if n in yellow and n not in seen:
+                  todo.append(n);seen.add(n)
+            if len(comp)>50: components.append(comp)
+          components.sort(key=len,reverse=True)
+          for c in components[:6]:
+            print('YELLOW_COMPONENT',len(c),(min(x for x,y in c),min(y for x,y in c),max(x for x,y in c),max(y for x,y in c)),flush=True)
+          assert components and len(components[0])>2000, 'Badge gold shape not located'
+          biggest=components[0]
+          left,top,right,bottom=min(x for x,y in biggest),min(y for x,y in biggest),max(x for x,y in biggest)+1,max(y for x,y in biggest)+1
+          cx,cy=(left+right)/2,(top+bottom)/2
+          d=max(right-left,bottom-top)
+          print('DETECTED_BADGE',cx,cy,d,flush=True)
+          assert 115<cx<235 and 132<cy<270 and 120<d<220 and abs((right-left)-(bottom-top))<24, 'Unexpected badge geometry'
+          old_outer=d/2+8
+          size=int(round(d+16))
+          x=int(round(cx-size/2)); y=int(round(cy-size/2))
+          assert 50<=x and x+size<330 and 90<=y and y+size<345, (x,y,size)
+          # Restore only the old circular badge footprint to header-black,
+          # using colors already present immediately beside that badge.
+          bg=pix[max(0,x-9),int(cy)]
+          ring=Image.new('L',(size*4,size*4),0)
+          ImageDraw.Draw(ring).ellipse((0,0,size*4-1,size*4-1),fill=255)
+          ring=ring.resize((size,size),Image.Resampling.LANCZOS)
+          dark=Image.new('RGB',(size,size),bg)
+          result.paste(dark,(x,y),ring)
+          # Put the owner's supplied exact red/silver emblem in the same circle.
+          badge=Image.open(logo_src).convert('RGB').resize((size,size),Image.Resampling.LANCZOS)
+          result.paste(badge,(x,y),ring)
+          diff=ImageChops.difference(base,result)
+          bbox=diff.getbbox()
+          assert bbox and bbox[0]>=x and bbox[1]>=y and bbox[2]<=x+size and bbox[3]<=y+size, ('Other template pixels changed',bbox)
+          assert result.size==base.size
+          # Verify all pixels outside exactly one old-logo square are unchanged.
+          diff_mask=diff.convert('L')
+          whole_pixels=sum(1 for v in diff_mask.getdata() if v)
+          assert whole_pixels>200, 'Logo was not replaced'
+          print('CHANGED_PIXELS',whole_pixels,'CHANGED_BOUNDING_BOX',bbox,'ALLOWED_ONLY',(x,y,x+size,y+size),flush=True)
+          meta=PngImagePlugin.PngInfo()
+          for k,v in original.info.items():
+            if isinstance(v,str): meta.add_text(k,v)
+          opts={'pnginfo':meta,'optimize':True}
+          if original.info.get('dpi'): opts['dpi']=original.info['dpi']
+          if original.info.get('icc_profile'): opts['icc_profile']=original.info['icc_profile']
+          result.save(src,'PNG',**opts)
+          with Image.open(src) as verify:
+            assert verify.size==original.size
+            assert ImageChops.difference(verify.convert('RGB'),result).getbbox() is None
+          thumb=result.copy()
+          thumb.thumbnail((930,700))
+          out=BytesIO();thumb.save(out,'JPEG',quality=65,optimize=True)
+          print('BEGIN_ID_PATCH_PREVIEW')
+          print(base64.b64encode(out.getvalue()).decode('ascii'))
+          print('END_ID_PATCH_PREVIEW')
+          PY
+      - name: Commit changed PNG only after strict validation
+        if: false # dry run until reviewed
+        shell: bash
+        run: |
+          set -e
+          git add -- instructor-id-template.png
+          if git diff --cached --quiet; then echo 'No modifications'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Only replace upper-left ID emblem; preserve calibrated 1536x1024 template'
+          git push origin HEAD:main
