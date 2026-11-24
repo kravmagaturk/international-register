@@ -1,6 +1,6 @@
 // KMT Admin route | security audit | 2026-11-18
 // Only Google/Firebase signed ID tokens are accepted; no client-provided identity is trusted.
-const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/08e58e7cb28c02d63e3771e0a0302e239aeb77f0/kmt-secure-8f3c2d-admin.html";
+const ADMIN_SOURCE = "https://raw.githubusercontent.com/kravmagaturk/international-register/9cc5f07b99eee23b656986dc4a263d398d3b4f2f/kmt-secure-8f3c2d-admin.html";
 const PROJECT_ID = "kravmaga-diploma";
 const ADMIN_EMAIL = "bulicet@gmail.com";
 const AUDIT_RETENTION_SECONDS = 90 * 24 * 60 * 60;
@@ -116,6 +116,7 @@ export default {
       const source=await fetch(ADMIN_SOURCE,{headers:{"Cache-Control":"no-store"}});
       if(!source.ok)return secure(new Response("Admin source unavailable",{status:502}));
       let html=await source.text();
+      html=html.replace("<link rel=\"icon\" type=\"image/png\" href=\"https://kravmaga.com.tr/assets/brand/logo-1948.png\">","<link rel=\"icon\" type=\"image/png\" sizes=\"96x96\" href=\"https://kravmaga.com.tr/assets/brand/kmt-symbol-mono-20261125.png\">");
       html=html.replace("<head>","<head>\n<base href=\"https://kravmagaturk.github.io/international-register/\">");
       return secure(new Response(request.method==="HEAD"?null:html,{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}}));
     }catch(e){return secure(new Response("Admin source unavailable",{status:502}));}
